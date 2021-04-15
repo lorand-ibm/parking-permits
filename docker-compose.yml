@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      target: development_stage
+    volumes:
+      - .:/app:cached
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - DEV_SERVER=true
