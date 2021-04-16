@@ -39,4 +39,5 @@ FROM base_stage AS production_stage
 
 COPY . /app/
 
-RUN echo 'TODO in the next PR: collectstatic command here so that production image would have the staticfiles'
+RUN DJANGO_SECRET_KEY="only-used-for-collectstatic" \
+    python /app/manage.py collectstatic --noinput
