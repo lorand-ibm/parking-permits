@@ -1,14 +1,15 @@
+from os import getenv
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
-SECRET_KEY = 'django-insecure-(q)0rwl9%7fi&sksumgh32d@yo%iq4rpy_vkh!de74q!gccq+j'
+SECRET_KEY = getenv('DJANGO_SECRET_KEY')
 
-DEBUG = True
+DEBUG = getenv('DEBUG') == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'users_app.CustomUser'
 
