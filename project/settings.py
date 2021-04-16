@@ -21,7 +21,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'graphql_app',
+    'parking_permits_app',
     'users_app',
 ]
 
