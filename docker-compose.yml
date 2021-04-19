@@ -25,6 +25,7 @@ services:
       - DEBUG=true
       - DEV_SERVER=true
       - DJANGO_SECRET_KEY=NotImportantHere
+      - WAIT_FOR_IT_ADDRESS=database:5432
 
 volumes:
   database-volume: {}
