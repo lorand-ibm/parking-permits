@@ -14,5 +14,6 @@
 # Allowed files
 #################################################
 !docker-entrypoint.sh
+!gunicorn.conf.py
 !manage.py
 !requirements*
