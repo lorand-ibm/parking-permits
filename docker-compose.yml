@@ -22,6 +22,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
+      - APPLY_MIGRATIONS=true
       - DEBUG=true
       - DEV_SERVER=true
       - DATABASE_URL=postgres://my_postgres_user:my_postgres_password@database:5432/my_postgres_db
