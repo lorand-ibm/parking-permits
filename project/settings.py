@@ -1,6 +1,8 @@
 from os import getenv
 from pathlib import Path
 
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -63,11 +65,9 @@ WSGI_APPLICATION = 'project.wsgi.application'
 
 
 
+DATABASE_URL = getenv('DATABASE_URL')
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.parse(DATABASE_URL)
 }
 
 

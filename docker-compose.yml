@@ -24,6 +24,7 @@ services:
     environment:
       - DEBUG=true
       - DEV_SERVER=true
+      - DATABASE_URL=postgres://my_postgres_user:my_postgres_password@database:5432/my_postgres_db
       - DJANGO_SECRET_KEY=NotImportantHere
       - WAIT_FOR_IT_ADDRESS=database:5432
 
