@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  database:
+    # https://registry.hub.docker.com/r/postgis/postgis
+    image: postgis/postgis:13-3.1
+    volumes:
+      - database-volume:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: my_postgres_db
+      POSTGRES_USER: my_postgres_user
+      POSTGRES_PASSWORD: my_postgres_password
+    ports:
+      - "127.0.0.1:5555:5432"
+
   api:
     build:
       context: .
@@ -13,3 +25,6 @@ services:
       - DEBUG=true
       - DEV_SERVER=true
       - DJANGO_SECRET_KEY=NotImportantHere
+
+volumes:
+  database-volume: {}
