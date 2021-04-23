@@ -39,5 +39,5 @@ FROM base_stage AS production_stage
 
 COPY . /app/
 
-RUN DJANGO_SECRET_KEY="only-used-for-collectstatic" \
+RUN DJANGO_SECRET_KEY="only-used-for-collectstatic" DATABASE_URL="sqlite:///" \
     python /app/manage.py collectstatic --noinput
