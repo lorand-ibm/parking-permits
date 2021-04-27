@@ -1,6 +1,11 @@
 [tool.black]
+target-version = ['py39']
 line-length    = 88        # Black's default value
-target-version = ['py38']  # TODO: change to ['py39'] when Black releases a version above 20.8b1
+extend-exclude = '''
+/(
+  | migrations
+)/
+'''
 
 [tool.isort]
 # Compliance with Black is supported simply by using 'black' profile

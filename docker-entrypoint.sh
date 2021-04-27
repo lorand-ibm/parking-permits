@@ -11,7 +11,11 @@ if [[ "$APPLY_MIGRATIONS" = "true" ]]; then
 fi
 
 if [[ "$INSTALL_PRECOMMIT" = "true" ]]; then
-    pre-commit install --install-hooks --overwrite
+    pre-commit install --overwrite
+fi
+
+if [[ "$CREATE_SUPERUSER" = "true" ]]; then
+    python /app/manage.py createsuperuser --noinput || true
 fi
 
 if [[ "$DEV_SERVER" = "true" ]]; then
