@@ -14,6 +14,10 @@ if [[ "$INSTALL_PRECOMMIT" = "true" ]]; then
     pre-commit install --overwrite
 fi
 
+if [[ "$CREATE_SUPERUSER" = "true" ]]; then
+    python /app/manage.py createsuperuser --noinput || true
+fi
+
 if [[ "$DEV_SERVER" = "true" ]]; then
     python /app/manage.py runserver 0.0.0.0:8000
 else
