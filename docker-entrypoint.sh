@@ -11,7 +11,7 @@ if [[ "$APPLY_MIGRATIONS" = "true" ]]; then
 fi
 
 if [[ "$INSTALL_PRECOMMIT" = "true" ]]; then
-    pre-commit install --install-hooks --overwrite
+    pre-commit install --overwrite
 fi
 
 if [[ "$DEV_SERVER" = "true" ]]; then
