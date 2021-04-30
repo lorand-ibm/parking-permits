@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     # disable Django’s static file handling during development so that whitenoise can take over
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
+    "ariadne.contrib.django",
     "parking_permits_app",
     "users_app",
 ]
