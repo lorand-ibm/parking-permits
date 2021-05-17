@@ -1,4 +1,4 @@
--c requirements.txt # Constrained by requirements.txt
+-r requirements.in # First include all basic requirements
 
 black==21.4b0                                 # code formatter
 flake8==3.9.1                                 # code linter

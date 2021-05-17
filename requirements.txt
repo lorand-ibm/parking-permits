@@ -12,7 +12,7 @@ dj-database-url==0.5.0
     # via -r requirements.in
 django==3.2
     # via -r requirements.in
-graphql-core==3.1.4
+graphql-core==3.1.5
     # via ariadne
 gunicorn==20.1.0
     # via -r requirements.in
@@ -24,7 +24,7 @@ sqlparse==0.4.1
     # via django
 starlette==0.14.2
     # via ariadne
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via ariadne
 whitenoise==5.2.0
     # via -r requirements.in
