@@ -33,7 +33,7 @@ Instructions in this README.md are written with an experienced Python developer 
 
 - You can run all the tests with:
   ```bash
-  docker-compose exec api pytest
+  docker-compose exec graphql-api pytest
   ```
 - If you want to run the tests continously while developing:
 
@@ -42,5 +42,5 @@ Instructions in this README.md are written with an experienced Python developer 
   - Run pytest whenever a Python file changes with:
 
     ```bash
-    fd --extension py | entr -c docker-compose exec api pytest
+    fd --extension py | entr -c docker-compose exec graphql-api pytest
     ```
