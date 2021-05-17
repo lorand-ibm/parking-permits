@@ -274,4 +274,7 @@ Temporary Items
 !.vscode/extensions.json
 *.code-workspace
 
+### PyCharm ###
+.idea
+
 # End of https://www.toptal.com/developers/gitignore/api/python,django,macos,vscode
