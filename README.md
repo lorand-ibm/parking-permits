@@ -33,8 +33,9 @@ Install packages
 
 ```
 pip install -U pip pip-tools
+pip-compile -U requirements.in
 pip-compile -U requirements-dev.in
-pip-sync requirements-dev.txt
+pip-sync requirements.txt requirements-dev.txt
 ```
 
 
