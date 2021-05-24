@@ -6,8 +6,8 @@ ARG IMAGE_VARIANT=slim
 FROM ${BASE_IMAGE}:${PYTHON_VERSION}-${IMAGE_VARIANT} AS base_stage
 # ==============================
 
-RUN groupadd --system --gid 2000 non-root-group && \
-    useradd  --system --gid      non-root-group --create-home --uid 3000 appuser
+RUN groupadd --system --gid 2000 appgroup && \
+    useradd  --system --gid      appgroup --create-home --uid 3000 appuser
 
 WORKDIR /app
 
@@ -39,7 +39,7 @@ RUN pip install --no-cache-dir -r /app/requirements-dev.txt
 
 COPY . /app/
 
-USER appuser:non-root-group
+USER appuser:appgroup
 
 # ==============================
 FROM base_stage AS production_stage
@@ -50,4 +50,4 @@ COPY . /app/
 RUN DJANGO_SECRET_KEY="only-used-for-collectstatic" DATABASE_URL="sqlite:///" \
     python /app/manage.py collectstatic --noinput
 
-USER appuser:non-root-group
+USER appuser:appgroup
