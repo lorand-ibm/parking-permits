@@ -1,14 +1,24 @@
-### Parking Permits API
+# Parking Permits API
 
 Backend repository for parking permits service developed by City of Helsinki.
 
 Instructions in this README.md are written with an experienced Python developer in mind. For example, "docker-compose up" means you already know what docker and docker-compose are and you already have both installed locally. This helps to keep the README.md concise.
 
-### Setting up local development environment with Docker
+## Setting up local development environment with Docker
 
-- Clone the repository
+In order to create placeholder for your own environment variables file, copy and rename `.env.example` to `.env`.
 
-- Start the application
+You'll need a redhat developer account to gain access to RedHat subscriptions
+needed to run the docker image.
+
+Register at https://developers.redhat.com/register and confirm your email address. 
+
+Set following environment variables in .env file:
+- BUILD_MODE=local
+- REDHAT_USERNAME=your redhat account username 
+- REDHAT_PASSWORD=your redhat account password
+
+Then you can run docker image with:
 
   ```bash
   docker-compose up
@@ -20,7 +30,7 @@ Instructions in this README.md are written with an experienced Python developer 
 
 - Done!
 
-### Setting up local development environment with PyEnv and VirtualEnvWrapper
+## Setting up local development environment with PyEnv and VirtualEnvWrapper
 
 ```
 pyenv install -v 3.9.0
@@ -39,7 +49,7 @@ pip-sync requirements.txt requirements-dev.txt
 ```
 
 
-### Managing project packages
+## Managing project packages
 
 - We use `pip-tools` to manage python packages we need
 - After adding a new package to requirements(-dev).in file, compile it and re-build the Docker image so that the container would have access to the new package
@@ -48,7 +58,7 @@ pip-sync requirements.txt requirements-dev.txt
   docker-compose up --build
   ```
 
-### Running tests
+## Running tests
 
 - You can run all the tests with:
   ```bash
