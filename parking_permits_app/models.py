@@ -1,18 +1,19 @@
-import uuid
-
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from .constants import CATEGORIES, CONTRACT_TYPES, VEHICLE_TYPES
+from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
+
 
 # TODO: Some of these fields should come directly from Helsinki profile User-model.
 #  Check how to combine this model with Helsinki profile User-model.
-class Customer(models.Model):
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     first_name = models.CharField(_("First name"), max_length=32)
     last_name = models.CharField(_("Last name"), max_length=32)
+    national_id_number = models.CharField(
+        _("National identification number"), max_length=16
+    )
     primary_address = models.ForeignKey(
         "Address",
         verbose_name=_("Primary address"),
@@ -34,7 +35,8 @@ class Customer(models.Model):
     parking_zone = models.ForeignKey(
         "ParkingZone", verbose_name=_("Parking zone"), on_delete=models.PROTECT
     )
-    terms_of_use_accepted = models.BooleanField(null=False, default=False)
+    consent_terms_of_use_accepted = models.BooleanField(null=False, default=False)
+    consent_low_emission_accepted = models.BooleanField(null=False, default=False)
 
     class Meta:
         db_table = "customer"
@@ -45,10 +47,7 @@ class Customer(models.Model):
         return "%s - %s %s" % (self.id, self.first_name, self.last_name)
 
 
-class ParkingZone(models.Model):
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     name = models.CharField(_("Name"), max_length=128, blank=False, null=False)
     location = models.MultiPolygonField(
         _("Area (2D)"), srid=settings.SRID, blank=False, null=False
@@ -63,11 +62,10 @@ class ParkingZone(models.Model):
         return "%s - %s" % (self.id, self.name)
 
 
-class VehicleType(models.Model):
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
+class VehicleType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+    type = models.CharField(
+        _("Type"), max_length=32, blank=False, null=False, choices=VEHICLE_TYPES
     )
-    name = models.CharField(_("Name"), max_length=32, blank=False, null=False)
 
     class Meta:
         db_table = "vehicle_type"
@@ -75,13 +73,10 @@ class VehicleType(models.Model):
         verbose_name_plural = _("Vehicle types")
 
     def __str__(self):
-        return "%s - %s" % (self.id, self.name)
+        return "%s - %s" % (self.id, self.type)
 
 
-class LowEmissionCriteria(models.Model):
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class LowEmissionCriteria(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     vehicle_type = models.ForeignKey(
         VehicleType,
         verbose_name=_("Vehicle type"),
@@ -95,6 +90,8 @@ class LowEmissionCriteria(models.Model):
     emission_limit_wltp = models.IntegerField(
         _("Emission limit (WLTP)"), blank=True, null=True
     )
+    start_date = models.DateField(_("Start date"), blank=False, null=False)
+    end_date = models.DateField(_("End date"), blank=True, null=True)
 
     class Meta:
         db_table = "low_emission_criteria"
@@ -110,10 +107,7 @@ class LowEmissionCriteria(models.Model):
         )
 
 
-class Address(models.Model):
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class Address(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     street_name = models.CharField(
         _("Street name"), max_length=128, blank=False, null=False
     )
@@ -139,11 +133,11 @@ class Address(models.Model):
         )
 
 
-class Company(models.Model):
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class Company(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     name = models.CharField(_("Company name"), max_length=128, blank=False, null=False)
+    business_id = models.CharField(
+        _("Business Id"), max_length=32, blank=False, null=False
+    )
     address = models.ForeignKey(
         Address, verbose_name=_("Address"), on_delete=models.PROTECT
     )
@@ -160,20 +154,7 @@ class Company(models.Model):
         return "%s - %s" % (self.id, self.name)
 
 
-class Vehicle(models.Model):
-    CATEGORIES = (
-        ("M1", _("M1")),
-        ("M2", _("M2")),
-        ("N1", _("N1")),
-        ("N2", _("N2")),
-        ("L3e", _("L3e")),
-        ("L4e", _("L4e")),
-        ("L5e", _("L5e")),
-        ("L6e", _("L6e")),
-    )
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     type = models.ForeignKey(
         VehicleType,
         verbose_name=_("Vehicle type"),
@@ -230,10 +211,7 @@ class Vehicle(models.Model):
         )
 
 
-class DrivingClass(models.Model):
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class DrivingClass(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     class_name = models.CharField(
         _("Driving class name"), max_length=32, blank=False, null=False
     )
@@ -250,10 +228,7 @@ class DrivingClass(models.Model):
         return "%s - %s - %s" % (self.id, self.class_name, self.identifier)
 
 
-class DrivingLicence(models.Model):
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class DrivingLicence(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     customer = models.ForeignKey(
         Customer, verbose_name=_("Customer"), on_delete=models.PROTECT
     )
@@ -271,14 +246,7 @@ class DrivingLicence(models.Model):
         return "%s - %s, active: %s" % (self.id, self.customer, self.active)
 
 
-class ContractType(models.Model):
-    CONTRACT_TYPES = (
-        ("FIXED_PERIOD", _("Fixed period")),
-        ("OPEN_ENDED", _("Open ended")),
-    )
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class ContractType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     contract_type = models.CharField(
         _("Contract type"),
         max_length=16,
@@ -297,21 +265,14 @@ class ContractType(models.Model):
         return "%s - %s, months: %s" % (self.id, self.contract_type, self.month_count)
 
 
-class Product(models.Model):
-    CONTRACT_TYPES = (
-        ("FIXED_PERIOD", _("Fixed period")),
-        ("OPEN_ENDED", _("Open ended")),
-    )
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
-    common_id = models.UUIDField(
-        unique=True, editable=False, default=uuid.uuid4
-    )  # Talpa ID
+class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+    shared_product_id = models.UUIDField(unique=True, editable=False)
     name = models.CharField(_("Product name"), max_length=32, blank=False, null=False)
     price = models.DecimalField(
         _("Product price"), blank=False, null=False, max_digits=6, decimal_places=2
     )
+    start_date = models.DateField(_("Start date"), blank=False, null=False)
+    end_date = models.DateField(_("End date"), blank=True, null=True)
 
     class Meta:
         db_table = "product"
@@ -321,16 +282,13 @@ class Product(models.Model):
     def __str__(self):
         return "%s - common_id: %s, %s, %s" % (
             self.id,
-            self.common_id,
+            self.shared_product_id,
             self.name,
             self.price,
         )
 
 
-class ParkingPermit(models.Model):
-    id = models.UUIDField(
-        primary_key=True, unique=True, editable=False, default=uuid.uuid4
-    )
+class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     customer = models.ForeignKey(
         Customer,
         verbose_name=_("Customer"),
@@ -366,8 +324,8 @@ class ParkingPermit(models.Model):
         blank=False,
         null=False,
     )
-    start = models.DateTimeField(_("Start"), blank=False, null=False)
-    end = models.DateTimeField(_("End"), blank=True, null=True)
+    start_time = models.DateTimeField(_("Start time"), blank=False, null=False)
+    end_time = models.DateTimeField(_("End time"), blank=True, null=True)
 
     class Meta:
         db_table = "parking_permit"
@@ -381,6 +339,6 @@ class ParkingPermit(models.Model):
             self.vehicle,
             self.product,
             self.contract_type,
-            self.start,
-            self.end,
+            self.start_time,
+            self.end_time,
         )
