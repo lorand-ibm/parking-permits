@@ -1,38 +1,37 @@
 version: "3.9"
 
 services:
-  database:
-    # https://registry.hub.docker.com/r/postgis/postgis
+  parking-permits-database:
     image: postgis/postgis:13-3.1
     volumes:
       - database-volume:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: my_postgres_db
-      POSTGRES_USER: my_postgres_user
-      POSTGRES_PASSWORD: my_postgres_password
+      POSTGRES_DB: parking_permits_db
+      POSTGRES_USER: parking_permits_user
+      POSTGRES_PASSWORD: parking_permits_password
     ports:
       - "127.0.0.1:5555:5432"
 
-  api:
+  parking-permits-api:
+    image: parking_permits_api
     build:
-      context: .
+      context: ./
+      dockerfile: ./Dockerfile
       target: development_stage
+      args:
+        BUILD_MODE: ${BUILD_MODE}
+        LOCAL_REDHAT_USERNAME: ${REDHAT_USERNAME}
+        LOCAL_REDHAT_PASSWORD: ${REDHAT_PASSWORD}
+    env_file:
+      - .env
     volumes:
       - .:/app:cached
     ports:
-      - "127.0.0.1:8000:8000"
-    environment:
-      - APPLY_MIGRATIONS=true
-      - CREATE_SUPERUSER=true
-      - DATABASE_URL=postgres://my_postgres_user:my_postgres_password@database:5432/my_postgres_db
-      - DEBUG=true
-      - DEV_SERVER=true
-      - DJANGO_SECRET_KEY=NotImportantHere
-      - DJANGO_SUPERUSER_EMAIL=admin@kool-kids.com
-      - DJANGO_SUPERUSER_PASSWORD=coconut
-      - DJANGO_SUPERUSER_USERNAME=admin
-      - INSTALL_PRECOMMIT=true
-      - WAIT_FOR_IT_ADDRESS=database:5432
+      - "127.0.0.1:8888:8888"
 
 volumes:
   database-volume: {}
+
+networks:
+  default:
+    name: helsinki

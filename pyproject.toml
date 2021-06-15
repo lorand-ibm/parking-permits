@@ -1,11 +1,6 @@
 [tool.black]
 target-version = ['py39']
 line-length    = 88        # Black's default value
-extend-exclude = '''
-/(
-  | migrations
-)/
-'''
 
 [tool.isort]
 # Compliance with Black is supported simply by using 'black' profile

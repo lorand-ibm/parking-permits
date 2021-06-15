@@ -1,0 +1,253 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-06-10 11:07+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "M1"
+msgstr "M1"
+
+msgid "M2"
+msgstr "M2"
+
+msgid "N1"
+msgstr "N1"
+
+msgid "N2"
+msgstr "N2"
+
+msgid "L3e"
+msgstr "L3e"
+
+msgid "L4e"
+msgstr "L4e"
+
+msgid "L5e"
+msgstr "L5e"
+
+msgid "L6e"
+msgstr "L6e"
+
+msgid "Fixed period"
+msgstr "Määräaikainen"
+
+msgid "Open ended"
+msgstr "Jatkuvavelotteinen"
+
+msgid "Bensin"
+msgstr "Bensiini"
+
+msgid "Diesel"
+msgstr "Diesel"
+
+msgid "Bifuel"
+msgstr "Kaasu"
+
+msgid "Time created"
+msgstr "Luonti-aikaleima"
+
+msgid "Time modified"
+msgstr "Muokattu-aikaleima"
+
+msgid "First name"
+msgstr "Etunimi"
+
+msgid "Last name"
+msgstr "Sukunimi"
+
+msgid "National identification number"
+msgstr "Henkilötunnus"
+
+msgid "Primary address"
+msgstr "Pysyvä osoite"
+
+msgid "Other address"
+msgstr "Tilapäinen osoite"
+
+msgid "Email"
+msgstr "Sähköposti"
+
+msgid "Phone number"
+msgstr "Puhelinnumero"
+
+msgid "Parking zone"
+msgstr "Pysäköintivyöhyke"
+
+msgid "Customer"
+msgstr "Asiakas"
+
+msgid "Customers"
+msgstr "Asiakkaat"
+
+msgid "Name"
+msgstr "Nimi"
+
+msgid "Area (2D)"
+msgstr "Alue (2D)"
+
+msgid "Parking zones"
+msgstr "Pysäköintivyöhykkeet"
+
+msgid "Type"
+msgstr "Tyyppi"
+
+msgid "Vehicle type"
+msgstr "Ajoneuvon tyyppi"
+
+msgid "Vehicle types"
+msgstr "Ajoneuvon tyypit"
+
+msgid "Emission limit (NEDC)"
+msgstr "Päästöraja (NEDC)"
+
+msgid "Emission limit (WLTP)"
+msgstr "Päästöraja (WLTP)"
+
+msgid "Start date"
+msgstr "Alkupäivä"
+
+msgid "End date"
+msgstr "Loppupäivä"
+
+msgid "Low-emission criteria"
+msgstr "Päästökriteeri"
+
+msgid "Low-emission criterias"
+msgstr "Päästökriteerit"
+
+msgid "Street name"
+msgstr "Kadunnimi"
+
+msgid "Street number"
+msgstr "Kadunnumero"
+
+msgid "City"
+msgstr "Postitoimipaikka"
+
+msgid "Location (2D)"
+msgstr "Sijainti (2D)"
+
+msgid "Address"
+msgstr "Osoite"
+
+msgid "Addresses"
+msgstr "Osoitteet"
+
+msgid "Company name"
+msgstr "Yrityksen nimi"
+
+msgid "Business Id"
+msgstr "Y-tunnus"
+
+msgid "Company owner"
+msgstr "Yrityksen omistaja"
+
+msgid "Company"
+msgstr "Yritys"
+
+msgid "Companies"
+msgstr "Yritykset"
+
+msgid "Vehicle category"
+msgstr "Ajoneuvon kategoria"
+
+msgid "Vehicle manufacturer"
+msgstr "Ajoneuvon valmistaja"
+
+msgid "Vehicle model"
+msgstr "Ajoneuvon malli"
+
+msgid "Vehicle production_year"
+msgstr "Ajoneuvon valmistamisvuosi"
+
+msgid "Vehicle registration number"
+msgstr "Ajoneuvon rekisteritunnus"
+
+msgid "Emission"
+msgstr "Päästölukema"
+
+msgid "Last inspection date"
+msgstr "Viimeisin katsastuspäivä"
+
+msgid "Owner"
+msgstr "Omistaja"
+
+msgid "Holder"
+msgstr "Haltija"
+
+msgid "Vehicle"
+msgstr "Ajoneuvo"
+
+msgid "Vehicles"
+msgstr "Ajoneuvot"
+
+msgid "Driving class name"
+msgstr "Ajoneuvoluokan nimi"
+
+msgid "Driving class identifier"
+msgstr "Ajoneuvoluokan tunniste"
+
+msgid "Driving class"
+msgstr "Ajoneuvoluokka"
+
+msgid "Driving classes"
+msgstr "Ajoneuvoluokat"
+
+msgid "Valid start"
+msgstr "Myönnetty (pvm)"
+
+msgid "Valid end"
+msgstr "Viimeinen voimassaolopäivä"
+
+msgid "Driving licence"
+msgstr "Ajokortti"
+
+msgid "Driving licences"
+msgstr "Ajokortit"
+
+msgid "Contract type"
+msgstr "Sopimustyyppi"
+
+msgid "Month count"
+msgstr "Kuukaudet (lkm)"
+
+msgid "Contract types"
+msgstr "Sopimustyypit"
+
+msgid "Product name"
+msgstr "Tuotteen nimi"
+
+msgid "Product price"
+msgstr "Tuotteen hinta"
+
+msgid "Product"
+msgstr "Tuote"
+
+msgid "Products"
+msgstr "Tuotteet"
+
+msgid "Start time"
+msgstr "Alkuaika"
+
+msgid "End time"
+msgstr "Loppuaika"
+
+msgid "Parking permit"
+msgstr "Pysäköintitunnus"
+
+msgid "Parking permits"
+msgstr "Pysäköintitunnukset"

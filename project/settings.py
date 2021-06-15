@@ -5,15 +5,14 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 SECRET_KEY = getenv("DJANGO_SECRET_KEY")
-
-DEBUG = getenv("DEBUG") == "true"
+DEBUG = getenv("DEBUG") == "True"
 
 ALLOWED_HOSTS = ["*"]
 
 AUTH_USER_MODEL = "users_app.CustomUser"
 
+SRID = 4326
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -24,8 +23,10 @@ INSTALLED_APPS = [
     # disable Django’s static file handling during development so that whitenoise can take over
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
+    "ariadne.contrib.django",
     "parking_permits_app",
     "users_app",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -60,8 +61,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "project.wsgi.application"
 
-
 DATABASE_URL = getenv("DATABASE_URL")
+
 DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
 
