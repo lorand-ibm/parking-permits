@@ -8,7 +8,7 @@ from .url_utils import versioned_url
 router = DefaultRouter()
 router.register(r"cart", views.ProductViewSet, basename="cart")
 
-app_name = "parking_permit"
+app_name = "parking_permits_app"
 urlpatterns = [
     path("graphql/", graphql.view, name="graphql"),
     path(
