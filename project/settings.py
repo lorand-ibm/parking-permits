@@ -1,14 +1,23 @@
-from os import getenv
+from os import getenv, path
 from pathlib import Path
 
 import dj_database_url
+import environ
+
+env = environ.Env(
+    DEBUG=(bool, False),
+    DJANGO_SECRET_KEY=(str, ""),
+    ALLOWED_HOSTS=(list, ["*"]),
+    DATABASE_URL=(str, "sqlite:////tmp/my-tmp-sqlite.db"),
+)
+
+if path.exists(".env"):
+    environ.Env().read_env(".env")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-SECRET_KEY = getenv("DJANGO_SECRET_KEY")
-DEBUG = getenv("DEBUG") == "True"
-
-ALLOWED_HOSTS = ["*"]
+DEBUG = env("DEBUG")
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
 AUTH_USER_MODEL = "users_app.CustomUser"
 
@@ -61,9 +70,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "project.wsgi.application"
 
-DATABASE_URL = getenv("DATABASE_URL")
-
-DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
+DATABASES = {"default": dj_database_url.parse(env("DATABASE_URL"))}
 
 
 AUTH_PASSWORD_VALIDATORS = [
