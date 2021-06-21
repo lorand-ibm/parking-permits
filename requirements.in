@@ -1,5 +1,6 @@
 ariadne==0.13.0                               # schema-first graphql server implementation
 dj-database-url==0.5.0                        # to be able to parse DATABASE_URL
+django-extensions==3.1.3
 django-environ==0.4.5                         # Read .env file
 django==3.2                                   # web framework itself
 djangorestframework==3.12.4                   # creating rest APIs
