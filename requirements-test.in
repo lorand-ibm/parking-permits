@@ -1,0 +1,6 @@
+pytest
+pytest-cov
+pytest-django
+pytest-factoryboy
+requests-mock
+factory-boy

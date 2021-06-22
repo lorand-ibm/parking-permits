@@ -1,9 +1,5 @@
--c requirements.txt # Constrained by requirements.txt
-
 black==21.4b0                                 # code formatter
 flake8==3.9.1                                 # code linter
 isort==5.8.0                                  # for sorting python imports
 pip-tools==6.1.0                              # package management tool
 pre-commit==2.12.1                            # pre-commit hooks package manager
-pytest-django==4.2.0                          # test runner integration with Django
-pytest==6.2.3                                 # test runner
