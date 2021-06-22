@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     "ariadne.contrib.django",
+    'django_extensions',
     "parking_permits_app",
     "users_app",
     "rest_framework",

@@ -2,7 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.contrib.gis.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from .constants import CATEGORIES, CONTRACT_TYPES, VEHICLE_TYPES
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
@@ -272,11 +272,6 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         unique=True, editable=False, default=uuid.uuid4
     )
     name = models.CharField(_("Product name"), max_length=32, blank=False, null=False)
-    price = models.DecimalField(
-        _("Product price"), blank=False, null=False, max_digits=6, decimal_places=2
-    )
-    start_date = models.DateField(_("Start date"), blank=False, null=False)
-    end_date = models.DateField(_("End date"), blank=True, null=True)
 
     class Meta:
         db_table = "product"
@@ -284,11 +279,35 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Products")
 
     def __str__(self):
-        return "%s - common_id: %s, %s, %s" % (
+        return self.name
+
+
+class ProductPrice(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+    product = models.ForeignKey(
+        Product,
+        verbose_name=_("Product price"),
+        on_delete=models.PROTECT,
+        related_name="prices",
+        blank=True,
+        null=True,
+    )
+    price = models.DecimalField(
+        _("Product price"), blank=False, null=False, max_digits=6, decimal_places=2
+    )
+    start_date = models.DateField(_("Start date"), blank=False, null=False)
+    end_date = models.DateField(_("End date"), blank=True, null=True)
+
+    class Meta:
+        db_table = "price"
+        verbose_name = _("Price")
+        verbose_name_plural = _("Prices")
+
+    def __str__(self):
+        return "%s %s - %s -> %s" % (
             self.id,
-            self.shared_product_id,
-            self.name,
-            self.price,
+            self.start_date,
+            self.end_date,
+            str(self.price),
         )
 
 

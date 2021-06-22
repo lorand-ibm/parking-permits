@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .models import Product
+from .permissions import ReadOnly
 from .serializers import ProductSerializer
 
 
@@ -14,3 +15,4 @@ class TalpaResolveAvailability(APIView):
 class ProductViewSet(ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = [ReadOnly]
