@@ -4,7 +4,8 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .constants import CATEGORIES, CONTRACT_TYPES, VEHICLE_TYPES
+from parking_permits_app import constants
+
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
 
@@ -66,7 +67,11 @@ class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
 class VehicleType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     type = models.CharField(
-        _("Type"), max_length=32, blank=False, null=False, choices=VEHICLE_TYPES
+        _("Type"),
+        max_length=32,
+        blank=False,
+        null=False,
+        choices=[(tag, tag.value) for tag in constants.VehicleType],
     )
 
     class Meta:
@@ -169,7 +174,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=16,
         blank=False,
         null=False,
-        choices=CATEGORIES,
+        choices=[(tag, tag.value) for tag in constants.VehicleCategory],
     )
     manufacturer = models.CharField(
         _("Vehicle manufacturer"), max_length=32, blank=False, null=False
@@ -254,7 +259,7 @@ class ContractType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=16,
         blank=False,
         null=False,
-        choices=CONTRACT_TYPES,
+        choices=[(tag, tag.value) for tag in constants.ContractType],
     )
     month_count = models.IntegerField(_("Month count"), blank=True, null=True)
 
