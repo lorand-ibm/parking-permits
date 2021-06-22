@@ -1,5 +1,11 @@
 import pytest
+from pytest_factoryboy import register
 from rest_framework.test import APIClient
+
+from parking_permits_app.factories import ProductFactory, ProductPriceFactory
+
+register(ProductFactory)
+register(ProductPriceFactory)
 
 
 @pytest.fixture
