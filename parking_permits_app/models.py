@@ -1,7 +1,9 @@
-import uuid
+import json
 
+import requests
 from django.conf import settings
 from django.contrib.gis.db import models
+from django.db.models.signals import post_save
 from django.utils.translation import gettext_lazy as _
 
 from parking_permits_app import constants
@@ -274,7 +276,7 @@ class ContractType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
 class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     shared_product_id = models.UUIDField(
-        unique=True, editable=False, default=uuid.uuid4
+        unique=True, editable=False, blank=True, null=True
     )
     name = models.CharField(_("Product name"), max_length=32, blank=False, null=False)
 
@@ -285,6 +287,25 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     def __str__(self):
         return self.name
+
+
+def post_product_to_talpa(sender, instance, created, **kwargs):
+    if created:
+        data = {
+            "namespace": settings.NAMESPACE,
+            "namespaceEntityId": instance.pk,
+            "name": instance.name,
+        }
+        result = requests.post(settings.TALPA_PRODUCT_EXPERIENCE_API, data=data)
+        if result.status_code == 201:
+            response = json.loads(result.text)
+            instance.shared_product_id = response["productId"]
+            instance.save()
+        if result.status_code >= 300:
+            raise Exception("Failed to create product on talpa: {}".format(result.text))
+
+
+post_save.connect(post_product_to_talpa, sender=Product)
 
 
 class ProductPrice(TimestampedModelMixin, UUIDPrimaryKeyMixin):
