@@ -1,4 +1,4 @@
-from os import getenv, path
+from os import path
 from pathlib import Path
 
 import dj_database_url
@@ -9,6 +9,10 @@ env = environ.Env(
     DJANGO_SECRET_KEY=(str, ""),
     ALLOWED_HOSTS=(list, ["*"]),
     DATABASE_URL=(str, "sqlite:////tmp/my-tmp-sqlite.db"),
+    TALPA_PRODUCT_EXPERIENCE_API=(
+        str,
+        "https://talpa-verkkokauppa-product-experience-api-dev.agw.arodevtest.hel.fi",
+    ),
 )
 
 if path.exists(".env"):
@@ -33,7 +37,7 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     "ariadne.contrib.django",
-    'django_extensions',
+    "django_extensions",
     "parking_permits_app",
     "users_app",
     "rest_framework",
@@ -105,3 +109,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static-files"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# FOR TALPA
+NAMESPACE = "parkingPermits"
+TALPA_PRODUCT_EXPERIENCE_API = env("TALPA_PRODUCT_EXPERIENCE_API")
