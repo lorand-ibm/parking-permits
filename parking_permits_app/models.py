@@ -1,5 +1,3 @@
-import uuid
-
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
@@ -274,7 +272,7 @@ class ContractType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
 class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     shared_product_id = models.UUIDField(
-        unique=True, editable=False, default=uuid.uuid4
+        unique=True, editable=False, blank=True, null=True
     )
     name = models.CharField(_("Product name"), max_length=32, blank=False, null=False)
 
