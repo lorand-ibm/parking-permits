@@ -1,5 +1,9 @@
+import json
+
+import requests
 from django.conf import settings
 from django.contrib.gis.db import models
+from django.db.models.signals import post_save
 from django.utils.translation import gettext_lazy as _
 
 from parking_permits_app import constants
@@ -283,6 +287,25 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     def __str__(self):
         return self.name
+
+
+def post_product_to_talpa(sender, instance, created, **kwargs):
+    if created:
+        data = {
+            "namespace": settings.NAMESPACE,
+            "namespaceEntityId": instance.pk,
+            "name": instance.name,
+        }
+        result = requests.post(settings.TALPA_PRODUCT_EXPERIENCE_API, data=data)
+        if result.status_code == 201:
+            response = json.loads(result.text)
+            instance.shared_product_id = response["productId"]
+            instance.save()
+        if result.status_code >= 300:
+            raise Exception("Failed to create product on talpa: {}".format(result.text))
+
+
+post_save.connect(post_product_to_talpa, sender=Product)
 
 
 class ProductPrice(TimestampedModelMixin, UUIDPrimaryKeyMixin):
