@@ -59,9 +59,11 @@ FROM appbase as development_stage
 # git is needed for 'pre-commit install' to work
 RUN yum install git
 
-# Copy and install development requirements files to image
 COPY requirements-dev.txt /app/
 RUN pip install --no-cache-dir -r /app/requirements-dev.txt
+
+COPY requirements-test.txt /app/
+RUN pip install --no-cache-dir -r /app/requirements-test.txt
 
 COPY . /app/
 
