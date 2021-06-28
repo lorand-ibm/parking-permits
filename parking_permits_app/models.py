@@ -289,6 +289,10 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     def __str__(self):
         return self.name
 
+    @property
+    def namespace(self):
+        return settings.NAMESPACE
+
 
 def post_product_to_talpa(sender, instance, created, **kwargs):
     if created:
