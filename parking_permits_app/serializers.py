@@ -19,6 +19,7 @@ class ProductPriceSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     prices = ProductPriceSerializer(read_only=True, many=True)
+    namespace = serializers.ReadOnlyField()
 
     class Meta:
         model = Product
@@ -27,6 +28,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "shared_product_id",
             "name",
             "prices",
+            "namespace",
+            "description",
         ]
         read_only_fields = [
             "id",
