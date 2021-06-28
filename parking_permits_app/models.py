@@ -278,6 +278,7 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     shared_product_id = models.UUIDField(
         unique=True, editable=False, blank=True, null=True
     )
+    description = models.TextField(_("Description"), blank=True, null=True)
     name = models.CharField(_("Product name"), max_length=32, blank=False, null=False)
 
     class Meta:
