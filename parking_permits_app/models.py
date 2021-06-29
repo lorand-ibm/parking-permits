@@ -93,11 +93,14 @@ class LowEmissionCriteria(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         blank=False,
         null=False,
     )
-    emission_limit_nedc = models.IntegerField(
-        _("Emission limit (NEDC)"), blank=True, null=True
+    nedc_max_emission_limit = models.IntegerField(
+        _("NEDC maximum emission limit"), blank=True, null=True
     )
-    emission_limit_wltp = models.IntegerField(
-        _("Emission limit (WLTP)"), blank=True, null=True
+    wltp_max_emission_limit = models.IntegerField(
+        _("WLTP maximum emission limit"), blank=True, null=True
+    )
+    euro_min_emission_limit = models.IntegerField(
+        _("Euro minimum emission limit"), blank=True, null=True
     )
     start_date = models.DateField(_("Start date"), blank=False, null=False)
     end_date = models.DateField(_("End date"), blank=True, null=True)
@@ -108,11 +111,12 @@ class LowEmissionCriteria(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Low-emission criterias")
 
     def __str__(self):
-        return "%s - %s, NEDC: %s, WLTP: %s" % (
+        return "%s - %s, NEDC: %s, WLTP: %s, EURO: %s" % (
             self.id,
             self.vehicle_type,
-            self.emission_limit_nedc,
-            self.emission_limit_wltp,
+            self.nedc_max_emission_limit,
+            self.wltp_max_emission_limit,
+            self.euro_min_emission_limit,
         )
 
 
