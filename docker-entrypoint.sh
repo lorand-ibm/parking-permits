@@ -6,9 +6,8 @@ if [[ "$WAIT_FOR_IT_ADDRESS" ]]; then
     ./wait-for-it.sh $WAIT_FOR_IT_ADDRESS --timeout=30
 fi
 
-if [[ "$APPLY_MIGRATIONS" = "True" ]]; then
-    python /app/manage.py migrate --noinput
-fi
+echo "Applying migrations..."
+python /app/manage.py migrate --noinput
 
 if [[ "$INSTALL_PRECOMMIT" = "True" ]]; then
     pre-commit install --overwrite
