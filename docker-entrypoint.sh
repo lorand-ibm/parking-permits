@@ -6,8 +6,11 @@ if [[ "$WAIT_FOR_IT_ADDRESS" ]]; then
     ./wait-for-it.sh $WAIT_FOR_IT_ADDRESS --timeout=30
 fi
 
-if [[ "$APPLY_MIGRATIONS" = "True" ]]; then
-    python /app/manage.py migrate --noinput
+echo "Applying migrations..."
+python /app/manage.py migrate --noinput
+
+if [[ "$BOOTSTRAP_PARKING_PERMITS" = "True" ]]; then
+    python /app/manage.py bootstrap_parking_permits
 fi
 
 if [[ "$INSTALL_PRECOMMIT" = "True" ]]; then
