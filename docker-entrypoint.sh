@@ -9,6 +9,10 @@ fi
 echo "Applying migrations..."
 python /app/manage.py migrate --noinput
 
+if [[ "$BOOTSTRAP_PARKING_PERMITS" = "True" ]]; then
+    python /app/manage.py bootstrap_parking_permits
+fi
+
 if [[ "$INSTALL_PRECOMMIT" = "True" ]]; then
     pre-commit install --overwrite
 fi
