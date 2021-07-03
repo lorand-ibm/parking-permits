@@ -61,8 +61,8 @@ SECONDARY_VEHICLE_LOW_EMISSION = (
     "item_price,"
     "item_quantity,"
     "vehicle_is_secondary,"
-    "euro_emission,"
-    "euro_emission_min_limit,"
+    "euro_class,"
+    "euro_class_min_limit,"
     "nedc_emission,"
     "nedc_emission_max_limit,"
     "wltp_emission,"
@@ -79,8 +79,8 @@ def test_calculate_cart_item_total_price_function_returns_correct_result(
     item_price,
     item_quantity,
     vehicle_is_secondary,
-    euro_emission,
-    euro_emission_min_limit,
+    euro_class,
+    euro_class_min_limit,
     nedc_emission,
     nedc_emission_max_limit,
     wltp_emission,
@@ -92,8 +92,8 @@ def test_calculate_cart_item_total_price_function_returns_correct_result(
             item_price=item_price,
             item_quantity=item_quantity,
             vehicle_is_secondary=vehicle_is_secondary,
-            euro_emission=euro_emission,
-            euro_emission_min_limit=euro_emission_min_limit,
+            euro_class=euro_class,
+            euro_class_min_limit=euro_class_min_limit,
             nedc_emission=nedc_emission,
             nedc_emission_max_limit=nedc_emission_max_limit,
             wltp_emission=wltp_emission,
