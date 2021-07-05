@@ -2,16 +2,14 @@ from parking_permits_app.constants import LOW_EMISSION_DISCOUNT
 
 
 def is_low_emission(
-    euro_emission=None,
-    euro_emission_min_limit=None,
+    euro_class=None,
+    euro_class_min_limit=None,
     nedc_emission=None,
     nedc_emission_max_limit=None,
     wltp_emission=None,
     wltp_emission_max_limit=None,
 ):
-    euro_compliant = (
-        euro_emission >= euro_emission_min_limit if euro_emission else False
-    )
+    euro_compliant = euro_class >= euro_class_min_limit if euro_class else False
     nedc_compliant = (
         nedc_emission <= nedc_emission_max_limit if nedc_emission else False
     )

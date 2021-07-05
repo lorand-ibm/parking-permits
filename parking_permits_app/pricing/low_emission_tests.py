@@ -9,8 +9,8 @@ from parking_permits_app.pricing.low_emission import (
 
 
 @pytest.mark.parametrize(
-    "euro_emission,"
-    "euro_emission_min_limit,"
+    "euro_class,"
+    "euro_class_min_limit,"
     "nedc_emission,"
     "nedc_emission_max_limit,"
     "wltp_emission,"
@@ -36,8 +36,8 @@ from parking_permits_app.pricing.low_emission import (
     ],
 )
 def test_is_low_emission_function_returns_correct_result(
-    euro_emission,
-    euro_emission_min_limit,
+    euro_class,
+    euro_class_min_limit,
     nedc_emission,
     nedc_emission_max_limit,
     wltp_emission,
@@ -46,8 +46,8 @@ def test_is_low_emission_function_returns_correct_result(
 ):
     assert (
         is_low_emission(
-            euro_emission=euro_emission,
-            euro_emission_min_limit=euro_emission_min_limit,
+            euro_class=euro_class,
+            euro_class_min_limit=euro_class_min_limit,
             nedc_emission=nedc_emission,
             nedc_emission_max_limit=nedc_emission_max_limit,
             wltp_emission=wltp_emission,
