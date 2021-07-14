@@ -99,8 +99,8 @@ class LowEmissionCriteria(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     wltp_max_emission_limit = models.IntegerField(
         _("WLTP maximum emission limit"), blank=True, null=True
     )
-    euro_min_emission_limit = models.IntegerField(
-        _("Euro minimum emission limit"), blank=True, null=True
+    euro_min_class_limit = models.IntegerField(
+        _("Euro minimum class limit"), blank=True, null=True
     )
     start_date = models.DateField(_("Start date"), blank=False, null=False)
     end_date = models.DateField(_("End date"), blank=True, null=True)
@@ -116,7 +116,7 @@ class LowEmissionCriteria(TimestampedModelMixin, UUIDPrimaryKeyMixin):
             self.vehicle_type,
             self.nedc_max_emission_limit,
             self.wltp_max_emission_limit,
-            self.euro_min_emission_limit,
+            self.euro_min_class_limit,
         )
 
 
@@ -192,7 +192,15 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     registration_number = models.CharField(
         _("Vehicle registration number"), max_length=24, blank=False, null=False
     )
+    euro_class = models.IntegerField(_("Euro class"), blank=True, null=True)
     emission = models.IntegerField(_("Emission"), blank=False, null=False)
+    emission_type = models.CharField(
+        _("Emission type"),
+        max_length=16,
+        blank=False,
+        null=True,
+        choices=[(tag, tag.value) for tag in constants.EmissionType],
+    )
     last_inspection_date = models.DateField(
         _("Last inspection date"), blank=False, null=False
     )
@@ -208,6 +216,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         on_delete=models.PROTECT,
         related_name="vehicles_holder",
     )
+    primary_vehicle = models.BooleanField(null=False, default=True)
 
     class Meta:
         db_table = "vehicle"
