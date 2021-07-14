@@ -194,6 +194,13 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
     euro_class = models.IntegerField(_("Euro class"), blank=True, null=True)
     emission = models.IntegerField(_("Emission"), blank=False, null=False)
+    emission_type = models.CharField(
+        _("Emission type"),
+        max_length=16,
+        blank=False,
+        null=True,
+        choices=[(tag, tag.value) for tag in constants.EmissionType],
+    )
     last_inspection_date = models.DateField(
         _("Last inspection date"), blank=False, null=False
     )
