@@ -27,7 +27,7 @@ class Command(BaseCommand):
                 vehicle_type=VehicleType.objects.get(type=vehicle_type),
                 nedc_max_emission_limit=emission_criteria.get(EmissionType.NEDC.value),
                 wltp_max_emission_limit=emission_criteria.get(EmissionType.WLTP.value),
-                euro_min_emission_limit=emission_criteria.get(EmissionType.EURO.value),
+                euro_min_class_limit=emission_criteria.get(EmissionType.EURO.value),
                 start_date=date(day=1, month=1, year=options.get("year")),
                 end_date=date(day=31, month=12, year=options.get("year")),
             )
