@@ -208,6 +208,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         on_delete=models.PROTECT,
         related_name="vehicles_holder",
     )
+    primary_vehicle = models.BooleanField(null=False, default=True)
 
     class Meta:
         db_table = "vehicle"
