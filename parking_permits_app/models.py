@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import requests
 from django.conf import settings
@@ -9,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from parking_permits_app import constants
 
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
+from .pricing.low_emission import is_low_emission
 
 
 # TODO: Some of these fields should come directly from Helsinki profile User-model.
@@ -218,6 +220,33 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
     primary_vehicle = models.BooleanField(null=False, default=True)
 
+    def is_low_emission(self):
+        nedc_emission = (
+            self.emission
+            if self.emission_type == constants.EmissionType.NEDC.value
+            else 0
+        )
+        wltp_emission = (
+            self.emission
+            if self.emission_type == constants.EmissionType.WLTP.value
+            else 0
+        )
+
+        low_emission_criteria = LowEmissionCriteria.objects.get(
+            vehicle_type=self.type,
+            start_date__lte=datetime.today(),
+            end_date__gte=datetime.today(),
+        )
+
+        return is_low_emission(
+            euro_class=self.euro_class,
+            euro_class_min_limit=low_emission_criteria.euro_min_class_limit,
+            nedc_emission=nedc_emission,
+            nedc_emission_max_limit=low_emission_criteria.nedc_max_emission_limit,
+            wltp_emission=wltp_emission,
+            wltp_emission_max_limit=low_emission_criteria.wltp_max_emission_limit,
+        )
+
     class Meta:
         db_table = "vehicle"
         verbose_name = _("Vehicle")
@@ -293,6 +322,17 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
     description = models.TextField(_("Description"), blank=True, null=True)
     name = models.CharField(_("Product name"), max_length=32, blank=False, null=False)
+
+    def get_current_price(self):
+        product_price = self.prices.get(
+            start_date__lte=datetime.today(),
+            end_date__gte=datetime.today(),
+        )
+
+        if product_price:
+            return product_price.price
+        else:
+            return None
 
     class Meta:
         db_table = "product"
