@@ -323,6 +323,17 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     description = models.TextField(_("Description"), blank=True, null=True)
     name = models.CharField(_("Product name"), max_length=32, blank=False, null=False)
 
+    def get_current_price(self):
+        product_price = self.prices.get(
+            start_date__lte=datetime.today(),
+            end_date__gte=datetime.today(),
+        )
+
+        if product_price:
+            return product_price.price
+        else:
+            return None
+
     class Meta:
         db_table = "product"
         verbose_name = _("Product")
