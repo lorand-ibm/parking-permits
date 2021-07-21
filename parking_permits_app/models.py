@@ -280,8 +280,11 @@ class DrivingClass(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
 
 class DrivingLicence(TimestampedModelMixin, UUIDPrimaryKeyMixin):
-    customer = models.ForeignKey(
-        Customer, verbose_name=_("Customer"), on_delete=models.PROTECT
+    customer = models.OneToOneField(
+        Customer,
+        verbose_name=_("Customer"),
+        on_delete=models.PROTECT,
+        related_name="driving_licence",
     )
     driving_classes = models.ManyToManyField(DrivingClass)
     valid_start = models.DateTimeField(_("Valid start"))
