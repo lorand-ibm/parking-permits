@@ -21,3 +21,10 @@ def resolve_price_response(product_id=None, total_price=None):
         "grossValue": total_price,
         "vatValue": total_price - calculate_price_without_vat(total_price),
     }
+
+
+def resolve_availability_response(product_id=None, availability=None):
+    return {
+        "productId": product_id,
+        "value": availability,
+    }
