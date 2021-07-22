@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+import arrow
 import requests
 from django.conf import settings
 from django.contrib.gis.db import models
@@ -75,7 +76,7 @@ class VehicleType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=32,
         blank=False,
         null=False,
-        choices=[(tag, tag.value) for tag in constants.VehicleType],
+        choices=[(tag.value, tag.value) for tag in constants.VehicleType],
     )
 
     class Meta:
@@ -182,7 +183,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=16,
         blank=False,
         null=False,
-        choices=[(tag, tag.value) for tag in constants.VehicleCategory],
+        choices=[(tag.value, tag.value) for tag in constants.VehicleCategory],
     )
     manufacturer = models.CharField(
         _("Vehicle manufacturer"), max_length=32, blank=False, null=False
@@ -201,7 +202,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=16,
         blank=False,
         null=True,
-        choices=[(tag, tag.value) for tag in constants.EmissionType],
+        choices=[(tag.value, tag.value) for tag in constants.EmissionType],
     )
     last_inspection_date = models.DateField(
         _("Last inspection date"), blank=False, null=False
@@ -291,6 +292,15 @@ class DrivingLicence(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     valid_end = models.DateTimeField(_("Valid end"))
     active = models.BooleanField(null=False, default=True)
 
+    def is_valid_for_vehicle_category(self, vehicle_category):
+        is_not_expired = self.valid_end > arrow.utcnow()
+        is_not_suspended = self.active
+        includes_vehicle_category = self.driving_classes.filter(
+            identifier=vehicle_category
+        ).exists()
+
+        return is_not_expired and is_not_suspended and includes_vehicle_category
+
     class Meta:
         db_table = "driving_licence"
         verbose_name = _("Driving licence")
@@ -306,7 +316,7 @@ class ContractType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=16,
         blank=False,
         null=False,
-        choices=[(tag, tag.value) for tag in constants.ContractType],
+        choices=[(tag.value, tag.value) for tag in constants.ContractType],
     )
     month_count = models.IntegerField(_("Month count"), blank=True, null=True)
 
