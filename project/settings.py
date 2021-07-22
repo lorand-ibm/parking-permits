@@ -29,6 +29,7 @@ SRID = 4326
 
 INSTALLED_APPS = [
     "django.contrib.admin",
+    "django.contrib.gis",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
