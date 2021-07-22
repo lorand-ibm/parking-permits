@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+import arrow
 import requests
 from django.conf import settings
 from django.contrib.gis.db import models
@@ -290,6 +291,15 @@ class DrivingLicence(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     valid_start = models.DateTimeField(_("Valid start"))
     valid_end = models.DateTimeField(_("Valid end"))
     active = models.BooleanField(null=False, default=True)
+
+    def is_valid_for_vehicle_category(self, vehicle_category):
+        is_not_expired = self.valid_end > arrow.utcnow()
+        is_not_suspended = self.active
+        includes_vehicle_category = self.driving_classes.filter(
+            identifier=vehicle_category
+        ).exists()
+
+        return is_not_expired and is_not_suspended and includes_vehicle_category
 
     class Meta:
         db_table = "driving_licence"
