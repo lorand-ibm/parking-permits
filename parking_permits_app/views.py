@@ -11,8 +11,14 @@ from .services import talpa
 
 
 class TalpaResolveAvailability(APIView):
-    def get(self, request, format=None):
-        return Response({"result": True})
+    def post(self, request, format=None):
+        shared_product_id = request.data.get("productId")
+
+        response = talpa.resolve_availability_response(
+            product_id=shared_product_id, availability=True
+        )
+
+        return Response(response)
 
 
 class TalpaResolvePrice(APIView):
