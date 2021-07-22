@@ -75,7 +75,7 @@ class VehicleType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=32,
         blank=False,
         null=False,
-        choices=[(tag, tag.value) for tag in constants.VehicleType],
+        choices=[(tag.value, tag.value) for tag in constants.VehicleType],
     )
 
     class Meta:
@@ -182,7 +182,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=16,
         blank=False,
         null=False,
-        choices=[(tag, tag.value) for tag in constants.VehicleCategory],
+        choices=[(tag.value, tag.value) for tag in constants.VehicleCategory],
     )
     manufacturer = models.CharField(
         _("Vehicle manufacturer"), max_length=32, blank=False, null=False
@@ -201,7 +201,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=16,
         blank=False,
         null=True,
-        choices=[(tag, tag.value) for tag in constants.EmissionType],
+        choices=[(tag.value, tag.value) for tag in constants.EmissionType],
     )
     last_inspection_date = models.DateField(
         _("Last inspection date"), blank=False, null=False
@@ -306,7 +306,7 @@ class ContractType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=16,
         blank=False,
         null=False,
-        choices=[(tag, tag.value) for tag in constants.ContractType],
+        choices=[(tag.value, tag.value) for tag in constants.ContractType],
     )
     month_count = models.IntegerField(_("Month count"), blank=True, null=True)
 
