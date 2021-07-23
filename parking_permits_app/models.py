@@ -233,6 +233,9 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
     primary_vehicle = models.BooleanField(null=False, default=True)
 
+    def is_due_for_inspection(self):
+        return arrow.utcnow().date() > self.last_inspection_date
+
     def is_low_emission(self):
         nedc_emission = (
             self.emission
