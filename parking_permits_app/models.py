@@ -58,6 +58,9 @@ class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         else:
             return False
 
+    def is_owner_or_holder_of_vehicle(self, vehicle):
+        return vehicle.owner == self or vehicle.holder == self
+
     class Meta:
         db_table = "customer"
         verbose_name = _("Customer")
