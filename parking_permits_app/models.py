@@ -307,11 +307,11 @@ class DrivingLicence(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     valid_end = models.DateTimeField(_("Valid end"))
     active = models.BooleanField(null=False, default=True)
 
-    def is_valid_for_vehicle_category(self, vehicle_category):
+    def is_valid_for_vehicle(self, vehicle):
         is_not_expired = self.valid_end > arrow.utcnow()
         is_not_suspended = self.active
         includes_vehicle_category = self.driving_classes.filter(
-            identifier=vehicle_category
+            identifier=vehicle.category
         ).exists()
 
         return is_not_expired and is_not_suspended and includes_vehicle_category
