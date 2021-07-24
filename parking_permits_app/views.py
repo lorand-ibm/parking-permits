@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Product, Vehicle
+from .models import Customer, Product, Vehicle
 from .permissions import ReadOnly
 from .pricing.engine import calculate_cart_item_total_price
 from .serializers import ProductSerializer
@@ -50,6 +50,33 @@ class TalpaResolvePrice(APIView):
 
         response = talpa.resolve_price_response(
             product_id=shared_product_id, total_price=total_price
+        )
+
+        return Response(response)
+
+
+class TalpaResolveRightOfPurchase(APIView):
+    def post(self, request, format=None):
+        shared_product_id = request.data.get("productId")
+        profile_id = talpa.get_meta_value(request.data.get("meta"), "profileId")
+        vehicle_id = talpa.get_meta_value(request.data.get("meta"), "vehicleId")
+
+        try:
+            customer = Customer.objects.get(pk=profile_id)
+            vehicle = Vehicle.objects.get(pk=vehicle_id)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        right_of_purchase = (
+            customer.has_valid_address_within_zone()
+            and customer.is_owner_or_holder_of_vehicle(vehicle)
+            and customer.driving_licence.is_valid_for_vehicle(vehicle)
+            and not vehicle.is_due_for_inspection()
+        )
+
+        response = talpa.resolve_right_of_purchase_response(
+            product_id=shared_product_id,
+            right_of_purchase=right_of_purchase,
         )
 
         return Response(response)
