@@ -21,5 +21,10 @@ urlpatterns = [
         views.TalpaResolvePrice.as_view(),
         name="talpa-price",
     ),
+    path(
+        "api/talpa/resolve-right-of-purchase/",
+        views.TalpaResolveRightOfPurchase.as_view(),
+        name="talpa-right-of-purchase",
+    ),
     versioned_url("v1", router.urls),
 ]
