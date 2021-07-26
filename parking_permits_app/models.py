@@ -46,6 +46,21 @@ class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     consent_terms_of_use_accepted = models.BooleanField(null=False, default=False)
     consent_low_emission_accepted = models.BooleanField(null=False, default=False)
 
+    def has_valid_address_within_zone(self):
+        if self.primary_address.location.within(self.parking_zone.location):
+            return True
+
+        elif self.other_address and self.other_address.location.within(
+            self.parking_zone.location
+        ):
+            return True
+
+        else:
+            return False
+
+    def is_owner_or_holder_of_vehicle(self, vehicle):
+        return vehicle.owner == self or vehicle.holder == self
+
     class Meta:
         db_table = "customer"
         verbose_name = _("Customer")
@@ -221,6 +236,9 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
     primary_vehicle = models.BooleanField(null=False, default=True)
 
+    def is_due_for_inspection(self):
+        return arrow.utcnow().date() > self.last_inspection_date
+
     def is_low_emission(self):
         nedc_emission = (
             self.emission
@@ -292,11 +310,11 @@ class DrivingLicence(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     valid_end = models.DateTimeField(_("Valid end"))
     active = models.BooleanField(null=False, default=True)
 
-    def is_valid_for_vehicle_category(self, vehicle_category):
+    def is_valid_for_vehicle(self, vehicle):
         is_not_expired = self.valid_end > arrow.utcnow()
         is_not_suspended = self.active
         includes_vehicle_category = self.driving_classes.filter(
-            identifier=vehicle_category
+            identifier=vehicle.category
         ).exists()
 
         return is_not_expired and is_not_suspended and includes_vehicle_category
