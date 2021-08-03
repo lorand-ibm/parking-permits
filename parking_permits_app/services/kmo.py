@@ -1,0 +1,53 @@
+import requests
+import xmltodict
+from django.conf import settings
+from rest_framework import status
+
+
+def get_wfs_result(street_name="", street_number=0):
+    street_address = f"katunimi=''{street_name}'' AND osoitenumero=''{street_number}''"
+    query_single_args = [
+        "'avoindata:Helsinki_osoiteluettelo'",
+        "'geom'",
+        f"'{street_address}'",
+    ]
+    cql_filter = f"CONTAINS(geom,querySingle({','.join(query_single_args)}))"
+    type_names = [
+        "avoindata:Asukas_ja_yrityspysakointivyohykkeet_alue",
+        "avoindata:Helsinki_osoiteluettelo",
+    ]
+
+    params = {
+        "CQL_FILTER": cql_filter,
+        "OUTPUTFORMAT": "json",
+        "REQUEST": "GetFeature",
+        "SERVICE": "WFS",
+        "srsName": "EPSG:4326",
+        "TYPENAME": ",".join(type_names),
+        "VERSION": "2.0.0",
+    }
+
+    response = requests.get(settings.KMO_URL, params=params)
+
+    if response.status_code != status.HTTP_200_OK:
+        xml_response = xmltodict.parse(response.content)
+
+        error_message = (
+            xml_response.get("ows:ExceptionReport", dict())
+            .get("ows:Exception", dict())
+            .get("ows:ExceptionText", "Unknown Error")
+        )
+        raise Exception(error_message)
+
+    result = response.json()
+
+    result_features = [
+        feature
+        for feature in result.get("features")
+        if not (
+            feature.get("geometry").get("type") == "Point"
+            and feature.get("properties").get("katunimi") != street_name
+        )
+    ]
+
+    return {**result, "features": result_features}

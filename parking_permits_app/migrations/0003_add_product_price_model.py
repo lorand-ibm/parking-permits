@@ -13,9 +13,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(model_name="product", name="end_date",),
-        migrations.RemoveField(model_name="product", name="price",),
-        migrations.RemoveField(model_name="product", name="start_date",),
+        migrations.RemoveField(
+            model_name="product",
+            name="end_date",
+        ),
+        migrations.RemoveField(
+            model_name="product",
+            name="price",
+        ),
+        migrations.RemoveField(
+            model_name="product",
+            name="start_date",
+        ),
         migrations.CreateModel(
             name="ProductPrice",
             fields=[
