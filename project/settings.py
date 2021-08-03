@@ -13,6 +13,7 @@ env = environ.Env(
         str,
         "https://talpa-verkkokauppa-product-experience-api-dev.agw.arodevtest.hel.fi",
     ),
+    KMO_URL=(str, "https://kartta.hel.fi/ws/geoserver/avoindata/wfs"),
 )
 
 if path.exists(".env"):
@@ -26,6 +27,7 @@ ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 AUTH_USER_MODEL = "users_app.CustomUser"
 
 SRID = 4326
+KMO_URL = env("KMO_URL")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
