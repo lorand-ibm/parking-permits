@@ -9,3 +9,4 @@ gunicorn==20.1.0                              # application server
 psycopg2-binary==2.8.6                        # postgres database adapter
 requests
 whitenoise==5.2.0                             # enabling Django to serve its own static files
+xmltodict==0.12.0                             # parsing xml to dictionary
