@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.contrib import admin
+from django.contrib.gis.admin import OSMGeoAdmin
 
 MODEL_ADMIN_ATTRIBUTES = {
     "Product": {
@@ -17,8 +18,8 @@ all_models = apps.all_models["parking_permits_app"].values()
 
 for model in all_models:
     model_admin = type(
-        "ModelAdmin",
-        (admin.ModelAdmin,),
+        "OSMGeoAdmin",
+        (OSMGeoAdmin,),
         MODEL_ADMIN_ATTRIBUTES.get(model.__name__, dict()),
     )
     admin.site.register(model, model_admin)
