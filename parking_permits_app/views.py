@@ -3,10 +3,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Customer, Product, Vehicle
+from .models import Customer, ParkingZone, Vehicle
 from .permissions import ReadOnly
 from .pricing.engine import calculate_cart_item_total_price
-from .serializers import ProductSerializer
+from .serializers import ParkingZoneSerializer
 from .services import talpa
 
 
@@ -37,12 +37,12 @@ class TalpaResolvePrice(APIView):
 
         try:
             vehicle = Vehicle.objects.get(pk=vehicle_id)
-            product = Product.objects.get(shared_product_id=shared_product_id)
+            zone = ParkingZone.objects.get(shared_product_id=shared_product_id)
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         total_price = calculate_cart_item_total_price(
-            item_price=product.get_current_price(),
+            item_price=zone.get_current_price(),
             item_quantity=item_quantity,
             vehicle_is_secondary=vehicle.primary_vehicle is False,
             vehicle_is_low_emission=vehicle.is_low_emission(),
@@ -82,7 +82,7 @@ class TalpaResolveRightOfPurchase(APIView):
         return Response(response)
 
 
-class ProductViewSet(ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+class ParkingZoneViewSet(ModelViewSet):
+    queryset = ParkingZone.objects.all()
+    serializer_class = ParkingZoneSerializer
     permission_classes = [ReadOnly]
