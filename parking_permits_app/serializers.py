@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
-from .models import Product, ProductPrice
+from .models import ParkingZone, Price
 
 
-class ProductPriceSerializer(serializers.ModelSerializer):
+class PriceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProductPrice
+        model = Price
         fields = [
             "id",
             "price",
@@ -17,19 +17,18 @@ class ProductPriceSerializer(serializers.ModelSerializer):
         ]
 
 
-class ProductSerializer(serializers.ModelSerializer):
-    prices = ProductPriceSerializer(read_only=True, many=True)
+class ParkingZoneSerializer(serializers.ModelSerializer):
+    prices = PriceSerializer(read_only=True, many=True)
     namespace = serializers.ReadOnlyField()
 
     class Meta:
-        model = Product
+        model = ParkingZone
         fields = [
             "id",
             "shared_product_id",
             "name",
             "prices",
             "namespace",
-            "description",
         ]
         read_only_fields = [
             "id",
