@@ -8,7 +8,7 @@ import parking_permits_app.constants
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("parking_permits_app", "0003_add_product_price_model"),
+        ("parking_permits_app", "0003_add_price_model"),
     ]
 
     operations = [

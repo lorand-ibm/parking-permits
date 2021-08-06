@@ -6,7 +6,7 @@ from parking_permits_app import graphql, views
 from .url_utils import versioned_url
 
 router = DefaultRouter()
-router.register(r"product", views.ProductViewSet, basename="product")
+router.register(r"product", views.ParkingZoneViewSet, basename="product")
 
 app_name = "parking_permits_app"
 urlpatterns = [

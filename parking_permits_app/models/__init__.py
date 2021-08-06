@@ -7,8 +7,7 @@ from .driving_licence import DrivingLicence
 from .low_emission_criteria import LowEmissionCriteria
 from .parking_permit import ParkingPermit
 from .parking_zone import ParkingZone
-from .product import Product
-from .product_price import ProductPrice
+from .price import Price
 from .vehicle import Vehicle
 from .vehicle_type import VehicleType
 
@@ -22,8 +21,7 @@ __all__ = [
     "LowEmissionCriteria",
     "ParkingPermit",
     "ParkingZone",
-    "Product",
-    "ProductPrice",
+    "Price",
     "Vehicle",
     "VehicleType",
 ]

@@ -3,13 +3,13 @@ from django.contrib import admin
 from django.contrib.gis.admin import OSMGeoAdmin
 
 MODEL_ADMIN_ATTRIBUTES = {
-    "Product": {
-        "list_display": ["name", "shared_product_id"],
+    "ParkingZone": {
+        "list_display": ["id", "name", "description", "shared_product_id"],
         "ordering": ["name"],
         "search_fields": ["name"],
     },
-    "ProductPrice": {
-        "list_display": ["product", "start_date", "end_date", "price"],
+    "Price": {
+        "list_display": ["zone", "start_date", "end_date", "price"],
         "ordering": ["-start_date"],
     },
 }

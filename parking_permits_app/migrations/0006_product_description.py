@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name="product",
+            model_name="parkingzone",
             name="description",
             field=models.TextField(blank=True, null=True, verbose_name="Description"),
         ),
