@@ -13,20 +13,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name="product",
-            name="end_date",
-        ),
-        migrations.RemoveField(
-            model_name="product",
-            name="price",
-        ),
-        migrations.RemoveField(
-            model_name="product",
-            name="start_date",
-        ),
         migrations.CreateModel(
-            name="ProductPrice",
+            name="Price",
             fields=[
                 (
                     "created_at",
@@ -51,7 +39,7 @@ class Migration(migrations.Migration):
                 (
                     "price",
                     models.DecimalField(
-                        decimal_places=2, max_digits=6, verbose_name="Product price"
+                        decimal_places=2, max_digits=6, verbose_name="Price"
                     ),
                 ),
                 ("start_date", models.DateField(verbose_name="Start date")),
@@ -60,14 +48,14 @@ class Migration(migrations.Migration):
                     models.DateField(blank=True, null=True, verbose_name="End date"),
                 ),
                 (
-                    "product",
+                    "zone",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="prices",
-                        to="parking_permits_app.product",
-                        verbose_name="Product price",
+                        to="parking_permits_app.parkingzone",
+                        verbose_name="Zone",
                     ),
                 ),
             ],

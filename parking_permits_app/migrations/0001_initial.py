@@ -241,6 +241,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("name", models.CharField(max_length=128, verbose_name="Name")),
+                ("shared_product_id", models.UUIDField(editable=False, unique=True)),
                 (
                     "location",
                     django.contrib.gis.db.models.fields.MultiPolygonField(
@@ -252,49 +253,6 @@ class Migration(migrations.Migration):
                 "verbose_name": "Parking zone",
                 "verbose_name_plural": "Parking zones",
                 "db_table": "parking_zone",
-            },
-        ),
-        migrations.CreateModel(
-            name="Product",
-            fields=[
-                (
-                    "created_at",
-                    models.DateTimeField(
-                        auto_now_add=True, verbose_name="Time created"
-                    ),
-                ),
-                (
-                    "modified_at",
-                    models.DateTimeField(auto_now=True, verbose_name="Time modified"),
-                ),
-                (
-                    "id",
-                    models.UUIDField(
-                        default=uuid.uuid4,
-                        editable=False,
-                        primary_key=True,
-                        serialize=False,
-                        unique=True,
-                    ),
-                ),
-                ("shared_product_id", models.UUIDField(editable=False, unique=True)),
-                ("name", models.CharField(max_length=32, verbose_name="Product name")),
-                (
-                    "price",
-                    models.DecimalField(
-                        decimal_places=2, max_digits=6, verbose_name="Product price"
-                    ),
-                ),
-                ("start_date", models.DateField(verbose_name="Start date")),
-                (
-                    "end_date",
-                    models.DateField(blank=True, null=True, verbose_name="End date"),
-                ),
-            ],
-            options={
-                "verbose_name": "Product",
-                "verbose_name_plural": "Products",
-                "db_table": "product",
             },
         ),
         migrations.CreateModel(
@@ -489,14 +447,6 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.PROTECT,
                         to="parking_permits_app.parkingzone",
                         verbose_name="Parking zone",
-                    ),
-                ),
-                (
-                    "product",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT,
-                        to="parking_permits_app.product",
-                        verbose_name="Product",
                     ),
                 ),
                 (

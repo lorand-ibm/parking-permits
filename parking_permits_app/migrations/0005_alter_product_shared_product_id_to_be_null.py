@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name="product",
+            model_name="parkingzone",
             name="shared_product_id",
             field=models.UUIDField(blank=True, editable=False, null=True, unique=True),
         ),
