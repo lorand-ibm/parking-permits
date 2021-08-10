@@ -23,8 +23,10 @@ if [[ "$CREATE_SUPERUSER" = "True" ]]; then
     python /app/manage.py createsuperuser --noinput || true
 fi
 
-echo "Updating translations..."
-python /app/manage.py compilemessages -l fi
+if [[ "$UPDATE_TRANSLATIONS" = "True" ]]; then
+    echo "Updating translations..."
+    python /app/manage.py compilemessages -l fi
+fi
 
 if [[ "$DEV_SERVER" = "True" ]]; then
     python /app/manage.py runserver 0.0.0.0:8888
