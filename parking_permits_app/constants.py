@@ -4,21 +4,21 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Zone(Enum):
-    A = _("Zone A")
-    B = _("Zone B")
-    C = _("Zone C")
-    D = _("Zone D")
-    E = _("Zone E")
-    F = _("Zone F")
-    H = _("Zone H")
-    I = _("Zone I")
-    J = _("Zone J")
-    K = _("Zone K")
-    L = _("Zone L")
-    M = _("Zone M")
-    N = _("Zone N")
-    O = _("Zone O")
-    P = _("Zone P")
+    A = _("A")
+    B = _("B")
+    C = _("C")
+    D = _("D")
+    E = _("E")
+    F = _("F")
+    H = _("H")
+    I = _("I")
+    J = _("J")
+    K = _("K")
+    L = _("L")
+    M = _("M")
+    N = _("N")
+    O = _("O")
+    P = _("P")
 
 
 class VehicleCategory(Enum):
