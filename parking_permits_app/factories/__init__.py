@@ -1,6 +1,7 @@
-from .product import ProductFactory, ProductPriceFactory
+from .price import PriceFactory
+from .zone import ParkingZoneFactory
 
 __all__ = [
-    "ProductFactory",
-    "ProductPriceFactory",
+    "PriceFactory",
+    "ParkingZoneFactory",
 ]

@@ -1,22 +1,16 @@
 import factory
 import pytz
 
-from ..models import Product, ProductPrice
+from ..models import Price
 from .faker import fake
+from .zone import ParkingZoneFactory
 
 
-class ProductFactory(factory.django.DjangoModelFactory):
+class PriceFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Product
+        model = Price
 
-    name = factory.Sequence(lambda n: "zone_%d" % (n + 1))
-
-
-class ProductPriceFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = ProductPrice
-
-    product = factory.SubFactory(ProductFactory)
+    zone = factory.SubFactory(ParkingZoneFactory)
     price = fake.random.randint(1, 50)
     start_date = factory.LazyFunction(
         lambda: fake.date_time_between(
