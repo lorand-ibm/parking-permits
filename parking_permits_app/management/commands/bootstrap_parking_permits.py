@@ -11,7 +11,7 @@ class Command(BaseCommand):
         call_command("create_vehicle_types")
 
         call_command(
-            "create_products_prices",
+            "create_parking_zone_prices",
             year=2021,
             data_module="parking_permits_app.data.2021",
         )
