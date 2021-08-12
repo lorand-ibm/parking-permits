@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Customer, ParkingZone, Vehicle
+from .models import ParkingPermit, ParkingZone
 from .permissions import ReadOnly
 from .pricing.engine import calculate_cart_item_total_price
 from .serializers import ParkingZoneSerializer
@@ -25,19 +25,20 @@ class TalpaResolvePrice(APIView):
     def post(self, request, format=None):
         shared_product_id = request.data.get("productId")
         item_quantity = request.data.get("quantity")
-        vehicle_id = talpa.get_meta_value(request.data.get("meta"), "vehicleId")
+        permit_id = talpa.get_meta_value(request.data.get("meta"), "permitId")
 
-        if vehicle_id is None:
+        if permit_id is None:
             return Response(
                 {
-                    "message": "No vehicleId key available in meta list of key-value pairs"
+                    "message": "No permitId key available in meta list of key-value pairs"
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            vehicle = Vehicle.objects.get(pk=vehicle_id)
-            zone = ParkingZone.objects.get(shared_product_id=shared_product_id)
+            permit = ParkingPermit.objects.get(pk=permit_id)
+            vehicle = permit.vehicle
+            zone = permit.parking_zone
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -58,12 +59,12 @@ class TalpaResolvePrice(APIView):
 class TalpaResolveRightOfPurchase(APIView):
     def post(self, request, format=None):
         shared_product_id = request.data.get("productId")
-        profile_id = talpa.get_meta_value(request.data.get("meta"), "profileId")
-        vehicle_id = talpa.get_meta_value(request.data.get("meta"), "vehicleId")
+        permit_id = talpa.get_meta_value(request.data.get("meta"), "permitId")
 
         try:
-            customer = Customer.objects.get(pk=profile_id)
-            vehicle = Vehicle.objects.get(pk=vehicle_id)
+            permit = ParkingPermit.objects.get(pk=permit_id)
+            customer = permit.customer
+            vehicle = permit.vehicle
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
