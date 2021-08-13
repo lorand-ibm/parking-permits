@@ -34,4 +34,4 @@ class DrivingLicence(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Driving licences")
 
     def __str__(self):
-        return "%s - %s, active: %s" % (self.id, self.customer, self.active)
+        return "%s, active: %s" % (self.customer, self.active)

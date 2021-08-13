@@ -100,10 +100,8 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Vehicles")
 
     def __str__(self):
-        return "%s - %s, %s, %s, %s" % (
-            self.id,
-            self.type,
-            self.category,
+        return "%s (%s, %s)" % (
+            self.registration_number,
             self.manufacturer,
             self.model,
         )

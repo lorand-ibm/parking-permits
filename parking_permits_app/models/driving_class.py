@@ -18,4 +18,4 @@ class DrivingClass(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Driving classes")
 
     def __str__(self):
-        return "%s - %s - %s" % (self.id, self.class_name, self.identifier)
+        return "%s - %s" % (self.class_name, self.identifier)

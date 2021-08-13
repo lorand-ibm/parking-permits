@@ -31,8 +31,7 @@ class LowEmissionCriteria(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Low-emission criterias")
 
     def __str__(self):
-        return "%s - %s, NEDC: %s, WLTP: %s, EURO: %s" % (
-            self.id,
+        return "%s, NEDC: %s, WLTP: %s, EURO: %s" % (
             self.vehicle_type,
             self.nedc_max_emission_limit,
             self.wltp_max_emission_limit,

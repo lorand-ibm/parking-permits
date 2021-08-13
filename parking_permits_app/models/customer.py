@@ -40,4 +40,4 @@ class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Customers")
 
     def __str__(self):
-        return "%s - %s %s" % (self.id, self.first_name, self.last_name)
+        return "%s %s" % (self.first_name, self.last_name)

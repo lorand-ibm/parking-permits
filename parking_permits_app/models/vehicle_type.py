@@ -21,4 +21,4 @@ class VehicleType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Vehicle types")
 
     def __str__(self):
-        return "%s - %s" % (self.id, self.type)
+        return "%s" % self.type

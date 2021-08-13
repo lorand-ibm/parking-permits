@@ -22,4 +22,4 @@ class ContractType(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Contract types")
 
     def __str__(self):
-        return "%s - %s, months: %s" % (self.id, self.contract_type, self.month_count)
+        return "%s, months: %s" % (self.contract_type, self.month_count)

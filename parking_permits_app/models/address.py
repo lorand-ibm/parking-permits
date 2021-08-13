@@ -31,8 +31,7 @@ class Address(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Addresses")
 
     def __str__(self):
-        return "%s - %s %s, %s" % (
-            self.id,
+        return "%s %s, %s" % (
             self.street_name,
             self.street_number,
             self.city,
