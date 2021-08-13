@@ -8,6 +8,13 @@ from .parking_zone import ParkingZone
 from .vehicle import Vehicle
 
 
+def get_next_identifier():
+    last = ParkingPermit.objects.order_by("-identifier").first()
+    if not last:
+        return 80000000
+    return last.identifier + 1
+
+
 class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     customer = models.ForeignKey(
         Customer,
@@ -37,6 +44,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         blank=False,
         null=False,
     )
+    identifier = models.IntegerField(
+        default=get_next_identifier, editable=False, unique=True, db_index=True
+    )
+    consent_low_emission_accepted = models.BooleanField(null=False, default=False)
     start_time = models.DateTimeField(_("Start time"), blank=False, null=False)
     end_time = models.DateTimeField(_("End time"), blank=True, null=True)
 
@@ -46,11 +57,4 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Parking permits")
 
     def __str__(self):
-        return "%s - %s - %s - %s - %s - %s" % (
-            self.id,
-            self.customer,
-            self.vehicle,
-            self.contract_type,
-            self.start_time,
-            self.end_time,
-        )
+        return "%s" % self.identifier

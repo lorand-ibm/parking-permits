@@ -12,6 +12,18 @@ MODEL_ADMIN_ATTRIBUTES = {
         "list_display": ["zone", "start_date", "end_date", "price"],
         "ordering": ["-start_date"],
     },
+    "ParkingPermit": {
+        "list_display": [
+            "identifier",
+            "customer",
+            "vehicle",
+            "parking_zone",
+            "start_time",
+            "end_time",
+        ],
+        "search_fields": ["identifier"],
+        "ordering": ["-start_time"],
+    },
 }
 
 all_models = apps.all_models["parking_permits_app"].values()

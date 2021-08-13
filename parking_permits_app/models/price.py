@@ -26,9 +26,8 @@ class Price(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Prices")
 
     def __str__(self):
-        return "%s %s - %s -> %s" % (
-            self.id,
+        return "%s (%s - %s)" % (
+            self.price,
             self.start_date,
             self.end_date,
-            str(self.price),
         )

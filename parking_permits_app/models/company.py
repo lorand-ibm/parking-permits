@@ -24,4 +24,4 @@ class Company(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Companies")
 
     def __str__(self):
-        return "%s - %s" % (self.id, self.name)
+        return "%s" % self.name

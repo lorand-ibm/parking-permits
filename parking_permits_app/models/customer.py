@@ -30,23 +30,6 @@ class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     phone_number = models.CharField(
         _("Phone number"), max_length=32, blank=True, null=True
     )
-    parking_zone = models.ForeignKey(
-        "ParkingZone", verbose_name=_("Parking zone"), on_delete=models.PROTECT
-    )
-    consent_terms_of_use_accepted = models.BooleanField(null=False, default=False)
-    consent_low_emission_accepted = models.BooleanField(null=False, default=False)
-
-    def has_valid_address_within_zone(self):
-        if self.primary_address.location.within(self.parking_zone.location):
-            return True
-
-        elif self.other_address and self.other_address.location.within(
-            self.parking_zone.location
-        ):
-            return True
-
-        else:
-            return False
 
     def is_owner_or_holder_of_vehicle(self, vehicle):
         return vehicle.owner == self or vehicle.holder == self
@@ -57,4 +40,4 @@ class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Customers")
 
     def __str__(self):
-        return "%s - %s %s" % (self.id, self.first_name, self.last_name)
+        return "%s %s" % (self.first_name, self.last_name)
