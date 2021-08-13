@@ -33,7 +33,6 @@ class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     parking_zone = models.ForeignKey(
         "ParkingZone", verbose_name=_("Parking zone"), on_delete=models.PROTECT
     )
-    consent_terms_of_use_accepted = models.BooleanField(null=False, default=False)
 
     def has_valid_address_within_zone(self):
         if self.primary_address.location.within(self.parking_zone.location):
