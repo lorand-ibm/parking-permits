@@ -16,6 +16,7 @@ class Address(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     location = models.PointField(
         _("Location (2D)"), srid=settings.SRID, blank=False, null=False
     )
+    zone = models.ForeignKey("Zone", verbose_name=_("Zone"), on_delete=models.PROTECT)
 
     class Meta:
         db_table = "address"

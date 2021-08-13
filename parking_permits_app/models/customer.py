@@ -30,21 +30,6 @@ class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     phone_number = models.CharField(
         _("Phone number"), max_length=32, blank=True, null=True
     )
-    parking_zone = models.ForeignKey(
-        "ParkingZone", verbose_name=_("Parking zone"), on_delete=models.PROTECT
-    )
-
-    def has_valid_address_within_zone(self):
-        if self.primary_address.location.within(self.parking_zone.location):
-            return True
-
-        elif self.other_address and self.other_address.location.within(
-            self.parking_zone.location
-        ):
-            return True
-
-        else:
-            return False
 
     def is_owner_or_holder_of_vehicle(self, vehicle):
         return vehicle.owner == self or vehicle.holder == self
