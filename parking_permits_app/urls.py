@@ -26,5 +26,10 @@ urlpatterns = [
         views.TalpaResolveRightOfPurchase.as_view(),
         name="talpa-right-of-purchase",
     ),
+    path(
+        "api/talpa/order/",
+        views.OrderView.as_view(),
+        name="order-notify",
+    ),
     versioned_url("v1", router.urls),
 ]

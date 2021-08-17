@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,6 +10,8 @@ from .permissions import ReadOnly
 from .pricing.engine import calculate_cart_item_total_price
 from .serializers import ParkingZoneSerializer
 from .services import talpa
+
+logger = logging.getLogger(__name__)
 
 
 class TalpaResolveAvailability(APIView):
@@ -87,3 +91,10 @@ class ParkingZoneViewSet(ModelViewSet):
     queryset = ParkingZone.objects.all()
     serializer_class = ParkingZoneSerializer
     permission_classes = [ReadOnly]
+
+
+class OrderView(APIView):
+    def post(self, request, format=None):
+        logger.info("Order received.", request.data)
+
+        return Response({"message": "Order received"}, status=200)
