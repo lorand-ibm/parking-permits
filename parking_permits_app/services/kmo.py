@@ -1,3 +1,5 @@
+import re
+
 import requests
 import xmltodict
 from django.conf import settings
@@ -51,3 +53,17 @@ def get_wfs_result(street_name="", street_number=0):
     ]
 
     return {**result, "features": result_features}
+
+
+def parse_street_name_and_number(street_address):
+    tokens = street_address.split()
+
+    street_name = tokens[0] if len(tokens) >= 1 else None
+    street_number_token = tokens[1] if len(tokens) >= 2 else ""
+
+    street_number_first_part = re.search(r"^\d+", street_number_token)
+    street_number = (
+        int(street_number_first_part.group()) if street_number_first_part else None
+    )
+
+    return dict(street_name=street_name, street_number=street_number)
