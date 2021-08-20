@@ -62,7 +62,6 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         on_delete=models.PROTECT,
         related_name="vehicles_holder",
     )
-    primary_vehicle = models.BooleanField(null=False, default=True)
 
     def is_due_for_inspection(self):
         return arrow.utcnow().date() > self.last_inspection_date

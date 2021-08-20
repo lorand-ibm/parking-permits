@@ -50,6 +50,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     consent_low_emission_accepted = models.BooleanField(null=False, default=False)
     start_time = models.DateTimeField(_("Start time"), blank=False, null=False)
     end_time = models.DateTimeField(_("End time"), blank=True, null=True)
+    primary_vehicle = models.BooleanField(null=False, default=True)
 
     class Meta:
         db_table = "parking_permit"
