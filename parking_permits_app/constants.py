@@ -49,6 +49,13 @@ class EmissionType(Enum):
     WLTP = _("WLTP")
 
 
+class ParkingPermitStatus(Enum):
+    DRAFT = _("DRAFT")
+    PAID = _("PAID")
+    CANCELLED = _("CANCELLED")
+    EXPIRED = _("EXPIRED")
+
+
 LOW_EMISSION_DISCOUNT = 50
 SECONDARY_VEHICLE_PRICE_INCREASE = 50
 VAT_PERCENTAGE = 24

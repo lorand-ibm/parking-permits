@@ -1,6 +1,7 @@
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
+from .. import constants
 from .contract_type import ContractType
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
@@ -44,12 +45,20 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         blank=False,
         null=False,
     )
+    status = models.CharField(
+        _("Status"),
+        max_length=32,
+        blank=False,
+        null=True,
+        choices=[(tag.value, tag.value) for tag in constants.ParkingPermitStatus],
+    )
     identifier = models.IntegerField(
         default=get_next_identifier, editable=False, unique=True, db_index=True
     )
     consent_low_emission_accepted = models.BooleanField(null=False, default=False)
     start_time = models.DateTimeField(_("Start time"), blank=False, null=False)
     end_time = models.DateTimeField(_("End time"), blank=True, null=True)
+    primary_vehicle = models.BooleanField(null=False, default=True)
 
     class Meta:
         db_table = "parking_permit"

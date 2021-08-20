@@ -49,7 +49,7 @@ class TalpaResolvePrice(APIView):
         total_price = calculate_cart_item_total_price(
             item_price=zone.get_current_price(),
             item_quantity=item_quantity,
-            vehicle_is_secondary=vehicle.primary_vehicle is False,
+            vehicle_is_secondary=permit.primary_vehicle is False,
             vehicle_is_low_emission=vehicle.is_low_emission(),
         )
 
