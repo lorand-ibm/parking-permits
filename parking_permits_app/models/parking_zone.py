@@ -13,6 +13,7 @@ from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     name = models.CharField(_("Name"), max_length=128, blank=False, null=False)
     description = models.TextField(_("Description"), blank=True, null=True)
+    description_sv = models.TextField(_("Description sv"), blank=True, null=True)
     shared_product_id = models.UUIDField(
         unique=True, editable=False, blank=True, null=True
     )

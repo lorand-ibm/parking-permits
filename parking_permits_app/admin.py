@@ -4,7 +4,13 @@ from django.contrib.gis.admin import OSMGeoAdmin
 
 MODEL_ADMIN_ATTRIBUTES = {
     "ParkingZone": {
-        "list_display": ["id", "name", "description", "shared_product_id"],
+        "list_display": [
+            "id",
+            "name",
+            "description",
+            "description_sv",
+            "shared_product_id",
+        ],
         "ordering": ["name"],
         "search_fields": ["name"],
     },
