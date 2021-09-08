@@ -8,6 +8,24 @@ from .wfs_importer import WfsImporter
 
 logger = logging.getLogger(__name__)
 
+PARKING_ZONE_DESCRIPTION_SV = {
+    "A": "Kampen",
+    "B": "Rödbergen/Eira",
+    "C": "Gardesstaden/Ulrikasborg/Brunnsparken",
+    "D": "Skatudden",
+    "E": "Gloet/Kronohagen",
+    "F": "Främre Tölö",
+    "H": "Bortre Tölö/Mejlans",
+    "I": "Berghäll/Sörnäs",
+    "J": "Åshöjden",
+    "K": "Vallgård",
+    "L": "Brunakärr",
+    "M": "Södra Haga",
+    "N": "Drumsö",
+    "O": "Munksnäs",
+    "P": "Munkshöjden/Näshöjden",
+}
+
 
 class ParkingZoneImporter(WfsImporter):
     """
@@ -38,10 +56,12 @@ class ParkingZoneImporter(WfsImporter):
     def _parse_feature(self, feature):
         name = feature["properties"]["asukaspysakointitunnus"]
         description = feature["properties"]["alueen_nimi"]
+        description_sv = PARKING_ZONE_DESCRIPTION_SV.get(name, "")
         locations = self.convert_to_geosgeometry(feature["geometry"])
 
         return {
             "name": name,
             "description": description,
+            "description_sv": description_sv,
             "location": locations,
         }
