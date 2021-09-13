@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 
 from project.settings import BASE_DIR
+
 from . import constants
 from .mock_vehicle import get_mock_vehicle
 from .models import Address, Customer, ParkingPermit, ParkingZone, Vehicle
@@ -132,7 +133,7 @@ def resolve_delete_parking_permit(obj, info, permit_id):
             other_permit = ParkingPermit.objects.filter(
                 customer=permit.customer,
                 status=constants.ParkingPermitStatus.DRAFT.value,
-            )
+            ).first()
             other_permit.primary_vehicle = True
             other_permit.save(update_fields=["primary_vehicle"])
         permit.delete()
@@ -156,9 +157,8 @@ def resolve_create_parking_permit(obj, info, customer_id, zone_id, registration)
         )
     except ObjectDoesNotExist:
         customer_vehicles = Vehicle.objects.filter(
-            Q(registration_number__iexact=registration),
             Q(owner=customer) | Q(holder=customer),
-        )
+        ).exclude(registration_number__iexact=registration)
         permit = ParkingPermit.objects.create(
             customer=customer,
             parking_zone=ParkingZone.objects.get(id=zone_id),
