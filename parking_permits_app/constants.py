@@ -37,6 +37,11 @@ class ContractType(Enum):
     OPEN_ENDED = _("OPEN_ENDED")
 
 
+class StartType(Enum):
+    IMMEDIATELY = _("IMMEDIATELY")
+    FROM = _("FROM")
+
+
 class VehicleType(Enum):
     BENSIN = _("Bensin")
     DIESEL = _("Diesel")
