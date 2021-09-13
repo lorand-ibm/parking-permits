@@ -65,6 +65,7 @@ type PermitNode {
   price: PriceNode!
   contractType: String
   monthCount: Int
+  startType: String
   startTime: String
   endTime: String
   status: String
@@ -107,6 +108,7 @@ input ParkingPermitInput {
   primaryVehicle: Boolean
   startTime: String
   endTime: String
+  startType: String
   contractType: String
   monthCount: Int
 }
