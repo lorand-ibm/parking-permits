@@ -12,7 +12,7 @@ def new_order_data():
         "permitId": "ZGU6NTI5MjFmZTctOWRjYS00ZmYyLWE4MjgtN",
         "start_time": "2020-01-01T00:00:00Z",
         "end_time": "2021-12-31T23:59:00Z",
-        "status": "PAID",
+        "status": "VALID",
     }
 
 

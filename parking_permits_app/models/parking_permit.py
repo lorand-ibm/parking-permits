@@ -58,6 +58,12 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         default=constants.ContractType.OPEN_ENDED.value,
         choices=[(tag.value, tag.value) for tag in constants.ContractType],
     )
+    start_type = models.CharField(
+        _("Start type"),
+        max_length=16,
+        default=constants.StartType.IMMEDIATELY.value,
+        choices=[(tag.value, tag.value) for tag in constants.StartType],
+    )
     month_count = models.IntegerField(_("Month count"), default=0)
 
     class Meta:

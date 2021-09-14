@@ -37,6 +37,11 @@ class ContractType(Enum):
     OPEN_ENDED = _("OPEN_ENDED")
 
 
+class StartType(Enum):
+    IMMEDIATELY = _("IMMEDIATELY")
+    FROM = _("FROM")
+
+
 class VehicleType(Enum):
     BENSIN = _("Bensin")
     DIESEL = _("Diesel")
@@ -51,7 +56,7 @@ class EmissionType(Enum):
 
 class ParkingPermitStatus(Enum):
     DRAFT = _("DRAFT")
-    PAID = _("PAID")
+    VALID = _("VALID")
     CANCELLED = _("CANCELLED")
     EXPIRED = _("EXPIRED")
 
