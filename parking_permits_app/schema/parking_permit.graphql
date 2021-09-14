@@ -49,6 +49,7 @@ type VehicleNode {
   productionYear: Int
   registrationNumber: String
   emission: Int
+  isLowEmission: Boolean
 }
 
 type PriceNode {
