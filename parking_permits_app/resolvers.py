@@ -53,11 +53,12 @@ def resolve_customer_permits(obj, info, customer_id):
 def serialize_permit(permit):
     price = permit.parking_zone.get_current_price()
     vehicle = permit.vehicle
+    is_low_emission = vehicle.is_low_emission()
     offer = calculate_cart_item_total_price(
         item_price=price,
         item_quantity=1,
         vehicle_is_secondary=permit.primary_vehicle is False,
-        vehicle_is_low_emission=vehicle.is_low_emission(),
+        vehicle_is_low_emission=is_low_emission,
     )
     return snake_to_camel_dict(
         {
@@ -70,6 +71,7 @@ def serialize_permit(permit):
             },
             "vehicle": {
                 "id": vehicle.pk,
+                "is_low_emission": is_low_emission,
                 "vehicle_type": {"id": vehicle.type.id, **model_to_dict(vehicle.type)},
                 **model_to_dict(vehicle),
             },
