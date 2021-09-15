@@ -39,7 +39,7 @@ schema_bindables = [
 def resolve_customer_permits(obj, info, customer_id):
     try:
         permits = ParkingPermit.objects.filter(customer__pk=customer_id).order_by(
-            "-start_time"
+            "start_time"
         )
         payload = {
             "success": True,
