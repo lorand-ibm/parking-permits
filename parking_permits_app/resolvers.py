@@ -134,10 +134,14 @@ def resolve_delete_parking_permit(obj, info, permit_id):
     try:
         permit = ParkingPermit.objects.get(id=permit_id)
         if permit.primary_vehicle:
-            other_permit = ParkingPermit.objects.filter(
-                customer=permit.customer,
-                status=constants.ParkingPermitStatus.DRAFT.value,
-            ).first()
+            other_permit = (
+                ParkingPermit.objects.filter(
+                    customer=permit.customer,
+                    status=constants.ParkingPermitStatus.DRAFT.value,
+                )
+                .exclude(id=permit.id)
+                .first()
+            )
             other_permit.primary_vehicle = True
             other_permit.save(update_fields=["primary_vehicle"])
         permit.delete()
