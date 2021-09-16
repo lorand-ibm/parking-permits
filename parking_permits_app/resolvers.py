@@ -14,8 +14,8 @@ from project.settings import BASE_DIR
 from . import constants
 from .mock_vehicle import get_mock_vehicle
 from .models import Address, Customer, ParkingPermit, ParkingZone, Vehicle
-from .pricing.engine import calculate_cart_item_total_price
 from .services.hel_profile import HelsinkiProfile
+from .services.talpa import resolve_price_response
 
 helsinki_profile_query = load_schema_from_path(
     BASE_DIR / "parking_permits_app" / "schema" / "helsinki_profile.graphql"
@@ -39,7 +39,7 @@ schema_bindables = [
 def resolve_customer_permits(obj, info, customer_id):
     try:
         permits = ParkingPermit.objects.filter(customer__pk=customer_id).order_by(
-            "-start_time"
+            "start_time"
         )
         payload = {
             "success": True,
@@ -51,24 +51,12 @@ def resolve_customer_permits(obj, info, customer_id):
 
 
 def serialize_permit(permit):
-    price = permit.parking_zone.get_current_price()
     vehicle = permit.vehicle
     is_low_emission = vehicle.is_low_emission()
-    offer = calculate_cart_item_total_price(
-        item_price=price,
-        item_quantity=1,
-        vehicle_is_secondary=permit.primary_vehicle is False,
-        vehicle_is_low_emission=is_low_emission,
-    )
-    return snake_to_camel_dict(
+    permit_data = snake_to_camel_dict(
         {
             "id": permit.pk,
             **model_to_dict(permit),
-            "price": {
-                "original": price,
-                "offer": offer,
-                "currency": "€",
-            },
             "vehicle": {
                 "id": vehicle.pk,
                 "is_low_emission": is_low_emission,
@@ -77,6 +65,7 @@ def serialize_permit(permit):
             },
         }
     )
+    return {**permit_data, "prices": resolve_price_response(permit.get_total_price())}
 
 
 @query.field("profile")
@@ -134,10 +123,14 @@ def resolve_delete_parking_permit(obj, info, permit_id):
     try:
         permit = ParkingPermit.objects.get(id=permit_id)
         if permit.primary_vehicle:
-            other_permit = ParkingPermit.objects.filter(
-                customer=permit.customer,
-                status=constants.ParkingPermitStatus.DRAFT.value,
-            ).first()
+            other_permit = (
+                ParkingPermit.objects.filter(
+                    customer=permit.customer,
+                    status=constants.ParkingPermitStatus.DRAFT.value,
+                )
+                .exclude(id=permit.id)
+                .first()
+            )
             other_permit.primary_vehicle = True
             other_permit.save(update_fields=["primary_vehicle"])
         permit.delete()

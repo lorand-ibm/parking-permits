@@ -1,5 +1,6 @@
+import decimal
+
 from parking_permits_app.constants import VAT_PERCENTAGE
-from parking_permits_app.pricing.value_added_tax import calculate_price_without_vat
 
 
 def get_meta_value(meta_pair_list, meta_pair_key):
@@ -13,13 +14,13 @@ def get_meta_value(meta_pair_list, meta_pair_key):
     )
 
 
-def resolve_price_response(product_id=None, total_price=None):
+def resolve_price_response(total_price=0):
+    vat = decimal.Decimal(VAT_PERCENTAGE) / 100 * total_price
     return {
-        "productId": product_id,
-        "netValue": calculate_price_without_vat(total_price),
+        "priceNet": total_price - vat,
+        "priceVat": vat,
+        "priceGross": total_price,
         "vatPercentage": VAT_PERCENTAGE,
-        "grossValue": total_price,
-        "vatValue": total_price - calculate_price_without_vat(total_price),
     }
 
 
