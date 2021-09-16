@@ -64,7 +64,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         default=constants.StartType.IMMEDIATELY.value,
         choices=[(tag.value, tag.value) for tag in constants.StartType],
     )
-    month_count = models.IntegerField(_("Month count"), default=0)
+    month_count = models.IntegerField(_("Month count"), default=1)
 
     class Meta:
         db_table = "parking_permit"
