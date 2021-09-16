@@ -7,7 +7,6 @@ from rest_framework.viewsets import ModelViewSet
 
 from .models import ParkingPermit, ParkingZone
 from .permissions import ReadOnly
-from .pricing.engine import calculate_cart_item_total_price
 from .serializers import ParkingZoneSerializer
 from .services import talpa
 
@@ -27,8 +26,6 @@ class TalpaResolveAvailability(APIView):
 
 class TalpaResolvePrice(APIView):
     def post(self, request, format=None):
-        shared_product_id = request.data.get("productId")
-        item_quantity = request.data.get("quantity")
         permit_id = talpa.get_meta_value(request.data.get("meta"), "permitId")
 
         if permit_id is None:
@@ -41,21 +38,10 @@ class TalpaResolvePrice(APIView):
 
         try:
             permit = ParkingPermit.objects.get(pk=permit_id)
-            vehicle = permit.vehicle
-            zone = permit.parking_zone
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        total_price = calculate_cart_item_total_price(
-            item_price=zone.get_current_price(),
-            item_quantity=item_quantity,
-            vehicle_is_secondary=permit.primary_vehicle is False,
-            vehicle_is_low_emission=vehicle.is_low_emission(),
-        )
-
-        response = talpa.resolve_price_response(
-            product_id=shared_product_id, total_price=total_price
-        )
+        response = talpa.resolve_price_response(total_price=permit.get_total_price())
 
         return Response(response)
 
