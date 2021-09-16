@@ -53,17 +53,17 @@ type VehicleNode {
 }
 
 type PriceNode {
-  id: ID!
-  original: Int!
-  offer: Int
-  currency: String
+  priceNet: Float!
+  priceVat: Float!
+  priceGross: Float!
+  vatPercentage: Int!
 }
 
 type PermitNode {
   id: ID!
   zone: ID!
   vehicle: VehicleNode!
-  price: PriceNode!
+  prices: PriceNode!
   contractType: String
   monthCount: Int
   startType: String
