@@ -1,9 +1,11 @@
+import decimal
 from datetime import datetime
 
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
 from .. import constants
+from ..constants import LOW_EMISSION_DISCOUNT, SECONDARY_VEHICLE_PRICE_INCREASE
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
@@ -65,6 +67,18 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         choices=[(tag.value, tag.value) for tag in constants.StartType],
     )
     month_count = models.IntegerField(_("Month count"), default=1)
+
+    def get_total_price(self):
+        total_price = self.parking_zone.get_current_price() * self.month_count
+        if not self.primary_vehicle:
+            increase = decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
+            total_price += increase * total_price
+
+        if self.vehicle.is_low_emission():
+            discount = decimal.Decimal(LOW_EMISSION_DISCOUNT) / 100
+            total_price -= discount * total_price
+
+        return total_price
 
     class Meta:
         db_table = "parking_permit"
