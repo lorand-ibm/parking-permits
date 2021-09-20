@@ -1,20 +1,20 @@
 type ZoneNode  {
   id: ID!
-  sharedProductId: String
+  shared_product_id: String
   name: String
   description: String
-  descriptionSv: String
+  description_sv: String
   location: [[[[Float]]]]
 }
 
 type AddressNode  {
   id: ID!
-  streetName: String
-  streetNumber: Int
-  streetNameSv: String
+  street_name: String
+  street_number: Int
+  street_name_sv: String
   city: String
-  citySv: String
-  postalCode: String
+  city_sv: String
+  postal_code: String
   location: [Float]
   zone: ZoneNode
 }
@@ -27,13 +27,14 @@ enum Language {
 
 type CustomerNode {
   id: ID!
-  firstName: String!
-  lastName: String!
+  first_name: String!
+  last_name: String!
   language: Language
   email: String
-  phoneNumber: String
-  primaryAddress: AddressNode
-  otherAddress: AddressNode
+  phone_number: String
+  primary_address: AddressNode
+  other_address: AddressNode
+  token: String
 }
 
 type VehicleTypeNode {
@@ -43,20 +44,20 @@ type VehicleTypeNode {
 
 type VehicleNode {
   id: ID!
-  vehicleType: VehicleTypeNode!
+  type: VehicleTypeNode!
   manufacturer: String
   model: String
-  productionYear: Int
-  registrationNumber: String
+  production_year: Int
+  registration_number: String
   emission: Int
-  isLowEmission: Boolean
+  is_low_emission: Boolean
 }
 
 type PriceNode {
-  priceNet: Float!
-  priceVat: Float!
-  priceGross: Float!
-  vatPercentage: Int!
+  price_net: Float!
+  price_vat: Float!
+  price_gross: Float!
+  vat_percentage: Int!
 }
 
 type PermitNode {
@@ -64,14 +65,14 @@ type PermitNode {
   zone: ID!
   vehicle: VehicleNode!
   prices: PriceNode!
-  contractType: String
-  monthCount: Int
-  startType: String
-  startTime: String
-  endTime: String
+  contract_type: String
+  month_count: Int
+  start_type: String
+  start_time: String
+  end_time: String
   status: String
-  consentLowEmissionAccepted: Boolean
-  primaryVehicle: Boolean
+  consent_low_emission_accepted: Boolean
+  primary_vehicle: Boolean
 }
 
 type PermitResult {
@@ -82,7 +83,7 @@ type PermitResult {
 
 type Query {
   profile: CustomerNode!
-  getPermits(customerId: ID!): PermitResult
+  getPermits: PermitResult
 }
 
 type CreateOrUpdatePermitResult {
@@ -97,7 +98,7 @@ type DeletePermitResult {
 }
 
 type Mutation {
-  createParkingPermit(customerId: ID!, zoneId: ID!, registration: String!): CreateOrUpdatePermitResult!
+  createParkingPermit(zoneId: ID!, registration: String!): CreateOrUpdatePermitResult!
   deleteParkingPermit(permitId: ID!): DeletePermitResult!
   updateParkingPermit(
     permitId: ID!
