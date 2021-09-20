@@ -12,6 +12,7 @@ from django.forms.models import model_to_dict
 from project.settings import BASE_DIR
 
 from . import constants
+from .jwt import attach_token, authenticate_parking_permit_token
 from .mock_vehicle import get_mock_vehicle
 from .models import Address, Customer, ParkingPermit, ParkingZone, Vehicle
 from .services.hel_profile import HelsinkiProfile
@@ -35,6 +36,7 @@ schema_bindables = [
 
 
 @query.field("getPermits")
+@authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
 def resolve_customer_permits(obj, info, customer_id):
     try:
@@ -69,6 +71,7 @@ def serialize_permit(permit):
 
 
 @query.field("profile")
+@attach_token
 def resolve_user_profile(_, info, *args):
     profile = HelsinkiProfile(info.context["request"])
     customer = profile.get_customer()
@@ -118,10 +121,11 @@ def resolve_user_profile(_, info, *args):
 
 
 @mutation.field("deleteParkingPermit")
+@authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
-def resolve_delete_parking_permit(obj, info, permit_id):
+def resolve_delete_parking_permit(obj, info, permit_id, customer_id):
     try:
-        permit = ParkingPermit.objects.get(id=permit_id)
+        permit = ParkingPermit.objects.get(id=permit_id, customer__id=customer_id)
         if permit.primary_vehicle:
             other_permit = (
                 ParkingPermit.objects.filter(
@@ -143,6 +147,7 @@ def resolve_delete_parking_permit(obj, info, permit_id):
 
 
 @mutation.field("createParkingPermit")
+@authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
 def resolve_create_parking_permit(obj, info, customer_id, zone_id, registration):
     customer = Customer.objects.get(id=customer_id)
@@ -169,9 +174,12 @@ def resolve_create_parking_permit(obj, info, customer_id, zone_id, registration)
 
 
 @mutation.field("updateParkingPermit")
+@authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
-def resolve_update_parking_permit(obj, info, permit_id, input):
-    permit, _ = ParkingPermit.objects.update_or_create(id=permit_id, defaults=input)
+def resolve_update_parking_permit(obj, info, customer_id, permit_id, input):
+    permit, _ = ParkingPermit.objects.update_or_create(
+        id=permit_id, customer_id=customer_id, defaults=input
+    )
     if "primary_vehicle" in input.keys():
         other_permit = (
             ParkingPermit.objects.filter(
