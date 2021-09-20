@@ -3,11 +3,8 @@ import logging
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 
-from .models import ParkingPermit, ParkingZone
-from .permissions import ReadOnly
-from .serializers import ParkingZoneSerializer
+from .models import ParkingPermit
 from .services import talpa
 
 logger = logging.getLogger(__name__)
@@ -70,12 +67,6 @@ class TalpaResolveRightOfPurchase(APIView):
         )
 
         return Response(response)
-
-
-class ParkingZoneViewSet(ModelViewSet):
-    queryset = ParkingZone.objects.all()
-    serializer_class = ParkingZoneSerializer
-    permission_classes = [ReadOnly]
 
 
 class OrderView(APIView):
