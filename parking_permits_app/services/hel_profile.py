@@ -10,6 +10,10 @@ helsinki_profile_query = load_schema_from_path(
 )
 
 
+class InvalidApiToken(Exception):
+    pass
+
+
 class HelsinkiProfile:
     __profile = None
 
@@ -67,6 +71,10 @@ class HelsinkiProfile:
             json={"query": helsinki_profile_query},
             headers={"Authorization": api_token},
         )
+        data = response.json()
+        if data.get("errors"):
+            message = next(iter(data.get("errors"))).get("message")
+            raise InvalidApiToken(message)
         self._extract_profile(response.json())
 
     def _extract_profile(self, hel_raw_data):
