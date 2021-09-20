@@ -42,11 +42,10 @@ def resolve_customer_permits(obj, info, customer_id):
         permits = ParkingPermit.objects.filter(customer__pk=customer_id).order_by(
             "start_time"
         )
-        for permit in permits:
-            permit.prices = resolve_price_response(permit.get_total_price())
-            vehicle = permit.vehicle
-            vehicle.is_low_emission = vehicle.is_low_emission()
-        payload = {"success": True, "permits": permits}
+        payload = {
+            "success": True,
+            "permits": map(resolve_prices_and_low_emission, permits),
+        }
     except AttributeError:
         payload = {
             "success": False,
@@ -129,7 +128,7 @@ def resolve_create_parking_permit(obj, info, customer_id, zone_id, registration)
             primary_vehicle=len(customer_vehicles) == 0,
             vehicle=get_mock_vehicle(customer, registration),
         )
-    return {"success": True, "permit": permit}
+    return {"success": True, "permit": resolve_prices_and_low_emission(permit)}
 
 
 @mutation.field("updateParkingPermit")
@@ -139,6 +138,7 @@ def resolve_update_parking_permit(obj, info, customer_id, permit_id, input):
     permit, _ = ParkingPermit.objects.update_or_create(
         id=permit_id, customer_id=customer_id, defaults=input
     )
+
     if "primary_vehicle" in input.keys():
         other_permit = (
             ParkingPermit.objects.filter(
@@ -152,4 +152,11 @@ def resolve_update_parking_permit(obj, info, customer_id, permit_id, input):
             other_permit.primary_vehicle = not input.get("primary_vehicle")
             other_permit.save(update_fields=["primary_vehicle"])
 
-    return {"success": True, "permit": permit}
+    return {"success": True, "permit": resolve_prices_and_low_emission(permit)}
+
+
+def resolve_prices_and_low_emission(permit):
+    permit.prices = resolve_price_response(permit.get_total_price())
+    vehicle = permit.vehicle
+    vehicle.is_low_emission = vehicle.is_low_emission()
+    return permit
