@@ -24,20 +24,6 @@ def resolve_price_response(total_price=0):
     }
 
 
-def resolve_availability_response(product_id=None, availability=None):
-    return {
-        "productId": product_id,
-        "value": availability,
-    }
-
-
-def resolve_right_of_purchase_response(product_id=None, right_of_purchase=None):
-    return {
-        "productId": product_id,
-        "value": right_of_purchase,
-    }
-
-
 def snake_to_camel_dict(dictionary):
     res = dict()
     for key in dictionary.keys():
