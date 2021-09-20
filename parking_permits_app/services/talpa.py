@@ -36,3 +36,18 @@ def resolve_right_of_purchase_response(product_id=None, right_of_purchase=None):
         "productId": product_id,
         "value": right_of_purchase,
     }
+
+
+def snake_to_camel_dict(dictionary):
+    res = dict()
+    for key in dictionary.keys():
+        if isinstance(dictionary[key], dict):
+            res[camel_str(key)] = snake_to_camel_dict(dictionary[key])
+        else:
+            res[camel_str(key)] = dictionary[key]
+    return res
+
+
+def camel_str(snake_str):
+    first, *others = snake_str.split("_")
+    return "".join([first.lower(), *map(str.title, others)])

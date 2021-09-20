@@ -153,18 +153,3 @@ def resolve_update_parking_permit(obj, info, customer_id, permit_id, input):
             other_permit.save(update_fields=["primary_vehicle"])
 
     return {"success": True, "permit": permit}
-
-
-def snake_to_camel_dict(dictionary):
-    res = dict()
-    for key in dictionary.keys():
-        if isinstance(dictionary[key], dict):
-            res[camel_str(key)] = snake_to_camel_dict(dictionary[key])
-        else:
-            res[camel_str(key)] = dictionary[key]
-    return res
-
-
-def camel_str(snake_str):
-    first, *others = snake_str.split("_")
-    return "".join([first.lower(), *map(str.title, others)])
