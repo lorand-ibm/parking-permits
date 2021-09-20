@@ -7,7 +7,6 @@ from ariadne import (
 from ariadne.contrib.federation import FederatedObjectType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
-from django.forms.models import model_to_dict
 
 from project.settings import BASE_DIR
 
@@ -43,31 +42,18 @@ def resolve_customer_permits(obj, info, customer_id):
         permits = ParkingPermit.objects.filter(customer__pk=customer_id).order_by(
             "start_time"
         )
+        for permit in permits:
+            permit.prices = resolve_price_response(permit.get_total_price())
+            vehicle = permit.vehicle
+            vehicle.is_low_emission = vehicle.is_low_emission()
+        payload = {"success": True, "permits": permits}
+    except AttributeError:
         payload = {
-            "success": True,
-            "permits": [serialize_permit(permit) for permit in permits],
+            "success": False,
+            "errors": ["Permits item matching {id} not found"],
         }
-    except AttributeError:  # todo not found
-        payload = {"success": False, "errors": ["Permits item matching {id} not found"]}
+
     return payload
-
-
-def serialize_permit(permit):
-    vehicle = permit.vehicle
-    is_low_emission = vehicle.is_low_emission()
-    permit_data = snake_to_camel_dict(
-        {
-            "id": permit.pk,
-            **model_to_dict(permit),
-            "vehicle": {
-                "id": vehicle.pk,
-                "is_low_emission": is_low_emission,
-                "vehicle_type": {"id": vehicle.type.id, **model_to_dict(vehicle.type)},
-                **model_to_dict(vehicle),
-            },
-        }
-    )
-    return {**permit_data, "prices": resolve_price_response(permit.get_total_price())}
 
 
 @query.field("profile")
@@ -93,31 +79,7 @@ def resolve_user_profile(_, info, *args):
         },
     )
 
-    # TODO: Handle the errors for non existing objects
-    customer_dict = {
-        **model_to_dict(customer_obj),
-        "id": customer_obj.pk,
-        "primary_address": {
-            **model_to_dict(primary_obj),
-            "id": primary_obj.pk,
-            "zone": {
-                **model_to_dict(primary_obj.zone),
-                "shared_product_id": primary_obj.zone.shared_product_id,
-                "id": primary_obj.zone.pk,
-            },
-        },
-        "other_address": {
-            **model_to_dict(other_obj),
-            "id": other_obj.pk,
-            "zone": {
-                **model_to_dict(other_obj.zone),
-                "shared_product_id": primary_obj.zone.shared_product_id,
-                "id": other_obj.zone.pk,
-            },
-        },
-    }
-
-    return snake_to_camel_dict(customer_dict)
+    return customer_obj
 
 
 @mutation.field("deleteParkingPermit")
@@ -167,10 +129,7 @@ def resolve_create_parking_permit(obj, info, customer_id, zone_id, registration)
             primary_vehicle=len(customer_vehicles) == 0,
             vehicle=get_mock_vehicle(customer, registration),
         )
-    return {
-        "success": True,
-        "permit": serialize_permit(permit),
-    }
+    return {"success": True, "permit": permit}
 
 
 @mutation.field("updateParkingPermit")
@@ -193,17 +152,7 @@ def resolve_update_parking_permit(obj, info, customer_id, permit_id, input):
             other_permit.primary_vehicle = not input.get("primary_vehicle")
             other_permit.save(update_fields=["primary_vehicle"])
 
-    return {
-        "success": True,
-        "permit": serialize_permit(permit),
-    }
-
-
-@profile_node.field("userId")
-def resolve_user_id(profile_obj, info):
-    return {
-        "userId": profile_obj.get("id"),
-    }
+    return {"success": True, "permit": permit}
 
 
 def snake_to_camel_dict(dictionary):
