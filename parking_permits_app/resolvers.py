@@ -3,6 +3,7 @@ from ariadne import (
     QueryType,
     convert_kwargs_to_snake_case,
     load_schema_from_path,
+    snake_case_fallback_resolvers,
 )
 from ariadne.contrib.federation import FederatedObjectType
 from django.core.exceptions import ObjectDoesNotExist
@@ -27,11 +28,7 @@ mutation = MutationType()
 address_node = FederatedObjectType("AddressNode")
 profile_node = FederatedObjectType("ProfileNode")
 
-schema_bindables = [
-    query,
-    mutation,
-    address_node,
-]
+schema_bindables = [query, mutation, address_node, snake_case_fallback_resolvers]
 
 
 @query.field("getPermits")
