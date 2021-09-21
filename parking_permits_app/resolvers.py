@@ -7,11 +7,11 @@ from ariadne import (
 from ariadne.contrib.federation import FederatedObjectType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
-from django.forms.models import model_to_dict
 
 from project.settings import BASE_DIR
 
 from . import constants
+from .jwt import attach_token, authenticate_parking_permit_token
 from .mock_vehicle import get_mock_vehicle
 from .models import Address, Customer, ParkingPermit, ParkingZone, Vehicle
 from .services.hel_profile import HelsinkiProfile
@@ -35,6 +35,7 @@ schema_bindables = [
 
 
 @query.field("getPermits")
+@authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
 def resolve_customer_permits(obj, info, customer_id):
     try:
@@ -43,32 +44,19 @@ def resolve_customer_permits(obj, info, customer_id):
         )
         payload = {
             "success": True,
-            "permits": [serialize_permit(permit) for permit in permits],
+            "permits": map(resolve_prices_and_low_emission, permits),
         }
-    except AttributeError:  # todo not found
-        payload = {"success": False, "errors": ["Permits item matching {id} not found"]}
+    except AttributeError:
+        payload = {
+            "success": False,
+            "errors": ["Permits item matching {id} not found"],
+        }
+
     return payload
 
 
-def serialize_permit(permit):
-    vehicle = permit.vehicle
-    is_low_emission = vehicle.is_low_emission()
-    permit_data = snake_to_camel_dict(
-        {
-            "id": permit.pk,
-            **model_to_dict(permit),
-            "vehicle": {
-                "id": vehicle.pk,
-                "is_low_emission": is_low_emission,
-                "vehicle_type": {"id": vehicle.type.id, **model_to_dict(vehicle.type)},
-                **model_to_dict(vehicle),
-            },
-        }
-    )
-    return {**permit_data, "prices": resolve_price_response(permit.get_total_price())}
-
-
 @query.field("profile")
+@attach_token
 def resolve_user_profile(_, info, *args):
     profile = HelsinkiProfile(info.context["request"])
     customer = profile.get_customer()
@@ -90,38 +78,15 @@ def resolve_user_profile(_, info, *args):
         },
     )
 
-    # TODO: Handle the errors for non existing objects
-    customer_dict = {
-        **model_to_dict(customer_obj),
-        "id": customer_obj.pk,
-        "primary_address": {
-            **model_to_dict(primary_obj),
-            "id": primary_obj.pk,
-            "zone": {
-                **model_to_dict(primary_obj.zone),
-                "shared_product_id": primary_obj.zone.shared_product_id,
-                "id": primary_obj.zone.pk,
-            },
-        },
-        "other_address": {
-            **model_to_dict(other_obj),
-            "id": other_obj.pk,
-            "zone": {
-                **model_to_dict(other_obj.zone),
-                "shared_product_id": primary_obj.zone.shared_product_id,
-                "id": other_obj.zone.pk,
-            },
-        },
-    }
-
-    return snake_to_camel_dict(customer_dict)
+    return customer_obj
 
 
 @mutation.field("deleteParkingPermit")
+@authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
-def resolve_delete_parking_permit(obj, info, permit_id):
+def resolve_delete_parking_permit(obj, info, permit_id, customer_id):
     try:
-        permit = ParkingPermit.objects.get(id=permit_id)
+        permit = ParkingPermit.objects.get(id=permit_id, customer__id=customer_id)
         if permit.primary_vehicle:
             other_permit = (
                 ParkingPermit.objects.filter(
@@ -143,6 +108,7 @@ def resolve_delete_parking_permit(obj, info, permit_id):
 
 
 @mutation.field("createParkingPermit")
+@authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
 def resolve_create_parking_permit(obj, info, customer_id, zone_id, registration):
     customer = Customer.objects.get(id=customer_id)
@@ -162,16 +128,17 @@ def resolve_create_parking_permit(obj, info, customer_id, zone_id, registration)
             primary_vehicle=len(customer_vehicles) == 0,
             vehicle=get_mock_vehicle(customer, registration),
         )
-    return {
-        "success": True,
-        "permit": serialize_permit(permit),
-    }
+    return {"success": True, "permit": resolve_prices_and_low_emission(permit)}
 
 
 @mutation.field("updateParkingPermit")
+@authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
-def resolve_update_parking_permit(obj, info, permit_id, input):
-    permit, _ = ParkingPermit.objects.update_or_create(id=permit_id, defaults=input)
+def resolve_update_parking_permit(obj, info, customer_id, permit_id, input):
+    permit, _ = ParkingPermit.objects.update_or_create(
+        id=permit_id, customer_id=customer_id, defaults=input
+    )
+
     if "primary_vehicle" in input.keys():
         other_permit = (
             ParkingPermit.objects.filter(
@@ -185,29 +152,11 @@ def resolve_update_parking_permit(obj, info, permit_id, input):
             other_permit.primary_vehicle = not input.get("primary_vehicle")
             other_permit.save(update_fields=["primary_vehicle"])
 
-    return {
-        "success": True,
-        "permit": serialize_permit(permit),
-    }
+    return {"success": True, "permit": resolve_prices_and_low_emission(permit)}
 
 
-@profile_node.field("userId")
-def resolve_user_id(profile_obj, info):
-    return {
-        "userId": profile_obj.get("id"),
-    }
-
-
-def snake_to_camel_dict(dictionary):
-    res = dict()
-    for key in dictionary.keys():
-        if isinstance(dictionary[key], dict):
-            res[camel_str(key)] = snake_to_camel_dict(dictionary[key])
-        else:
-            res[camel_str(key)] = dictionary[key]
-    return res
-
-
-def camel_str(snake_str):
-    first, *others = snake_str.split("_")
-    return "".join([first.lower(), *map(str.title, others)])
+def resolve_prices_and_low_emission(permit):
+    permit.prices = resolve_price_response(permit.get_total_price())
+    vehicle = permit.vehicle
+    vehicle.is_low_emission = vehicle.is_low_emission()
+    return permit

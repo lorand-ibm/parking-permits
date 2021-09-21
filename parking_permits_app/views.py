@@ -3,11 +3,8 @@ import logging
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 
-from .models import ParkingPermit, ParkingZone
-from .permissions import ReadOnly
-from .serializers import ParkingZoneSerializer
+from .models import ParkingPermit
 from .services import talpa
 
 logger = logging.getLogger(__name__)
@@ -16,12 +13,8 @@ logger = logging.getLogger(__name__)
 class TalpaResolveAvailability(APIView):
     def post(self, request, format=None):
         shared_product_id = request.data.get("productId")
-
-        response = talpa.resolve_availability_response(
-            product_id=shared_product_id, availability=True
-        )
-
-        return Response(response)
+        res = {"product_id": shared_product_id, "value": True}
+        return Response(talpa.snake_to_camel_dict(res))
 
 
 class TalpaResolvePrice(APIView):
@@ -43,7 +36,7 @@ class TalpaResolvePrice(APIView):
 
         response = talpa.resolve_price_response(total_price=permit.get_total_price())
 
-        return Response(response)
+        return Response(talpa.snake_to_camel_dict(response))
 
 
 class TalpaResolveRightOfPurchase(APIView):
@@ -63,19 +56,8 @@ class TalpaResolveRightOfPurchase(APIView):
             and customer.driving_licence.is_valid_for_vehicle(vehicle)
             and not vehicle.is_due_for_inspection()
         )
-
-        response = talpa.resolve_right_of_purchase_response(
-            product_id=shared_product_id,
-            right_of_purchase=right_of_purchase,
-        )
-
-        return Response(response)
-
-
-class ParkingZoneViewSet(ModelViewSet):
-    queryset = ParkingZone.objects.all()
-    serializer_class = ParkingZoneSerializer
-    permission_classes = [ReadOnly]
+        res = {"product_id": shared_product_id, "value": right_of_purchase}
+        return Response(talpa.snake_to_camel_dict(res))
 
 
 class OrderView(APIView):

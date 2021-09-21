@@ -38,6 +38,8 @@ idna==2.10
     # via requests
 psycopg2-binary==2.8.6
     # via -r requirements.in
+pyjwt==2.1.0
+    # via -r requirements.in
 python-dateutil==2.8.2
     # via arrow
 pytz==2021.1
