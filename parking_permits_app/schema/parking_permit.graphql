@@ -1,20 +1,20 @@
 type ZoneNode  {
   id: ID!
-  shared_product_id: String
+  sharedProductId: String
   name: String
   description: String
-  description_sv: String
+  descriptionSv: String
   location: [[[[Float]]]]
 }
 
 type AddressNode  {
   id: ID!
-  street_name: String
-  street_number: Int
-  street_name_sv: String
+  streetName: String
+  streetNumber: Int
+  streetNameSv: String
   city: String
-  city_sv: String
-  postal_code: String
+  citySv: String
+  postalCode: String
   location: [Float]
   zone: ZoneNode
 }
@@ -27,13 +27,13 @@ enum Language {
 
 type CustomerNode {
   id: ID!
-  first_name: String!
-  last_name: String!
+  firstName: String!
+  lastName: String!
   language: Language
   email: String
-  phone_number: String
-  primary_address: AddressNode
-  other_address: AddressNode
+  phoneNumber: String
+  primaryAddress: AddressNode
+  otherAddress: AddressNode
   token: String
 }
 
@@ -47,17 +47,17 @@ type VehicleNode {
   type: VehicleTypeNode!
   manufacturer: String
   model: String
-  production_year: Int
-  registration_number: String
+  productionYear: Int
+  registrationNumber: String
   emission: Int
-  is_low_emission: Boolean
+  isLowEmission: Boolean
 }
 
 type PriceNode {
-  price_net: Float!
-  price_vat: Float!
-  price_gross: Float!
-  vat_percentage: Int!
+  priceNet: Float!
+  priceVat: Float!
+  priceGross: Float!
+  vatPercentage: Int!
 }
 
 type PermitNode {
@@ -65,14 +65,14 @@ type PermitNode {
   zone: ID!
   vehicle: VehicleNode!
   prices: PriceNode!
-  contract_type: String
-  month_count: Int
-  start_type: String
-  start_time: String
-  end_time: String
+  contractType: String
+  monthCount: Int
+  startType: String
+  startTime: String
+  endTime: String
   status: String
-  consent_low_emission_accepted: Boolean
-  primary_vehicle: Boolean
+  consentLowEmissionAccepted: Boolean
+  primaryVehicle: Boolean
 }
 
 type PermitResult {
