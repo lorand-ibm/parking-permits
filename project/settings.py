@@ -34,7 +34,8 @@ OPEN_CITY_PROFILE_GRAPHQL_API = env("OPEN_CITY_PROFILE_GRAPHQL_API")
 JWT_SECRET = env("JWT_SECRET")
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "helusers.apps.HelusersConfig",
+    "helusers.apps.HelusersAdminConfig",
     "django.contrib.gis",
     "django.contrib.auth",
     "django.contrib.contenttypes",
