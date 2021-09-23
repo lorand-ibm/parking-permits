@@ -57,6 +57,7 @@ class HelsinkiProfile:
                     "street_number": parsed_address.get("street_number"),
                     "city": address_node.get("city"),
                     "postal_code": address_node.get("postalCode"),
+                    "primary": address_node.get("primary"),
                 }
                 if address_node.get("primary"):
                     primary_address = data
