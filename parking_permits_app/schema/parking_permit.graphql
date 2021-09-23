@@ -73,6 +73,7 @@ type PermitNode {
   startTime: String
   endTime: String
   status: String
+  parkingZone: ZoneNode
   consentLowEmissionAccepted: Boolean
   primaryVehicle: Boolean
 }
