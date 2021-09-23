@@ -17,6 +17,7 @@ type AddressNode  {
   postalCode: String
   location: [Float]
   zone: ZoneNode
+  primary: Boolean
 }
 
 enum Language {

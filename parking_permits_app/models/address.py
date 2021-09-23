@@ -27,6 +27,7 @@ class Address(TimestampedModelMixin):
     location = models.PointField(
         _("Location (2D)"), srid=settings.SRID, blank=True, null=True
     )
+    primary = models.BooleanField(_("Primary address"), default=False)
     zone = models.ForeignKey(
         ParkingZone,
         null=True,
