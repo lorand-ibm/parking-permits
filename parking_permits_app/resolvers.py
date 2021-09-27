@@ -35,21 +35,7 @@ schema_bindables = [query, mutation, address_node, snake_case_fallback_resolvers
 @authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
 def resolve_customer_permits(obj, info, customer_id):
-    try:
-        permits = ParkingPermit.objects.filter(customer__pk=customer_id).order_by(
-            "start_time"
-        )
-        payload = {
-            "success": True,
-            "permits": map(resolve_prices_and_low_emission, permits),
-        }
-    except AttributeError:
-        payload = {
-            "success": False,
-            "errors": ["Permits item matching {id} not found"],
-        }
-
-    return payload
+    return get_customer_permits(customer_id)
 
 
 @query.field("profile")
@@ -152,6 +138,24 @@ def resolve_update_parking_permit(obj, info, customer_id, permit_id, input):
             other_permit.save(update_fields=["primary_vehicle"])
 
     return {"success": True, "permit": resolve_prices_and_low_emission(permit)}
+
+
+def get_customer_permits(customer_id):
+    try:
+        permits = ParkingPermit.objects.filter(customer__pk=customer_id).order_by(
+            "start_time"
+        )
+        payload = {
+            "success": True,
+            "permits": [resolve_prices_and_low_emission(permit) for permit in permits],
+        }
+    except AttributeError:
+        payload = {
+            "success": False,
+            "errors": ["Permits item matching {id} not found"],
+        }
+
+    return payload
 
 
 def resolve_prices_and_low_emission(permit):
