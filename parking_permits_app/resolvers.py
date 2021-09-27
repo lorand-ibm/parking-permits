@@ -14,7 +14,7 @@ from project.settings import BASE_DIR
 from . import constants
 from .jwt import attach_token, authenticate_parking_permit_token
 from .mock_vehicle import get_mock_vehicle
-from .models import Address, Customer, ParkingPermit, ParkingZone, Vehicle
+from .models import Address, Customer, ParkingPermit, ParkingZone
 from .services.hel_profile import HelsinkiProfile
 from .services.talpa import resolve_price_response
 
@@ -96,25 +96,40 @@ def resolve_delete_parking_permit(obj, info, permit_id, customer_id):
 @mutation.field("createParkingPermit")
 @authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
-def resolve_create_parking_permit(obj, info, customer_id, zone_id, registration):
+def resolve_create_parking_permit(obj, info, customer_id, zone_id, registrations):
+    normalized_registrations = [reg.upper() for reg in registrations]
     customer = Customer.objects.get(id=customer_id)
 
-    try:
-        permit = ParkingPermit.objects.get(
-            Q(vehicle__registration_number__iexact=registration),
-            Q(vehicle__owner=customer) | Q(vehicle__holder=customer),
-        )
-    except ObjectDoesNotExist:
-        customer_vehicles = Vehicle.objects.filter(
-            Q(owner=customer) | Q(holder=customer),
-        ).exclude(registration_number__iexact=registration)
-        permit = ParkingPermit.objects.create(
-            customer=customer,
-            parking_zone=ParkingZone.objects.get(id=zone_id),
-            primary_vehicle=len(customer_vehicles) == 0,
-            vehicle=get_mock_vehicle(customer, registration),
-        )
-    return {"success": True, "permit": resolve_prices_and_low_emission(permit)}
+    # Create permit for a new registration numbers
+    for registration in normalized_registrations:
+        try:
+            ParkingPermit.objects.get(
+                Q(vehicle__registration_number__iexact=registration),
+                Q(vehicle__owner=customer) | Q(vehicle__holder=customer),
+            )
+        except ParkingPermit.DoesNotExist:
+            ParkingPermit.objects.create(
+                customer=customer,
+                parking_zone=ParkingZone.objects.get(id=zone_id),
+                primary_vehicle=False,
+                vehicle=get_mock_vehicle(customer, registration),
+            )
+    permits = ParkingPermit.objects.filter(
+        Q(status=constants.ParkingPermitStatus.DRAFT.value),
+        Q(vehicle__owner=customer) | Q(vehicle__holder=customer),
+    )
+    # Delete permits for a vehicle whose reg is not in the list
+    permits.exclude(
+        Q(vehicle__registration_number__in=normalized_registrations)
+    ).delete()
+
+    # If there is no primary vehicle mark first one to be primary
+    if permits.count() and not permits.filter(primary_vehicle=True):
+        permit = permits.first()
+        permit.primary_vehicle = True
+        permit.save(update_fields=["primary_vehicle"])
+
+    return get_customer_permits(customer_id)
 
 
 @mutation.field("updateParkingPermit")
