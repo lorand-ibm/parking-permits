@@ -81,8 +81,9 @@ def resolve_delete_parking_permit(obj, info, permit_id, customer_id):
                 .exclude(id=permit.id)
                 .first()
             )
-            other_permit.primary_vehicle = True
-            other_permit.save(update_fields=["primary_vehicle"])
+            if other_permit:
+                other_permit.primary_vehicle = True
+                other_permit.save(update_fields=["primary_vehicle"])
         permit.delete()
         return {"success": True}
     except ObjectDoesNotExist:
