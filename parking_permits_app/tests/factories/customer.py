@@ -3,8 +3,8 @@ import string
 
 import factory
 
-from parking_permits_app.factories.address import AddressFactory
 from parking_permits_app.models import Customer
+from parking_permits_app.tests.factories.address import AddressFactory
 
 
 def generate_random_national_id():

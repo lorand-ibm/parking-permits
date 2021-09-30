@@ -1,9 +1,9 @@
 import factory
 
-from parking_permits_app.factories import ParkingZoneFactory
-from parking_permits_app.factories.customer import CustomerFactory
-from parking_permits_app.factories.vehicle import VehicleFactory
 from parking_permits_app.models import ParkingPermit
+from parking_permits_app.tests.factories import ParkingZoneFactory
+from parking_permits_app.tests.factories.customer import CustomerFactory
+from parking_permits_app.tests.factories.vehicle import VehicleFactory
 
 
 class ParkingPermitFactory(factory.django.DjangoModelFactory):

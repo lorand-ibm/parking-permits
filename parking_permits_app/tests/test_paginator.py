@@ -1,8 +1,8 @@
 from django.test import TestCase
 
-from parking_permits_app.factories.parking_permit import ParkingPermitFactory
 from parking_permits_app.models import ParkingPermit
 from parking_permits_app.paginator import QuerySetPaginator
+from parking_permits_app.tests.factories.parking_permit import ParkingPermitFactory
 
 
 class QuerySetPaginatorTestCase(TestCase):

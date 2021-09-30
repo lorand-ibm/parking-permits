@@ -4,8 +4,8 @@ import string
 import factory
 
 from parking_permits_app import constants
-from parking_permits_app.factories.customer import CustomerFactory
 from parking_permits_app.models import Vehicle, VehicleType
+from parking_permits_app.tests.factories.customer import CustomerFactory
 
 
 def generate_random_registration_number():
