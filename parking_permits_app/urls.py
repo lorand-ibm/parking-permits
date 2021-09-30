@@ -5,6 +5,7 @@ from parking_permits_app import graphql, views
 app_name = "parking_permits_app"
 urlpatterns = [
     path("graphql/", graphql.view, name="graphql"),
+    path("admin-graphql/", graphql.admin_view, name="admin-graphql"),
     path(
         "api/talpa/resolve-availability/",
         views.TalpaResolveAvailability.as_view(),
