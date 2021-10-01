@@ -2,7 +2,8 @@ import factory
 from django.conf import settings
 from django.contrib.gis.geos import MultiPolygon, Point, Polygon
 
-from ..models import ParkingZone
+from parking_permits_app.models import ParkingZone
+
 from .faker import fake
 
 

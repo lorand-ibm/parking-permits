@@ -1,7 +1,8 @@
 import factory
 import pytz
 
-from ..models import Price
+from parking_permits_app.models import Price
+
 from .faker import fake
 from .zone import ParkingZoneFactory
 

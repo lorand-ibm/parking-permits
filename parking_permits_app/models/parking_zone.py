@@ -57,4 +57,6 @@ def post_zone_to_talpa(sender, instance, created, **kwargs):
             raise Exception("Failed to create product on talpa: {}".format(result.text))
 
 
-post_save.connect(post_zone_to_talpa, sender=ParkingZone)
+if not settings.DEBUG:
+    # we don't want to run this in DEV and TESTING
+    post_save.connect(post_zone_to_talpa, sender=ParkingZone)

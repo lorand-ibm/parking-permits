@@ -1,0 +1,60 @@
+type ZoneNode {
+    id: ID!
+    name: String
+}
+
+type AddressNode {
+  id: ID!
+  streetName: String
+  streetNumber: Int
+  streetNameSv: String
+  city: String
+  citySv: String
+  postalCode: String
+
+}
+
+type CustomerNode {
+    firstName: String!
+    lastName: String!
+    nationalIdNumber: String
+    primaryAddress: AddressNode
+}
+
+type VehicleNode {
+    manufacturer: String
+    model: String
+}
+
+type PermitNode {
+    customer: CustomerNode
+    vehicle: VehicleNode
+    parkingZone: ZoneNode
+}
+
+type PageInfo {
+    numPages: Int!
+    next: Int
+    prev: Int
+}
+
+type PagedPermits {
+    objects: [PermitNode]
+    pageInfo: PageInfo
+}
+
+enum OrderDirection {
+    asc,
+    desc
+}
+
+input PageInput {
+    page: Int!
+    pageSize: Int
+    orderBy: String
+    orderDirection: OrderDirection
+}
+
+type Query {
+    permits(pageInput: PageInput!): PagedPermits
+}
