@@ -16,6 +16,11 @@ env = environ.Env(
     ),
     OPEN_CITY_PROFILE_GRAPHQL_API=(str, "https://profile-api.test.hel.ninja/graphql/"),
     KMO_URL=(str, "https://kartta.hel.fi/ws/geoserver/avoindata/wfs"),
+    TOKEN_AUTH_ACCEPTED_AUDIENCE=(str, ""),
+    TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX=(str, ""),
+    TOKEN_AUTH_AUTHSERVER_URL=(str, ""),
+    TOKEN_AUTH_REQUIRE_SCOPE_PREFIX=(str, ""),
+    ALLOWED_ADMIN_AD_GROUPS=(list, None),
 )
 
 if path.exists(".env"):
@@ -125,3 +130,13 @@ NAMESPACE = "parkingPermits"
 TALPA_PRODUCT_EXPERIENCE_API = env("TALPA_PRODUCT_EXPERIENCE_API")
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+# OIDC auth
+OIDC_API_TOKEN_AUTH = {
+    "AUDIENCE": env("TOKEN_AUTH_ACCEPTED_AUDIENCE"),
+    "API_SCOPE_PREFIX": env("TOKEN_AUTH_ACCEPTED_SCOPE_PREFIX"),
+    "ISSUER": env("TOKEN_AUTH_AUTHSERVER_URL"),
+    "REQUIRE_API_SCOPE_FOR_AUTHENTICATION": env("TOKEN_AUTH_REQUIRE_SCOPE_PREFIX"),
+}
+
+ALLOWED_ADMIN_AD_GROUPS = env.list("ALLOWED_ADMIN_AD_GROUPS")
