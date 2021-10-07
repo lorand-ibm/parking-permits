@@ -135,25 +135,22 @@ def resolve_create_parking_permit(obj, info, customer_id, zone_id, registrations
 @mutation.field("updateParkingPermit")
 @authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
-def resolve_update_parking_permit(obj, info, customer_id, permit_id, input):
-    permit, _ = ParkingPermit.objects.update_or_create(
-        id=permit_id, customer_id=customer_id, defaults=input
-    )
-
-    if "primary_vehicle" in input.keys():
-        other_permit = (
-            ParkingPermit.objects.filter(
-                customer=permit.customer,
-                status=constants.ParkingPermitStatus.DRAFT.value,
-            )
-            .exclude(id=permit_id)
-            .first()
+def resolve_update_parking_permit(obj, info, customer_id, permit_ids, input):
+    for permit_id in permit_ids:
+        permit, _ = ParkingPermit.objects.update_or_create(
+            id=permit_id, customer_id=customer_id, defaults=input
         )
+    permits_query = ParkingPermit.objects.filter(
+        customer__id=customer_id,
+        status=constants.ParkingPermitStatus.DRAFT.value,
+    )
+    if "primary_vehicle" in input.keys():
+        other_permit = permits_query.exclude(id__in=permit_ids).first()
         if other_permit:
             other_permit.primary_vehicle = not input.get("primary_vehicle")
             other_permit.save(update_fields=["primary_vehicle"])
 
-    return {"success": True, "permit": resolve_prices_and_low_emission(permit)}
+    return get_customer_permits(customer_id)
 
 
 def get_customer_permits(customer_id):

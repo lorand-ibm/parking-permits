@@ -101,12 +101,12 @@ type DeletePermitResult {
 }
 
 type Mutation {
-  createParkingPermit(zoneId: ID!, registrations: [String]!): PermitResult!
+  createParkingPermit(zoneId: ID!): PermitResult!
   deleteParkingPermit(permitId: ID!): DeletePermitResult!
   updateParkingPermit(
-    permitId: ID!
+    permitIds: [ID]!
     input: ParkingPermitInput!
-  ): CreateOrUpdatePermitResult!
+  ): PermitResult!
 }
 
 input ParkingPermitInput {
