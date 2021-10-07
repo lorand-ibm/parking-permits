@@ -14,12 +14,16 @@ def get_meta_value(meta_pair_list, meta_pair_key):
     )
 
 
-def resolve_price_response(total_price=0):
-    vat = decimal.Decimal(VAT_PERCENTAGE) / 100 * total_price
+def resolve_price_response(total_price=0, monthly_price=0):
+    price_vat = decimal.Decimal(VAT_PERCENTAGE) / 100 * total_price
+    row_price_vat = decimal.Decimal(VAT_PERCENTAGE) / 100 * monthly_price
     return {
-        "price_net": total_price - vat,
-        "price_vat": vat,
-        "price_gross": total_price,
+        "row_price_net": total_price - price_vat,
+        "row_price_vat": price_vat,
+        "row_price_total": total_price,
+        "price_net": monthly_price - row_price_vat,
+        "price_vat": row_price_vat,
+        "price_gross": monthly_price,
         "vat_percentage": VAT_PERCENTAGE,
     }
 

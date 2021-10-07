@@ -59,6 +59,9 @@ type PriceNode {
   priceNet: Float!
   priceVat: Float!
   priceGross: Float!
+  rowPriceNet: Float!
+  rowPriceVat: Float!
+  rowPriceTotal: Float!
   vatPercentage: Int!
 }
 

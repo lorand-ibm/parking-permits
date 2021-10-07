@@ -183,7 +183,8 @@ def get_customer_permits(customer_id):
 
 
 def resolve_prices_and_low_emission(permit):
-    permit.prices = resolve_price_response(permit.get_total_price())
+    total_price, monthly_price = permit.get_prices()
+    permit.prices = resolve_price_response(total_price, monthly_price)
     vehicle = permit.vehicle
     vehicle.is_low_emission = vehicle.is_low_emission()
     return permit
