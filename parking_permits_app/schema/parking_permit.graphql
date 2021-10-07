@@ -89,10 +89,10 @@ type Query {
   getPermits: PermitResult
 }
 
-type CreateOrUpdatePermitResult {
+type updateVehicleResult {
   success: Boolean!
   errors: [String]
-  permit: PermitNode
+  vehicle: VehicleNode
 }
 
 type DeletePermitResult {
@@ -107,6 +107,10 @@ type Mutation {
     permitIds: [ID]!
     input: ParkingPermitInput!
   ): PermitResult!
+  updateVehicle(
+    vehicleId: ID!
+    registration: String!
+  ): updateVehicleResult!
 }
 
 input ParkingPermitInput {

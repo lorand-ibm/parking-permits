@@ -14,7 +14,7 @@ from project.settings import BASE_DIR
 from . import constants
 from .jwt import attach_token, authenticate_parking_permit_token
 from .mock_vehicle import get_mock_vehicle
-from .models import Address, Customer, ParkingPermit, ParkingZone
+from .models import Address, Customer, ParkingPermit, ParkingZone, Vehicle
 from .services.hel_profile import HelsinkiProfile
 from .services.talpa import resolve_price_response
 
@@ -151,6 +151,17 @@ def resolve_update_parking_permit(obj, info, customer_id, permit_ids, input):
             other_permit.save(update_fields=["primary_vehicle"])
 
     return get_customer_permits(customer_id)
+
+
+@mutation.field("updateVehicle")
+@authenticate_parking_permit_token
+@convert_kwargs_to_snake_case
+def resolve_update_vehicle(obj, info, customer_id, vehicle_id, registration):
+    vehicle = Vehicle.objects.get(id=vehicle_id)
+    vehicle.registration_number = registration.upper()
+    vehicle.save(update_fields=["registration_number"])
+    vehicle.is_low_emission = vehicle.is_low_emission()
+    return {"success": True, "vehicle": vehicle}
 
 
 def get_customer_permits(customer_id):
