@@ -16,7 +16,7 @@ class QuerySetPaginatorTestCase(TestCase):
         page_input = {"page": 1}
         paginator = QuerySetPaginator(qs, page_input)
         self.assertEqual(paginator.object_list.count(), 10)
-        expected_page_info = {"num_pages": 1, "next": None, "prev": None}
+        expected_page_info = {"num_pages": 1, "next": None, "prev": None, "page": 1}
         self.assertEqual(paginator.page_info, expected_page_info)
 
     def test_paginator_with_custom_page_size(self):
@@ -24,5 +24,5 @@ class QuerySetPaginatorTestCase(TestCase):
         page_input = {"page": 2, "page_size": 3}
         paginator = QuerySetPaginator(qs, page_input)
         self.assertEqual(paginator.object_list.count(), 3)
-        expected_page_info = {"num_pages": 4, "next": 3, "prev": 1}
+        expected_page_info = {"num_pages": 4, "next": 3, "prev": 1, "page": 2}
         self.assertEqual(paginator.page_info, expected_page_info)
