@@ -1,6 +1,6 @@
 type ZoneNode {
-    id: ID!
-    name: String
+  id: ID!
+  name: String
 }
 
 type AddressNode {
@@ -15,46 +15,59 @@ type AddressNode {
 }
 
 type CustomerNode {
-    firstName: String!
-    lastName: String!
-    nationalIdNumber: String
-    primaryAddress: AddressNode
+  firstName: String!
+  lastName: String!
+  nationalIdNumber: String
+  primaryAddress: AddressNode
 }
 
 type VehicleNode {
-    manufacturer: String
-    model: String
+  manufacturer: String!
+  model: String!
+  registrationNumber: String!
+}
+
+enum ParkingPermitStatus {
+  DRAFT
+  VALID
+  CANCELLED
+  EXPIRED
 }
 
 type PermitNode {
-    customer: CustomerNode
-    vehicle: VehicleNode
-    parkingZone: ZoneNode
+  identifier: Int!
+  customer: CustomerNode!
+  vehicle: VehicleNode
+  parkingZone: ZoneNode
+  status: ParkingPermitStatus!
+  startTime: String
+  endTime: String
 }
 
 type PageInfo {
-    numPages: Int!
-    next: Int
-    prev: Int
+  numPages: Int!
+  page: Int!
+  next: Int
+  prev: Int
 }
 
 type PagedPermits {
-    objects: [PermitNode]
-    pageInfo: PageInfo
+  objects: [PermitNode]
+  pageInfo: PageInfo
 }
 
 enum OrderDirection {
-    asc,
-    desc
+  ASC,
+  DESC
 }
 
 input PageInput {
-    page: Int!
-    pageSize: Int
-    orderBy: String
-    orderDirection: OrderDirection
+  page: Int!
+  pageSize: Int
+  orderBy: String
+  orderDirection: OrderDirection
 }
 
 type Query {
-    permits(pageInput: PageInput!): PagedPermits
+  permits(pageInput: PageInput!): PagedPermits
 }

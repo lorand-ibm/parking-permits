@@ -33,5 +33,6 @@ class QuerySetPaginator:
         return {
             "next": self.next_page,
             "prev": self.prev_page,
+            "page": self.page.number,
             "num_pages": self.paginator.num_pages,
         }
