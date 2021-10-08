@@ -68,17 +68,21 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
     month_count = models.IntegerField(_("Month count"), default=1)
 
-    def get_total_price(self):
-        total_price = self.parking_zone.get_current_price() * self.month_count
+    def get_prices(self):
+        monthly_price = self.parking_zone.get_current_price()
+        month_count = self.month_count
+
+        if self.contract_type == constants.ContractType.OPEN_ENDED.value:
+            month_count = 1
         if not self.primary_vehicle:
             increase = decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
-            total_price += increase * total_price
+            monthly_price += increase * monthly_price
 
         if self.vehicle.is_low_emission():
             discount = decimal.Decimal(LOW_EMISSION_DISCOUNT) / 100
-            total_price -= discount * total_price
+            monthly_price -= discount * monthly_price
 
-        return total_price
+        return monthly_price * month_count, monthly_price
 
     class Meta:
         db_table = "parking_permit"

@@ -59,6 +59,9 @@ type PriceNode {
   priceNet: Float!
   priceVat: Float!
   priceGross: Float!
+  rowPriceNet: Float!
+  rowPriceVat: Float!
+  rowPriceTotal: Float!
   vatPercentage: Int!
 }
 
@@ -89,10 +92,10 @@ type Query {
   getPermits: PermitResult
 }
 
-type CreateOrUpdatePermitResult {
+type updateVehicleResult {
   success: Boolean!
   errors: [String]
-  permit: PermitNode
+  vehicle: VehicleNode
 }
 
 type DeletePermitResult {
@@ -101,15 +104,20 @@ type DeletePermitResult {
 }
 
 type Mutation {
-  createParkingPermit(zoneId: ID!, registrations: [String]!): PermitResult!
+  createParkingPermit(zoneId: ID!): PermitResult!
   deleteParkingPermit(permitId: ID!): DeletePermitResult!
   updateParkingPermit(
-    permitId: ID!
+    permitIds: [ID]!
     input: ParkingPermitInput!
-  ): CreateOrUpdatePermitResult!
+  ): PermitResult!
+  updateVehicle(
+    vehicleId: ID!
+    registration: String!
+  ): updateVehicleResult!
 }
 
 input ParkingPermitInput {
+  consentLowEmissionAccepted: Boolean
   primaryVehicle: Boolean
   startTime: String
   endTime: String

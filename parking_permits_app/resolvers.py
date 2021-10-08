@@ -14,7 +14,7 @@ from project.settings import BASE_DIR
 from . import constants
 from .jwt import attach_token, authenticate_parking_permit_token
 from .mock_vehicle import get_mock_vehicle
-from .models import Address, Customer, ParkingPermit, ParkingZone
+from .models import Address, Customer, ParkingPermit, ParkingZone, Vehicle
 from .services.hel_profile import HelsinkiProfile
 from .services.talpa import resolve_price_response
 
@@ -96,32 +96,20 @@ def resolve_delete_parking_permit(obj, info, permit_id, customer_id):
 @mutation.field("createParkingPermit")
 @authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
-def resolve_create_parking_permit(obj, info, customer_id, zone_id, registrations):
-    normalized_registrations = [reg.upper() for reg in registrations]
+def resolve_create_parking_permit(obj, info, customer_id, zone_id):
+    registration = ""
     customer = Customer.objects.get(id=customer_id)
+    ParkingPermit.objects.create(
+        customer=customer,
+        parking_zone=ParkingZone.objects.get(id=zone_id),
+        primary_vehicle=False,
+        vehicle=get_mock_vehicle(customer, registration),
+    )
 
-    # Create permit for a new registration numbers
-    for registration in normalized_registrations:
-        try:
-            ParkingPermit.objects.get(
-                Q(vehicle__registration_number__iexact=registration),
-                Q(vehicle__owner=customer) | Q(vehicle__holder=customer),
-            )
-        except ParkingPermit.DoesNotExist:
-            ParkingPermit.objects.create(
-                customer=customer,
-                parking_zone=ParkingZone.objects.get(id=zone_id),
-                primary_vehicle=False,
-                vehicle=get_mock_vehicle(customer, registration),
-            )
     permits = ParkingPermit.objects.filter(
         Q(status=constants.ParkingPermitStatus.DRAFT.value),
         Q(vehicle__owner=customer) | Q(vehicle__holder=customer),
     )
-    # Delete permits for a vehicle whose reg is not in the list
-    permits.exclude(
-        Q(vehicle__registration_number__in=normalized_registrations)
-    ).delete()
 
     # If there is no primary vehicle mark first one to be primary
     if permits.count() and not permits.filter(primary_vehicle=True):
@@ -135,25 +123,33 @@ def resolve_create_parking_permit(obj, info, customer_id, zone_id, registrations
 @mutation.field("updateParkingPermit")
 @authenticate_parking_permit_token
 @convert_kwargs_to_snake_case
-def resolve_update_parking_permit(obj, info, customer_id, permit_id, input):
-    permit, _ = ParkingPermit.objects.update_or_create(
-        id=permit_id, customer_id=customer_id, defaults=input
-    )
-
-    if "primary_vehicle" in input.keys():
-        other_permit = (
-            ParkingPermit.objects.filter(
-                customer=permit.customer,
-                status=constants.ParkingPermitStatus.DRAFT.value,
-            )
-            .exclude(id=permit_id)
-            .first()
+def resolve_update_parking_permit(obj, info, customer_id, permit_ids, input):
+    for permit_id in permit_ids:
+        permit, _ = ParkingPermit.objects.update_or_create(
+            id=permit_id, customer_id=customer_id, defaults=input
         )
+    permits_query = ParkingPermit.objects.filter(
+        customer__id=customer_id,
+        status=constants.ParkingPermitStatus.DRAFT.value,
+    )
+    if "primary_vehicle" in input.keys():
+        other_permit = permits_query.exclude(id__in=permit_ids).first()
         if other_permit:
             other_permit.primary_vehicle = not input.get("primary_vehicle")
             other_permit.save(update_fields=["primary_vehicle"])
 
-    return {"success": True, "permit": resolve_prices_and_low_emission(permit)}
+    return get_customer_permits(customer_id)
+
+
+@mutation.field("updateVehicle")
+@authenticate_parking_permit_token
+@convert_kwargs_to_snake_case
+def resolve_update_vehicle(obj, info, customer_id, vehicle_id, registration):
+    vehicle = Vehicle.objects.get(id=vehicle_id)
+    vehicle.registration_number = registration.upper()
+    vehicle.save(update_fields=["registration_number"])
+    vehicle.is_low_emission = vehicle.is_low_emission()
+    return {"success": True, "vehicle": vehicle}
 
 
 def get_customer_permits(customer_id):
@@ -175,7 +171,8 @@ def get_customer_permits(customer_id):
 
 
 def resolve_prices_and_low_emission(permit):
-    permit.prices = resolve_price_response(permit.get_total_price())
+    total_price, monthly_price = permit.get_prices()
+    permit.prices = resolve_price_response(total_price, monthly_price)
     vehicle = permit.vehicle
     vehicle.is_low_emission = vehicle.is_low_emission()
     return permit

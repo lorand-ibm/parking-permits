@@ -33,8 +33,8 @@ class TalpaResolvePrice(APIView):
             permit = ParkingPermit.objects.get(pk=permit_id)
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        response = talpa.resolve_price_response(total_price=permit.get_total_price())
+        total_price, monthly_price = permit.get_prices()
+        response = talpa.resolve_price_response(total_price, monthly_price)
 
         return Response(talpa.snake_to_camel_dict(response))
 
