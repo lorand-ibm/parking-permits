@@ -64,10 +64,14 @@ enum OrderDirection {
 input PageInput {
   page: Int!
   pageSize: Int
-  orderBy: String
-  orderDirection: OrderDirection
+}
+
+input OrderByInput {
+  field: String!
+  orderFields: [String]!
+  orderDirection: OrderDirection!
 }
 
 type Query {
-  permits(pageInput: PageInput!): PagedPermits
+  permits(pageInput: PageInput!, orderBy: OrderByInput): PagedPermits
 }
