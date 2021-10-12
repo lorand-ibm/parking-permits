@@ -15,6 +15,7 @@ def user_passes_test(test_func):
                 raise PermissionDenied(e)
 
             if test_func(auth.user):
+                request.user = auth.user
                 return f(obj, info, *args, **kwargs)
             raise PermissionDenied()
 
@@ -23,5 +24,5 @@ def user_passes_test(test_func):
     return decorator
 
 
-is_login = user_passes_test(lambda u: u.is_authenticated)
+is_authenticated = user_passes_test(lambda u: u.is_authenticated)
 is_ad_admin = user_passes_test(lambda u: u.is_ad_admin)
