@@ -3,6 +3,7 @@ from pathlib import Path
 
 import dj_database_url
 import environ
+from corsheaders.defaults import default_headers
 
 env = environ.Env(
     DEBUG=(bool, False),
@@ -129,7 +130,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 NAMESPACE = "parkingPermits"
 TALPA_PRODUCT_EXPERIENCE_API = env("TALPA_PRODUCT_EXPERIENCE_API")
 
+# cors
 CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-authorization",  # for passing Helsinki Profile API token form frontend
+]
 
 # OIDC auth
 OIDC_API_TOKEN_AUTH = {

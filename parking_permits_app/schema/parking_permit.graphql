@@ -36,7 +36,6 @@ type CustomerNode {
   phoneNumber: String
   primaryAddress: AddressNode
   otherAddress: AddressNode
-  token: String
 }
 
 type VehicleTypeNode {
