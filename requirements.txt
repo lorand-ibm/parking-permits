@@ -43,7 +43,7 @@ graphql-core==3.1.6
     # via ariadne
 gunicorn==20.1.0
     # via -r requirements.in
-idna==3.2
+idna==3.3
     # via requests
 packaging==21.0
     # via deprecation
@@ -53,8 +53,6 @@ pyasn1==0.4.8
     # via
     #   python-jose
     #   rsa
-pyjwt==2.2.0
-    # via -r requirements.in
 pyparsing==2.4.7
     # via packaging
 python-dateutil==2.8.2
