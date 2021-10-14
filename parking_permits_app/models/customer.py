@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -6,6 +7,13 @@ from .mixins import TimestampedModelMixin
 
 class Customer(TimestampedModelMixin):
     id = models.TextField(primary_key=True, unique=True, editable=False)
+    user = models.OneToOneField(
+        get_user_model(),
+        related_name="customer",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
     first_name = models.CharField(_("First name"), max_length=32)
     last_name = models.CharField(_("Last name"), max_length=32)
     national_id_number = models.CharField(

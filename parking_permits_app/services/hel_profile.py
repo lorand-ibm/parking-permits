@@ -66,7 +66,7 @@ class HelsinkiProfile:
         return primary_address, other_address
 
     def _get_profile(self):
-        api_token = self.request.headers.get("Authorization")
+        api_token = self.request.headers.get("X-Authorization")
         response = requests.get(
             settings.OPEN_CITY_PROFILE_GRAPHQL_API,
             json={"query": helsinki_profile_query},
