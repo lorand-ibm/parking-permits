@@ -8,7 +8,6 @@ from corsheaders.defaults import default_headers
 env = environ.Env(
     DEBUG=(bool, False),
     DJANGO_SECRET_KEY=(str, ""),
-    JWT_SECRET=(str, ""),
     ALLOWED_HOSTS=(list, ["*"]),
     DATABASE_URL=(str, "sqlite:////tmp/my-tmp-sqlite.db"),
     TALPA_PRODUCT_EXPERIENCE_API=(
@@ -37,7 +36,6 @@ AUTH_USER_MODEL = "users_app.CustomUser"
 SRID = 4326
 KMO_URL = env("KMO_URL")
 OPEN_CITY_PROFILE_GRAPHQL_API = env("OPEN_CITY_PROFILE_GRAPHQL_API")
-JWT_SECRET = env("JWT_SECRET")
 
 INSTALLED_APPS = [
     "helusers.apps.HelusersConfig",
