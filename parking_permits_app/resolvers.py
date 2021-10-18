@@ -36,7 +36,7 @@ schema_bindables = [query, mutation, address_node, snake_case_fallback_resolvers
 @convert_kwargs_to_snake_case
 def resolve_customer_permits(obj, info):
     request = info.context["request"]
-    return get_customer_permits(request.user.id)
+    return get_customer_permits(request.user.customer.id)
 
 
 @query.field("profile")
