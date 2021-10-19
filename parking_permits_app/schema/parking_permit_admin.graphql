@@ -72,6 +72,16 @@ input OrderByInput {
   orderDirection: OrderDirection!
 }
 
+input SearchItem {
+  matchType: String!
+  fields: [String]!
+  value: String!
+}
+
 type Query {
-  permits(pageInput: PageInput!, orderBy: OrderByInput): PagedPermits
+  permits(
+    pageInput: PageInput!
+    orderBy: OrderByInput
+    searchItems: [SearchItem]
+   ): PagedPermits
 }
