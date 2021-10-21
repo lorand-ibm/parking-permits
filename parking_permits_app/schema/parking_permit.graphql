@@ -67,6 +67,8 @@ type PriceNode {
 type PermitNode {
   id: ID!
   zone: ID!
+  orderId: String
+  subscriptionId: String
   vehicle: VehicleNode!
   prices: PriceNode!
   contractType: String
