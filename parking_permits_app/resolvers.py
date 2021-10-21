@@ -33,8 +33,8 @@ profile_node = FederatedObjectType("ProfileNode")
 schema_bindables = [query, mutation, address_node, snake_case_fallback_resolvers]
 
 ACTIVE_PERMIT_STATUSES = [
-    constants.ParkingPermitStatus.DRAFT,
-    constants.ParkingPermitStatus.VALID,
+    constants.ParkingPermitStatus.DRAFT.value,
+    constants.ParkingPermitStatus.VALID.value,
 ]
 
 
