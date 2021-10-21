@@ -68,6 +68,11 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
     month_count = models.IntegerField(_("Month count"), default=1)
 
+    order_id = models.CharField(max_length=50, blank=True, null=True)
+    subscription_id = models.CharField(
+        max_length=50, unique=True, blank=True, null=True
+    )
+
     def get_prices(self):
         monthly_price = self.parking_zone.get_current_price()
         month_count = self.month_count
