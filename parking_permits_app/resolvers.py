@@ -6,6 +6,7 @@ from ariadne import (
     snake_case_fallback_resolvers,
 )
 from ariadne.contrib.federation import FederatedObjectType
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
@@ -13,6 +14,7 @@ from project.settings import BASE_DIR
 
 from . import constants
 from .decorators import is_authenticated
+from .exceptions import PermitLimitExceeded
 from .mock_vehicle import get_mock_vehicle
 from .models import Address, Customer, ParkingPermit, ParkingZone, Vehicle
 from .services.hel_profile import HelsinkiProfile
@@ -29,6 +31,11 @@ address_node = FederatedObjectType("AddressNode")
 profile_node = FederatedObjectType("ProfileNode")
 
 schema_bindables = [query, mutation, address_node, snake_case_fallback_resolvers]
+
+ACTIVE_PERMIT_STATUSES = [
+    constants.ParkingPermitStatus.DRAFT,
+    constants.ParkingPermitStatus.VALID,
+]
 
 
 @query.field("getPermits")
@@ -106,23 +113,30 @@ def resolve_create_parking_permit(obj, info, zone_id):
     request = info.context["request"]
     registration = ""
     customer = Customer.objects.get(id=request.user.customer.id)
+
+    permits = ParkingPermit.objects.filter(
+        Q(status__in=ACTIVE_PERMIT_STATUSES),
+        Q(vehicle__owner=customer) | Q(vehicle__holder=customer),
+    )
+    if permits.count() > settings.MAX_ALLOWED_USER_PERMIT:
+        raise PermitLimitExceeded(
+            f"You can have a max of ${settings.MAX_ALLOWED_USER_PERMIT} permits."
+        )
+
+    contract_type = constants.ContractType.OPEN_ENDED.value
+    primary_vehicle = False
+    primary_permit = permits.get(primary_vehicle=True)
+    if permits.count():
+        contract_type = primary_permit.contract_type
+        primary_vehicle = not primary_permit.primary_vehicle
+
     ParkingPermit.objects.create(
         customer=customer,
         parking_zone=ParkingZone.objects.get(id=zone_id),
-        primary_vehicle=False,
+        primary_vehicle=primary_vehicle,
+        contract_type=contract_type,
         vehicle=get_mock_vehicle(customer, registration),
     )
-
-    permits = ParkingPermit.objects.filter(
-        Q(status=constants.ParkingPermitStatus.DRAFT.value),
-        Q(vehicle__owner=customer) | Q(vehicle__holder=customer),
-    )
-
-    # If there is no primary vehicle mark first one to be primary
-    if permits.count() and not permits.filter(primary_vehicle=True):
-        permit = permits.first()
-        permit.primary_vehicle = True
-        permit.save(update_fields=["primary_vehicle"])
 
     return get_customer_permits(request.user.customer.id)
 
@@ -172,7 +186,7 @@ def get_customer_permits(customer_id):
     except AttributeError:
         payload = {
             "success": False,
-            "errors": ["Permits item matching {id} not found"],
+            "errors": [f"Permits item matching {customer_id} not found"],
         }
 
     return payload
