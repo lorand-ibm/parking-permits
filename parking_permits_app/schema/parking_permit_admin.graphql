@@ -78,10 +78,21 @@ input SearchItem {
   value: String!
 }
 
+type PermitDetailNode {
+  identifier: Int!
+  customer: CustomerNode!
+  vehicle: VehicleNode
+  parkingZone: ZoneNode
+  status: ParkingPermitStatus!
+  startTime: String
+  endTime: String
+}
+
 type Query {
   permits(
     pageInput: PageInput!
     orderBy: OrderByInput
     searchItems: [SearchItem]
-   ): PagedPermits
+   ): PagedPermits!
+  permitDetail(permitId: ID!): PermitDetailNode!
 }

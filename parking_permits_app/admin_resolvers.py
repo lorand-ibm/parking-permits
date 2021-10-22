@@ -28,3 +28,10 @@ def resolve_permits(_, info, page_input, order_by=None, search_items=None):
         "page_info": paginator.page_info,
         "objects": paginator.object_list,
     }
+
+
+@query.field("permitDetail")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+def resolve_permit_detail(_, info, permit_id):
+    return ParkingPermit.objects.get(identifier=permit_id)
