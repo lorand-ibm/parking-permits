@@ -7,7 +7,9 @@ from django.contrib.gis.db import models
 from django.db.models.signals import post_save
 from django.utils.translation import gettext_lazy as _
 
+from ..exceptions import PriceError
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
+from .price import Price
 
 
 class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
@@ -21,13 +23,6 @@ class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         _("Area (2D)"), srid=settings.SRID, blank=False, null=False
     )
 
-    def get_current_price(self):
-        product_price = self.prices.get(
-            start_date__lte=datetime.today(),
-            end_date__gte=datetime.today(),
-        )
-        return product_price.price if product_price else None
-
     class Meta:
         db_table = "parking_zone"
         verbose_name = _("Parking zone")
@@ -39,6 +34,19 @@ class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     @property
     def namespace(self):
         return settings.NAMESPACE
+
+    @property
+    def price(self):
+        try:
+            price_obj = self.prices.get(
+                start_date__lte=datetime.today(),
+                end_date__gte=datetime.today(),
+            )
+        except Price.DoesNotExist:
+            raise PriceError("No price defined")
+        except Price.MultipleObjectsReturned:
+            raise PriceError("Multiple prices defined")
+        return price_obj.price
 
 
 def post_zone_to_talpa(sender, instance, created, **kwargs):

@@ -22,11 +22,13 @@ factory-boy==3.2.0
     # via
     #   -r requirements-test.in
     #   pytest-factoryboy
-faker==9.3.1
+faker==9.5.2
     # via factory-boy
 flake8==3.9.1
     # via -r requirements-test.in
-idna==3.2
+freezegun==1.1.0
+    # via -r requirements-test.in
+idna==3.3
     # via requests
 inflection==0.5.1
     # via pytest-factoryboy
@@ -65,8 +67,10 @@ pytest==6.2.5
     #   pytest-django
     #   pytest-factoryboy
 python-dateutil==2.8.2
-    # via faker
-regex==2021.10.8
+    # via
+    #   faker
+    #   freezegun
+regex==2021.10.21
     # via black
 requests-mock==1.9.3
     # via -r requirements-test.in

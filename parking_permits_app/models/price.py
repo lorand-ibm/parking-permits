@@ -2,12 +2,11 @@ from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
-from .parking_zone import ParkingZone
 
 
 class Price(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     zone = models.ForeignKey(
-        ParkingZone,
+        "ParkingZone",
         verbose_name=_("Zone"),
         on_delete=models.PROTECT,
         related_name="prices",
