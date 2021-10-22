@@ -62,8 +62,6 @@ def resolve_user_profile(_, info, *args):
         id=other_address.get("id"), defaults=other_address
     )
 
-    for obj in [primary_obj, other_obj]:
-        obj.zone.price = obj.zone.get_current_price()
     customer_obj, _ = Customer.objects.update_or_create(
         id=customer.get("id"),
         defaults={

@@ -74,7 +74,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
 
     def get_prices(self):
-        monthly_price = self.parking_zone.get_current_price()
+        monthly_price = self.parking_zone.price
         month_count = self.month_count
 
         if self.contract_type == constants.ContractType.OPEN_ENDED.value:
