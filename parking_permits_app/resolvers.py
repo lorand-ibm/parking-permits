@@ -33,8 +33,8 @@ profile_node = FederatedObjectType("ProfileNode")
 schema_bindables = [query, mutation, address_node, snake_case_fallback_resolvers]
 
 ACTIVE_PERMIT_STATUSES = [
-    constants.ParkingPermitStatus.DRAFT,
-    constants.ParkingPermitStatus.VALID,
+    constants.ParkingPermitStatus.DRAFT.value,
+    constants.ParkingPermitStatus.VALID.value,
 ]
 
 
@@ -124,9 +124,9 @@ def resolve_create_parking_permit(obj, info, zone_id):
         )
 
     contract_type = constants.ContractType.OPEN_ENDED.value
-    primary_vehicle = False
-    primary_permit = permits.get(primary_vehicle=True)
+    primary_vehicle = True
     if permits.count():
+        primary_permit = permits.get(primary_vehicle=True)
         contract_type = primary_permit.contract_type
         primary_vehicle = not primary_permit.primary_vehicle
 
@@ -176,9 +176,9 @@ def resolve_update_vehicle(obj, info, vehicle_id, registration):
 
 def get_customer_permits(customer_id):
     try:
-        permits = ParkingPermit.objects.filter(customer__pk=customer_id).order_by(
-            "start_time"
-        )
+        permits = ParkingPermit.objects.filter(
+            customer__pk=customer_id, status__in=ACTIVE_PERMIT_STATUSES
+        ).order_by("start_time")
         payload = {
             "success": True,
             "permits": [resolve_prices_and_low_emission(permit) for permit in permits],
