@@ -83,7 +83,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
             increase = decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
             monthly_price += increase * monthly_price
 
-        if self.vehicle.is_low_emission():
+        if self.vehicle.is_low_emission:
             discount = decimal.Decimal(LOW_EMISSION_DISCOUNT) / 100
             monthly_price -= discount * monthly_price
 

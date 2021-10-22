@@ -168,7 +168,6 @@ def resolve_update_vehicle(obj, info, vehicle_id, registration):
     vehicle = Vehicle.objects.get(id=vehicle_id)
     vehicle.registration_number = registration.upper()
     vehicle.save(update_fields=["registration_number"])
-    vehicle.is_low_emission = vehicle.is_low_emission()
     return {"success": True, "vehicle": vehicle}
 
 
@@ -193,6 +192,4 @@ def get_customer_permits(customer_id):
 def resolve_prices_and_low_emission(permit):
     total_price, monthly_price = permit.get_prices()
     permit.prices = resolve_price_response(total_price, monthly_price)
-    vehicle = permit.vehicle
-    vehicle.is_low_emission = vehicle.is_low_emission()
     return permit
