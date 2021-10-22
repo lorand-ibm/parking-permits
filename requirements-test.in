@@ -7,3 +7,4 @@ pytest-django
 pytest-factoryboy
 requests-mock
 factory-boy
+freezegun
