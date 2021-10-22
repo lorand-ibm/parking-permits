@@ -176,9 +176,9 @@ def resolve_update_vehicle(obj, info, vehicle_id, registration):
 
 def get_customer_permits(customer_id):
     try:
-        permits = ParkingPermit.objects.filter(customer__pk=customer_id).order_by(
-            "start_time"
-        )
+        permits = ParkingPermit.objects.filter(
+            customer__pk=customer_id, status__in=ACTIVE_PERMIT_STATUSES
+        ).order_by("start_time")
         payload = {
             "success": True,
             "permits": [resolve_prices_and_low_emission(permit) for permit in permits],
