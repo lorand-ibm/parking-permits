@@ -1,6 +1,9 @@
 type ZoneNode {
   id: ID!
   name: String
+  description: String
+  descriptionSv: String
+  price: Float!
 }
 
 type AddressNode {
@@ -19,12 +22,16 @@ type CustomerNode {
   lastName: String!
   nationalIdNumber: String
   primaryAddress: AddressNode
+  email: String
+  phoneNumber: String
 }
 
 type VehicleNode {
   manufacturer: String!
   model: String!
   registrationNumber: String!
+  isLowEmission: Boolean!
+  holder: String!
 }
 
 enum ParkingPermitStatus {
@@ -78,10 +85,25 @@ input SearchItem {
   value: String!
 }
 
+type PermitDetailNode {
+  identifier: Int!
+  customer: CustomerNode!
+  vehicle: VehicleNode
+  parkingZone: ZoneNode
+  status: ParkingPermitStatus!
+  startTime: String
+  endTime: String
+  consentLowEmissionAccepted: Boolean
+  contractType: String
+  monthCount: Int
+  monthsLeft: Int
+}
+
 type Query {
   permits(
     pageInput: PageInput!
     orderBy: OrderByInput
     searchItems: [SearchItem]
-   ): PagedPermits
+   ): PagedPermits!
+  permitDetail(permitId: ID!): PermitDetailNode!
 }

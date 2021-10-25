@@ -65,6 +65,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     def is_due_for_inspection(self):
         return arrow.utcnow().date() > self.last_inspection_date
 
+    @property
     def is_low_emission(self):
         le_criteria = LowEmissionCriteria.objects.get(
             vehicle_type=self.type,

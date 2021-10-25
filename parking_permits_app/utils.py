@@ -23,3 +23,14 @@ def apply_filtering(queryset, search_items):
         )
         query &= search_item_query
     return queryset.filter(query)
+
+
+def calc_months_diff(start_date, end_date):
+    diff_months = (
+        (end_date.year - start_date.year) * 12 + end_date.month - start_date.month
+    )
+    if end_date.day < start_date.day:
+        diff_months -= 1
+    if diff_months < 0:
+        return 0
+    return diff_months
