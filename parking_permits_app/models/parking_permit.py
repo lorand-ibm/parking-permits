@@ -2,10 +2,16 @@ import decimal
 from datetime import datetime
 
 from django.contrib.gis.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .. import constants
-from ..constants import LOW_EMISSION_DISCOUNT, SECONDARY_VEHICLE_PRICE_INCREASE
+from ..constants import (
+    LOW_EMISSION_DISCOUNT,
+    SECONDARY_VEHICLE_PRICE_INCREASE,
+    ContractType,
+)
+from ..utils import calc_months_diff
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
@@ -73,6 +79,21 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=50, unique=True, blank=True, null=True
     )
 
+    class Meta:
+        db_table = "parking_permit"
+        verbose_name = _("Parking permit")
+        verbose_name_plural = _("Parking permits")
+
+    def __str__(self):
+        return "%s" % self.identifier
+
+    @property
+    def months_left(self):
+        if self.contract_type == ContractType.OPEN_ENDED or not self.end_time:
+            return None
+        today = timezone.now().today()
+        return calc_months_diff(today, self.end_time.date())
+
     def get_prices(self):
         monthly_price = self.parking_zone.price
         month_count = self.month_count
@@ -88,11 +109,3 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
             monthly_price -= discount * monthly_price
 
         return monthly_price * month_count, monthly_price
-
-    class Meta:
-        db_table = "parking_permit"
-        verbose_name = _("Parking permit")
-        verbose_name_plural = _("Parking permits")
-
-    def __str__(self):
-        return "%s" % self.identifier

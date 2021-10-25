@@ -1,10 +1,12 @@
+from datetime import date
+
 from django.test import TestCase
 
 from parking_permits_app.constants import ParkingPermitStatus
 from parking_permits_app.models import ParkingPermit
 from parking_permits_app.tests.factories.customer import CustomerFactory
 from parking_permits_app.tests.factories.parking_permit import ParkingPermitFactory
-from parking_permits_app.utils import apply_filtering, apply_ordering
+from parking_permits_app.utils import apply_filtering, apply_ordering, calc_months_diff
 
 
 class ApplyingOrderingTestCase(TestCase):
@@ -108,3 +110,14 @@ class ApplyingFilteringTestCase(TestCase):
         ]
         qs = apply_filtering(all_parking_permits, search_items)
         self.assertEqual(qs.count(), 1)
+
+
+class CalcMonthsDiffTestCase(TestCase):
+    def test_calc_months_diff(self):
+        self.assertEqual(calc_months_diff(date(2020, 10, 1), date(2021, 10, 1)), 12)
+        self.assertEqual(calc_months_diff(date(2020, 10, 15), date(2021, 10, 1)), 11)
+        self.assertEqual(calc_months_diff(date(2021, 9, 1), date(2021, 10, 1)), 1)
+        self.assertEqual(calc_months_diff(date(2021, 9, 1), date(2021, 10, 15)), 1)
+        self.assertEqual(calc_months_diff(date(2021, 10, 1), date(2021, 10, 15)), 0)
+        self.assertEqual(calc_months_diff(date(2021, 10, 15), date(2021, 10, 1)), 0)
+        self.assertEqual(calc_months_diff(date(2021, 12, 1), date(2021, 10, 1)), 0)
