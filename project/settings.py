@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "parking_permits_app",
     "users_app",
     "rest_framework",
+    "reversion",
 ]
 
 MIDDLEWARE = [
