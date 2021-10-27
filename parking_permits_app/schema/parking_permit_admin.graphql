@@ -85,6 +85,14 @@ input SearchItem {
   value: String!
 }
 
+type ChangeLog {
+  id: ID!
+  event: String!
+  description: String!
+  createdAt: String!
+  createdBy: String!
+}
+
 type PermitDetailNode {
   identifier: Int!
   customer: CustomerNode!
@@ -97,6 +105,7 @@ type PermitDetailNode {
   contractType: String
   monthCount: Int
   monthsLeft: Int
+  changeLogs: [ChangeLog]!
 }
 
 type Query {
