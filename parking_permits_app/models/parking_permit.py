@@ -1,6 +1,7 @@
 import decimal
 from datetime import datetime
 
+import reversion
 from django.contrib.gis.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -25,6 +26,7 @@ def get_next_identifier():
     return last.identifier + 1
 
 
+@reversion.register()
 class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     customer = models.ForeignKey(
         Customer,
