@@ -1,9 +1,14 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
 from django.utils import timezone as tz
 
 from parking_permits_app import constants
 from parking_permits_app.customer_permit import CustomerPermit
-from parking_permits_app.exceptions import InvalidUserZone, PermitLimitExceeded
+from parking_permits_app.exceptions import (
+    InvalidUserZone,
+    PermitCanNotBeDelete,
+    PermitLimitExceeded,
+)
 from parking_permits_app.tests.factories import (
     LowEmissionCriteriaFactory,
     ParkingZoneFactory,
@@ -188,3 +193,46 @@ class CreateCustomerPermitTestCase(TestCase):
             permit.primary_vehicle,
             not self.customer_c_valid_primary_permit.primary_vehicle,
         )
+
+
+class DeleteCustomerPermitTestCase(TestCase):
+    def setUp(self):
+        self.customer_a = CustomerFactory(first_name="Firstname A", last_name="")
+        self.customer_b = CustomerFactory(first_name="Firstname B", last_name="")
+
+        self.c_a_canceled = ParkingPermitFactory(
+            customer=self.customer_a, status=CANCELLED
+        )
+        self.c_a_expired = ParkingPermitFactory(
+            customer=self.customer_a, status=EXPIRED
+        )
+        self.c_a_processing = ParkingPermitFactory(
+            customer=self.customer_a, status=PROCESSING
+        )
+        self.c_a_draft = ParkingPermitFactory(
+            customer=self.customer_a, status=DRAFT, primary_vehicle=False
+        )
+        self.c_a_valid = ParkingPermitFactory(customer=self.customer_a, status=VALID)
+        self.c_b_draft = ParkingPermitFactory(customer=self.customer_b, status=DRAFT)
+
+    def test_customer_a_can_not_delete_non_draft_permit(self):
+        msg = "Non draft permit can not be deleted"
+        with self.assertRaisesMessage(PermitCanNotBeDelete, msg):
+            CustomerPermit(self.customer_a.id).delete(self.c_a_canceled.id)
+
+        with self.assertRaisesMessage(PermitCanNotBeDelete, msg):
+            CustomerPermit(self.customer_a.id).delete(self.c_a_expired.id)
+
+        with self.assertRaisesMessage(PermitCanNotBeDelete, msg):
+            CustomerPermit(self.customer_a.id).delete(self.c_a_valid.id)
+
+        with self.assertRaisesMessage(PermitCanNotBeDelete, msg):
+            CustomerPermit(self.customer_a.id).delete(self.c_a_processing.id)
+
+    def test_customer_a_can_delete_draft_permit(self):
+        result = CustomerPermit(self.customer_a.id).delete(self.c_a_draft.id)
+        self.assertEqual(result, True)
+
+    def test_customer_a_can_not_delete_others_permit(self):
+        with self.assertRaises(ObjectDoesNotExist):
+            CustomerPermit(self.customer_a.id).delete(self.c_b_draft.id)
