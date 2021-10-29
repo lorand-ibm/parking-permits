@@ -16,3 +16,7 @@ class InvalidContractType(Exception):
 
 class NonDraftPermitUpdateError(Exception):
     pass
+
+
+class PermitCanNotBeDelete(Exception):
+    pass
