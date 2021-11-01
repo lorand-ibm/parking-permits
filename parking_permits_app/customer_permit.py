@@ -106,7 +106,8 @@ class CustomerPermit:
             permit.consent_low_emission_accepted = data.get(
                 "consent_low_emission_accepted", False
             )
-            return permit.save(update_fields=["consent_low_emission_accepted"])
+            permit.save(update_fields=["consent_low_emission_accepted"])
+            return permit
 
         if "primary_vehicle" in keys:
             return self._toggle_primary_permit()
@@ -161,14 +162,16 @@ class CustomerPermit:
                 }
             )
             if permit_id:
-                return self.customer_permit_query.filter(
-                    id__in=permit_to_update
-                ).update(**fields_to_update)
+                self.customer_permit_query.filter(id__in=permit_to_update).update(
+                    **fields_to_update
+                )
+                return self.customer_permit_query.all()
 
         return self._update_fields_to_all_draft(fields_to_update)
 
     def _update_fields_to_all_draft(self, data):
-        return self.customer_permit_query.filter(status=DRAFT).update(**data)
+        self.customer_permit_query.filter(status=DRAFT).update(**data)
+        return self.customer_permit_query.all()
 
     def _resolve_prices(self, permit):
         total_price, monthly_price = permit.get_prices()
@@ -231,7 +234,7 @@ class CustomerPermit:
         primary.save(update_fields=["primary_vehicle"])
         secondary.primary_vehicle = not secondary.primary_vehicle
         secondary.save(update_fields=["primary_vehicle"])
-        return [primary, secondary]
+        return primary, secondary
 
     # Start time will be next day by default if the type is immediately
     # but if the start type is FROM then the start time can not be
