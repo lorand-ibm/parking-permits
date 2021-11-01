@@ -9,6 +9,7 @@ from .exceptions import (
     InvalidContractType,
     InvalidUserZone,
     NonDraftPermitUpdateError,
+    PermitCanNotBeDelete,
     PermitLimitExceeded,
 )
 from .mock_vehicle import get_mock_vehicle
@@ -77,7 +78,10 @@ class CustomerPermit:
             return permit
 
     def delete(self, permit_id):
-        self.customer_permit_query.get(id=permit_id).delete()
+        permit = ParkingPermit.objects.get(customer=self.customer, id=permit_id)
+        if permit.status != DRAFT:
+            raise PermitCanNotBeDelete("Non draft permit can not be deleted")
+        permit.delete()
 
         if self.customer_permit_query.count():
             other_permit = self.customer_permit_query.first()
