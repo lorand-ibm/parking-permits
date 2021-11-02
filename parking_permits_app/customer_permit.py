@@ -144,12 +144,14 @@ class CustomerPermit:
                     )
 
                 if is_primary:
-                    month_count = self._get_month_count_for_primary_permit(month_count)
+                    month_count = self._get_month_count_for_primary_permit(
+                        contract_type, month_count
+                    )
                     if secondary and secondary.month_count > month_count:
                         permit_to_update.append(secondary.id)
                 else:
                     month_count = self._get_month_count_for_secondary_permit(
-                        month_count
+                        contract_type, month_count
                     )
                     sec_p_end_time = get_end_time(secondary.start_time, month_count)
                     end_time = end_time if sec_p_end_time > end_time else sec_p_end_time
@@ -165,7 +167,7 @@ class CustomerPermit:
                 self.customer_permit_query.filter(id__in=permit_to_update).update(
                     **fields_to_update
                 )
-                return self.customer_permit_query.all()
+                return self.customer_permit_query.get(id=permit_id)
 
         return self._update_fields_to_all_draft(fields_to_update)
 
@@ -258,7 +260,9 @@ class CustomerPermit:
             )
         return {"start_type": start_type, "start_time": start_time}
 
-    def _get_month_count_for_secondary_permit(self, count):
+    def _get_month_count_for_secondary_permit(self, contract_type, count):
+        if contract_type == OPEN_ENDED:
+            return 1
         primary, secondary = self._get_primary_and_secondary_permit()
         end_date = primary.end_time
         if not end_date:
@@ -270,7 +274,9 @@ class CustomerPermit:
         month_count = month_diff + 1 if dangling_days >= 1 else month_diff
         return month_count if count > month_count else count
 
-    def _get_month_count_for_primary_permit(self, month_count):
+    def _get_month_count_for_primary_permit(self, contract_type, month_count):
+        if contract_type == OPEN_ENDED:
+            return 1
         if month_count > 12:
             return 12
         if month_count < 1:
