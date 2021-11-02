@@ -106,7 +106,8 @@ class CustomerPermit:
             permit.consent_low_emission_accepted = data.get(
                 "consent_low_emission_accepted", False
             )
-            return permit.save(update_fields=["consent_low_emission_accepted"])
+            permit.save(update_fields=["consent_low_emission_accepted"])
+            return permit
 
         if "primary_vehicle" in keys:
             return self._toggle_primary_permit()
@@ -143,12 +144,14 @@ class CustomerPermit:
                     )
 
                 if is_primary:
-                    month_count = self._get_month_count_for_primary_permit(month_count)
+                    month_count = self._get_month_count_for_primary_permit(
+                        contract_type, month_count
+                    )
                     if secondary and secondary.month_count > month_count:
                         permit_to_update.append(secondary.id)
                 else:
                     month_count = self._get_month_count_for_secondary_permit(
-                        month_count
+                        contract_type, month_count
                     )
                     sec_p_end_time = get_end_time(secondary.start_time, month_count)
                     end_time = end_time if sec_p_end_time > end_time else sec_p_end_time
@@ -161,14 +164,16 @@ class CustomerPermit:
                 }
             )
             if permit_id:
-                return self.customer_permit_query.filter(
-                    id__in=permit_to_update
-                ).update(**fields_to_update)
+                self.customer_permit_query.filter(id__in=permit_to_update).update(
+                    **fields_to_update
+                )
+                return self.customer_permit_query.get(id=permit_id)
 
         return self._update_fields_to_all_draft(fields_to_update)
 
     def _update_fields_to_all_draft(self, data):
-        return self.customer_permit_query.filter(status=DRAFT).update(**data)
+        self.customer_permit_query.filter(status=DRAFT).update(**data)
+        return self.customer_permit_query.all()
 
     def _resolve_prices(self, permit):
         total_price, monthly_price = permit.get_prices()
@@ -231,7 +236,7 @@ class CustomerPermit:
         primary.save(update_fields=["primary_vehicle"])
         secondary.primary_vehicle = not secondary.primary_vehicle
         secondary.save(update_fields=["primary_vehicle"])
-        return [primary, secondary]
+        return primary, secondary
 
     # Start time will be next day by default if the type is immediately
     # but if the start type is FROM then the start time can not be
@@ -255,7 +260,9 @@ class CustomerPermit:
             )
         return {"start_type": start_type, "start_time": start_time}
 
-    def _get_month_count_for_secondary_permit(self, count):
+    def _get_month_count_for_secondary_permit(self, contract_type, count):
+        if contract_type == OPEN_ENDED:
+            return 1
         primary, secondary = self._get_primary_and_secondary_permit()
         end_date = primary.end_time
         if not end_date:
@@ -267,7 +274,9 @@ class CustomerPermit:
         month_count = month_diff + 1 if dangling_days >= 1 else month_diff
         return month_count if count > month_count else count
 
-    def _get_month_count_for_primary_permit(self, month_count):
+    def _get_month_count_for_primary_permit(self, contract_type, month_count):
+        if contract_type == OPEN_ENDED:
+            return 1
         if month_count > 12:
             return 12
         if month_count < 1:
