@@ -1,3 +1,4 @@
+import reversion
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -14,6 +15,7 @@ from .exceptions import (
 )
 from .mock_vehicle import get_mock_vehicle
 from .models import Customer, ParkingPermit, ParkingZone
+from .reversion import EventType, get_reversion_comment
 from .services.talpa import resolve_price_response
 from .utils import calc_months_diff
 
@@ -67,15 +69,19 @@ class CustomerPermit:
                 contract_type = primary_permit.contract_type
                 primary_vehicle = not primary_permit.primary_vehicle
 
-            permit = ParkingPermit.objects.create(
-                customer=self.customer,
-                parking_zone=ParkingZone.objects.get(id=zone_id),
-                primary_vehicle=primary_vehicle,
-                contract_type=contract_type,
-                start_time=next_day(),
-                vehicle=get_mock_vehicle(self.customer, ""),
-            )
-            return permit
+            with reversion.create_revision():
+                permit = ParkingPermit.objects.create(
+                    customer=self.customer,
+                    parking_zone=ParkingZone.objects.get(id=zone_id),
+                    primary_vehicle=primary_vehicle,
+                    contract_type=contract_type,
+                    start_time=next_day(),
+                    vehicle=get_mock_vehicle(self.customer, ""),
+                )
+                comment = get_reversion_comment(EventType.CREATED, permit)
+                reversion.set_user(self.customer.user)
+                reversion.set_comment(comment)
+                return permit
 
     def delete(self, permit_id):
         permit = ParkingPermit.objects.get(customer=self.customer, id=permit_id)
@@ -85,9 +91,8 @@ class CustomerPermit:
 
         if self.customer_permit_query.count():
             other_permit = self.customer_permit_query.first()
-            other_permit.primary_vehicle = True
-            other_permit.save(update_fields=["primary_vehicle"])
-
+            data = {"primary_vehicle": True}
+            self._update_permit(other_permit, data)
         return True
 
     def update(self, data, permit_id=None):
@@ -113,7 +118,7 @@ class CustomerPermit:
             return self._toggle_primary_permit()
 
         if "zone_id" in keys and self._can_buy_permit_for_zone(data["zone_id"]):
-            fields_to_update.update({"parking_zone": data["zone_id"]})
+            fields_to_update.update({"parking_zone_id": data["zone_id"]})
 
         if "start_type" in keys or "start_time" in keys:
             fields_to_update.update(self._get_start_type_and_start_time(data))
@@ -164,16 +169,30 @@ class CustomerPermit:
                 }
             )
             if permit_id:
-                self.customer_permit_query.filter(id__in=permit_to_update).update(
-                    **fields_to_update
-                )
-                return self.customer_permit_query.get(id=permit_id)
+                return [
+                    self._update_permit(
+                        self.customer_permit_query.get(id=id), fields_to_update
+                    )
+                    for id in permit_to_update
+                ]
 
         return self._update_fields_to_all_draft(fields_to_update)
 
     def _update_fields_to_all_draft(self, data):
-        self.customer_permit_query.filter(status=DRAFT).update(**data)
-        return self.customer_permit_query.all()
+        permits = self.customer_permit_query.filter(status=DRAFT).all()
+        return [self._update_permit(permit, data) for permit in permits]
+
+    def _update_permit(self, permit, data):
+        keys = data.keys()
+        with reversion.create_revision():
+            for key in keys:
+                setattr(permit, key, data[key])
+            permit.save(update_fields=keys)
+            event_type = EventType.CHANGED
+            comment = get_reversion_comment(event_type, permit)
+            reversion.set_user(self.customer.user)
+            reversion.set_comment(comment)
+            return permit
 
     def _resolve_prices(self, permit):
         total_price, monthly_price = permit.get_prices()
