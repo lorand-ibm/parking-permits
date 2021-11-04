@@ -5,7 +5,7 @@ from ariadne import (
     snake_case_fallback_resolvers,
 )
 
-from parking_permits_app.models import ParkingPermit
+from parking_permits_app.models import ParkingPermit, ParkingZone
 
 from .decorators import is_ad_admin
 from .paginator import QuerySetPaginator
@@ -43,3 +43,10 @@ def resolve_permit_detail(_, info, permit_id):
 @PermitDetail.field("changeLogs")
 def resolve_permit_detail_history(permit, info):
     return get_obj_changelogs(permit)
+
+
+@query.field("zones")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+def resolve_zones(_, info):
+    return ParkingZone.objects.all()

@@ -115,4 +115,5 @@ type Query {
     searchItems: [SearchItem]
    ): PagedPermits!
   permitDetail(permitId: ID!): PermitDetailNode!
+  zones: [ZoneNode]
 }
