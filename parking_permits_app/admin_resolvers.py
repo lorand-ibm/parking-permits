@@ -1,3 +1,6 @@
+from datetime import datetime
+
+import reversion
 from ariadne import (
     MutationType,
     ObjectType,
@@ -19,7 +22,7 @@ from parking_permits_app.models import (
 from .constants import ContractType
 from .decorators import is_ad_admin
 from .paginator import QuerySetPaginator
-from .reversion import get_obj_changelogs
+from .reversion import EventType, get_obj_changelogs, get_reversion_comment
 from .utils import apply_filtering, apply_ordering
 
 query = QueryType()
@@ -123,14 +126,19 @@ def resolve_create_resident_permit(_, info, permit):
         },
     )
     parking_zone = ParkingZone.objects.get(name=customer_info["zone"]["name"])
-    ParkingPermit.objects.create(
-        contract_type=ContractType.FIXED_PERIOD.value,
-        customer=customer,
-        vehicle=vehicle,
-        parking_zone=parking_zone,
-        status=permit["status"],
-        start_time=permit["start_time"],
-        month_count=permit["month_count"],
-        consent_low_emission_accepted=vehicle_info["consent_low_emission_accepted"],
-    )
+    with reversion.create_revision():
+        permit = ParkingPermit.objects.create(
+            contract_type=ContractType.FIXED_PERIOD.value,
+            customer=customer,
+            vehicle=vehicle,
+            parking_zone=parking_zone,
+            status=permit["status"],
+            start_time=datetime.strptime(permit["start_time"], "%Y-%m-%dT%H:%M:%S.%fZ"),
+            month_count=permit["month_count"],
+            consent_low_emission_accepted=vehicle_info["consent_low_emission_accepted"],
+        )
+        request = info.context["request"]
+        reversion.set_user(request.user)
+        comment = get_reversion_comment(EventType.CREATED, permit)
+        reversion.set_comment(comment)
     return {"success": True}
