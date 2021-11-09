@@ -14,7 +14,6 @@ type AddressNode {
   city: String
   citySv: String
   postalCode: String
-
 }
 
 type CustomerNode {
@@ -116,4 +115,67 @@ type Query {
    ): PagedPermits!
   permitDetail(permitId: ID!): PermitDetailNode!
   zones: [ZoneNode]
+}
+
+input ZoneInput {
+  name: String
+  description: String
+  descriptionSv: String
+  price: Float
+}
+
+input AddressInput {
+  streetName: String
+  streetNumber: Int
+  streetNameSv: String
+  city: String
+  citySv: String
+  postalCode: String
+}
+
+input CustomerInput {
+  firstName: String!
+  lastName: String!
+  address: AddressInput
+  addressSecurityBan: Boolean
+  nationalIdNumber: String
+  zone: ZoneInput
+  phoneNumber: String
+  email: String
+  driverLicenseChecked: Boolean
+}
+
+input VehicleUserInput {
+  firstName: String
+  lastName: String
+  nationalIdNumber: String
+}
+
+input VehicleInput {
+  manufacturer: String!
+  model: String!
+  registrationNumber: String!
+  isLowEmission: Boolean!
+  holder: VehicleUserInput
+  owner: VehicleUserInput
+  serialNumber: String
+  type: String
+  consentLowEmissionAccepted: Boolean!
+}
+
+input ResidentPermitInput {
+  contractType: String
+  customer: CustomerInput!
+  vehicle: VehicleInput
+  status: ParkingPermitStatus!
+  startTime: String
+  monthCount: Int
+}
+
+type ResponseNode {
+  success: Boolean
+}
+
+type Mutation {
+  createResidentPermit(permit: ResidentPermitInput!): ResponseNode
 }
