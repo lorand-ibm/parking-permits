@@ -39,6 +39,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
     euro_class = models.IntegerField(_("Euro class"), blank=True, null=True)
     emission = models.IntegerField(_("Emission"), blank=False, null=False)
+    low_emission_vehicle = models.BooleanField(_("Low emission vehicle"), default=False)
     emission_type = models.CharField(
         _("Emission type"),
         max_length=16,
@@ -67,6 +68,9 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     @property
     def is_low_emission(self):
+        if self.low_emission_vehicle:
+            return True
+
         le_criteria = LowEmissionCriteria.objects.get(
             vehicle_type=self.type,
             start_date__lte=datetime.today(),
