@@ -39,6 +39,10 @@ class Customer(TimestampedModelMixin):
     phone_number = models.CharField(
         _("Phone number"), max_length=32, blank=True, null=True
     )
+    address_security_ban = models.BooleanField(_("Address security ban"), default=False)
+    driver_license_checked = models.BooleanField(
+        _("Driver's license checked"), default=False
+    )
 
     def is_owner_or_holder_of_vehicle(self, vehicle):
         return vehicle.owner == self or vehicle.holder == self
