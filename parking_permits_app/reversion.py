@@ -54,8 +54,8 @@ class FieldChangeResolver:
             )
             return f"{self.field.verbose_name}: {old_instance} --> {new_instance}"
         elif isinstance(self.field, models.DateTimeField):
-            format_old = self.old_value.strftime(TIME_FORMAT)
-            format_new = self.new_value.strftime(TIME_FORMAT)
+            format_old = self.old_value.strftime(TIME_FORMAT) if self.old_value else ""
+            format_new = self.new_value.strftime(TIME_FORMAT) if self.new_value else ""
             return f"{self.field.verbose_name}: {format_old} --> {format_new}"
 
         return f"{self.field.verbose_name}: {self.old_value} --> {self.new_value}"
