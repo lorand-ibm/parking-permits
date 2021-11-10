@@ -62,7 +62,8 @@ class FieldChangeResolver:
 
 
 def _created_description_resolver(obj):
-    return f"{type(obj)} {obj}"
+    model_class = type(obj)
+    return f"{model_class._meta.verbose_name}: {obj}"
 
 
 def _changed_description_resolver(obj):

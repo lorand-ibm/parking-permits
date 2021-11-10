@@ -29,7 +29,7 @@ class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Parking zones")
 
     def __str__(self):
-        return "%s (%s)" % (self.name, self.shared_product_id)
+        return self.name
 
     @property
     def namespace(self):
