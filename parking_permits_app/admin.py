@@ -10,6 +10,7 @@ from parking_permits_app.models import (
     ParkingPermit,
     ParkingZone,
     Price,
+    Refund,
     Vehicle,
     VehicleType,
 )
@@ -116,3 +117,13 @@ class VehicleAdmin(admin.ModelAdmin):
 @admin.register(VehicleType)
 class VehicleTypeAdmin(admin.ModelAdmin):
     list_display = ("type",)
+
+
+@admin.register(Refund)
+class RefundAdmin(admin.ModelAdmin):
+    list_display = (
+        "customer",
+        "permit",
+        "amount",
+        "iban",
+    )
