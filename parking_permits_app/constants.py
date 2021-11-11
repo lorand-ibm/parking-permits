@@ -62,6 +62,12 @@ class ParkingPermitStatus(Enum):
     EXPIRED = _("EXPIRED")
 
 
+class RefundStatus(Enum):
+    OPEN = _("OPEN")
+    IN_PROGRESS = _("IN_PROGRESS")
+    ACCEPTED = _("ACCEPTED")
+
+
 LOW_EMISSION_DISCOUNT = 50
 SECONDARY_VEHICLE_PRICE_INCREASE = 50
 VAT_PERCENTAGE = 24
