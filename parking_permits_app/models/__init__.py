@@ -7,6 +7,7 @@ from .low_emission_criteria import LowEmissionCriteria
 from .parking_permit import ParkingPermit
 from .parking_zone import ParkingZone
 from .price import Price
+from .refund import Refund
 from .vehicle import Vehicle
 from .vehicle_type import VehicleType
 
@@ -22,4 +23,5 @@ __all__ = [
     "Price",
     "Vehicle",
     "VehicleType",
+    "Refund",
 ]
