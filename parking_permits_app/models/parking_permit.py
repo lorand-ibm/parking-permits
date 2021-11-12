@@ -3,7 +3,6 @@ import decimal
 import reversion
 from django.contrib.gis.db import models
 from django.utils import timezone
-from django.utils import timezone as tz
 from django.utils.translation import gettext_lazy as _
 
 from .. import constants
@@ -32,22 +31,16 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         Customer,
         verbose_name=_("Customer"),
         on_delete=models.PROTECT,
-        blank=False,
-        null=False,
     )
     vehicle = models.ForeignKey(
         Vehicle,
         verbose_name=_("Vehicle"),
         on_delete=models.PROTECT,
-        blank=False,
-        null=False,
     )
     parking_zone = models.ForeignKey(
         ParkingZone,
         verbose_name=_("Parking zone"),
         on_delete=models.PROTECT,
-        blank=False,
-        null=False,
     )
     status = models.CharField(
         _("Status"),
@@ -58,10 +51,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     identifier = models.IntegerField(
         default=get_next_identifier, editable=False, unique=True, db_index=True
     )
-    consent_low_emission_accepted = models.BooleanField(null=False, default=False)
-    start_time = models.DateTimeField(_("Start time"), default=tz.now)
+    consent_low_emission_accepted = models.BooleanField(default=False)
+    start_time = models.DateTimeField(_("Start time"), default=timezone.now)
     end_time = models.DateTimeField(_("End time"), blank=True, null=True)
-    primary_vehicle = models.BooleanField(null=False, default=True)
+    primary_vehicle = models.BooleanField(default=True)
     contract_type = models.CharField(
         _("Contract type"),
         max_length=16,
