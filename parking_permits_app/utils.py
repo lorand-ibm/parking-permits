@@ -1,6 +1,7 @@
 import operator
 from functools import reduce
 
+from dateutil.relativedelta import relativedelta
 from django.db.models import Q
 
 
@@ -25,12 +26,18 @@ def apply_filtering(queryset, search_items):
     return queryset.filter(query)
 
 
-def calc_months_diff(start_date, end_date):
-    diff_months = (
-        (end_date.year - start_date.year) * 12 + end_date.month - start_date.month
-    )
-    if end_date.day < start_date.day:
-        diff_months -= 1
-    if diff_months < 0:
+def diff_months_floor(start_date, end_date):
+    if start_date > end_date:
         return 0
+    diff = relativedelta(end_date, start_date)
+    return diff.months + diff.years * 12
+
+
+def diff_months_ceil(start_date, end_date):
+    if start_date > end_date:
+        return 0
+    diff = relativedelta(end_date, start_date)
+    diff_months = diff.months + diff.years * 12
+    if diff.days >= 0:
+        diff_months += 1
     return diff_months

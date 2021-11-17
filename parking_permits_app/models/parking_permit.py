@@ -11,7 +11,7 @@ from ..constants import (
     SECONDARY_VEHICLE_PRICE_INCREASE,
     ContractType,
 )
-from ..utils import calc_months_diff
+from ..utils import diff_months_floor
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
@@ -87,7 +87,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         if self.contract_type == ContractType.OPEN_ENDED or not self.end_time:
             return None
         today = timezone.now().today()
-        return calc_months_diff(today, self.end_time.date())
+        return diff_months_floor(today, self.end_time.date())
 
     def get_prices(self):
         monthly_price = self.parking_zone.price
