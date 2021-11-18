@@ -10,6 +10,7 @@ from ariadne import (
 )
 from django.conf import settings
 from django.contrib.gis.geos import Point
+from django.db import transaction
 
 from parking_permits_app.models import (
     Address,
@@ -70,6 +71,7 @@ def resolve_zones(_, info):
 @mutation.field("createResidentPermit")
 @is_ad_admin
 @convert_kwargs_to_snake_case
+@transaction.atomic
 def resolve_create_resident_permit(_, info, permit):
     # TODO: Update this once we have proper Traficom and DVV integrations
     # This method relies on the mock data passed in from
@@ -152,4 +154,29 @@ def resolve_create_resident_permit(_, info, permit):
         reversion.set_user(request.user)
         comment = get_reversion_comment(EventType.CREATED, permit)
         reversion.set_comment(comment)
+    return {"success": True}
+
+
+@mutation.field("endPermit")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_end_permit(_, info, permit_id, end_type, iban=None):
+    request = info.context["request"]
+    with reversion.create_revision():
+        permit = ParkingPermit.objects.get(identifier=permit_id)
+        permit.end_permit(end_type)
+
+        if permit.contract_type == ContractType.OPEN_ENDED.value:
+            permit.end_subscription()
+        elif (
+            permit.contract_type == ContractType.FIXED_PERIOD.value
+            and not permit.has_refund
+        ):
+            permit.create_refund(iban)
+
+        reversion.set_user(request.user)
+        comment = get_reversion_comment(EventType.CHANGED, permit)
+        reversion.set_comment(comment)
+
     return {"success": True}

@@ -143,9 +143,14 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return hasattr(self, "refund")
 
     @property
+    def monthly_price(self):
+        # TODO: return different price for different permit types
+        return self.parking_zone.resident_price
+
+    @property
     def refund_amount(self):
         # TODO: account for different prices in different years
-        return self.months_left * self.parking_zone.resident_price
+        return self.months_left * self.monthly_price
 
     def end_permit(self, end_type):
         if end_type == ParkingPermitEndType.AFTER_CURRENT_PERIOD.value:
