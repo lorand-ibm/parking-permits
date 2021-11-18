@@ -10,10 +10,7 @@ env = environ.Env(
     DJANGO_SECRET_KEY=(str, ""),
     ALLOWED_HOSTS=(list, ["*"]),
     DATABASE_URL=(str, "sqlite:////tmp/my-tmp-sqlite.db"),
-    TALPA_PRODUCT_EXPERIENCE_API=(
-        str,
-        "https://talpa-verkkokauppa-product-experience-api-dev.agw.arodevtest.hel.fi",
-    ),
+    TALPA_PRODUCT_EXPERIENCE_API=(str, ""),
     OPEN_CITY_PROFILE_GRAPHQL_API=(str, "https://profile-api.test.hel.ninja/graphql/"),
     KMO_URL=(str, "https://kartta.hel.fi/ws/geoserver/avoindata/wfs"),
     TOKEN_AUTH_ACCEPTED_AUDIENCE=(str, ""),
