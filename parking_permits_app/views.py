@@ -40,9 +40,9 @@ class TalpaResolvePrice(APIView):
 
 
 class TalpaResolveRightOfPurchase(APIView):
-    def post(self, request, format=None):
-        shared_product_id = request.data.get("productId")
-        permit_id = talpa.get_meta_value(request.data.get("meta"), "permitId")
+    def post(self, request):
+        order_item = request.data.get("orderItem")
+        permit_id = talpa.get_meta_value(order_item.get("meta"), "permitId")
 
         try:
             permit = ParkingPermit.objects.get(pk=permit_id)
@@ -56,7 +56,13 @@ class TalpaResolveRightOfPurchase(APIView):
             and customer.driving_licence.is_valid_for_vehicle(vehicle)
             and not vehicle.is_due_for_inspection()
         )
-        res = {"product_id": shared_product_id, "value": right_of_purchase}
+        res = {
+            "error_message": "",
+            "right_of_purchase": right_of_purchase,
+            "order_id": request.data.get("orderId"),
+            "user_id": request.data.get("userId"),
+            "order_item_id": order_item.get("orderItemId"),
+        }
         return Response(talpa.snake_to_camel_dict(res))
 
 
