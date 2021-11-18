@@ -1,4 +1,3 @@
-from datetime import date
 from decimal import Decimal
 
 from django.test import TestCase
@@ -17,29 +16,11 @@ class ParkingZoneTestCase(TestCase):
         PriceFactory(
             zone=self.zone,
             price=Decimal(20),
-            start_date=date(2021, 10, 1),
-            end_date=date(2021, 11, 1),
+            year=2021,
         )
-        self.assertEqual(self.zone.price, Decimal(20))
+        self.assertEqual(self.zone.resident_price, Decimal(20))
 
     @freeze_time("2021-10-16")
     def test_zone_price_raise_price_error_if_no_price_defined(self):
         with self.assertRaises(PriceError):
-            self.zone.price
-
-    @freeze_time("2021-10-16")
-    def test_zone_price_raise_price_error_if_multiple_prices_defined(self):
-        PriceFactory(
-            zone=self.zone,
-            price=Decimal(20),
-            start_date=date(2021, 10, 1),
-            end_date=date(2021, 11, 1),
-        )
-        PriceFactory(
-            zone=self.zone,
-            price=Decimal(30),
-            start_date=date(2021, 10, 15),
-            end_date=date(2021, 11, 1),
-        )
-        with self.assertRaises(PriceError):
-            self.zone.price
+            self.zone.resident_price

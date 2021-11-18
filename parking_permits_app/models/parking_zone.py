@@ -1,10 +1,10 @@
 import json
-from datetime import datetime
 
 import requests
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.db.models.signals import post_save
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from ..exceptions import PriceError
@@ -36,17 +36,20 @@ class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return settings.NAMESPACE
 
     @property
-    def price(self):
+    def resident_price(self):
         try:
-            price_obj = self.prices.get(
-                start_date__lte=datetime.today(),
-                end_date__gte=datetime.today(),
-            )
+            price = self.prices.get(type=Price.RESIDENT, year=timezone.now().year)
         except Price.DoesNotExist:
-            raise PriceError("No price defined")
-        except Price.MultipleObjectsReturned:
-            raise PriceError("Multiple prices defined")
-        return price_obj.price
+            raise PriceError("No resident price available")
+        return price.price
+
+    @property
+    def company_price(self):
+        try:
+            price = self.prices.get(type=Price.COMPANY, year=timezone.now().year)
+        except Price.DoesNotExist:
+            raise PriceError("No company price available")
+        return price.price
 
 
 def post_zone_to_talpa(sender, instance, created, **kwargs):

@@ -5,28 +5,26 @@ from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
 
 class Price(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+    COMPANY = "company"
+    RESIDENT = "resident"
+    TYPE_CHOICES = [(RESIDENT, _("Resident")), (COMPANY, _("Company"))]
     zone = models.ForeignKey(
         "ParkingZone",
         verbose_name=_("Zone"),
         on_delete=models.PROTECT,
         related_name="prices",
-        blank=True,
-        null=True,
     )
-    price = models.DecimalField(
-        _("Price"), blank=False, null=False, max_digits=6, decimal_places=2
+    price = models.DecimalField(_("Price"), max_digits=6, decimal_places=2)
+    type = models.CharField(
+        _("Type"), max_length=20, choices=TYPE_CHOICES, default=RESIDENT
     )
-    start_date = models.DateField(_("Start date"), blank=False, null=False)
-    end_date = models.DateField(_("End date"), blank=True, null=True)
+    year = models.IntegerField(_("Year"))
 
     class Meta:
         db_table = "price"
         verbose_name = _("Price")
         verbose_name_plural = _("Prices")
+        unique_together = ["zone", "type", "year"]
 
     def __str__(self):
-        return "%s (%s - %s)" % (
-            self.price,
-            self.start_date,
-            self.end_date,
-        )
+        return f"{self.price}€ ({self.year})"
