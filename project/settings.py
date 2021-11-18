@@ -10,10 +10,7 @@ env = environ.Env(
     DJANGO_SECRET_KEY=(str, ""),
     ALLOWED_HOSTS=(list, ["*"]),
     DATABASE_URL=(str, "sqlite:////tmp/my-tmp-sqlite.db"),
-    TALPA_PRODUCT_EXPERIENCE_API=(
-        str,
-        "https://talpa-verkkokauppa-product-experience-api-dev.agw.arodevtest.hel.fi",
-    ),
+    TALPA_PRODUCT_EXPERIENCE_API=(str, ""),
     OPEN_CITY_PROFILE_GRAPHQL_API=(str, "https://profile-api.test.hel.ninja/graphql/"),
     KMO_URL=(str, "https://kartta.hel.fi/ws/geoserver/avoindata/wfs"),
     TOKEN_AUTH_ACCEPTED_AUDIENCE=(str, ""),
@@ -21,6 +18,8 @@ env = environ.Env(
     TOKEN_AUTH_AUTHSERVER_URL=(str, ""),
     TOKEN_AUTH_REQUIRE_SCOPE_PREFIX=(str, ""),
     ALLOWED_ADMIN_AD_GROUPS=(list, None),
+    TALPA_API_KEY=(str, ""),
+    TALPA_NAMESPACE=(str, "asukaspysakointi"),
 )
 
 if path.exists(".env"):
@@ -126,8 +125,9 @@ STATIC_ROOT = BASE_DIR / "static-files"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # FOR TALPA
-NAMESPACE = "parkingPermits"
+NAMESPACE = env("TALPA_NAMESPACE")
 TALPA_PRODUCT_EXPERIENCE_API = env("TALPA_PRODUCT_EXPERIENCE_API")
+TALPA_API_KEY = env("TALPA_API_KEY")
 
 # cors
 CORS_ORIGIN_ALLOW_ALL = True

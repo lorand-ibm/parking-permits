@@ -125,6 +125,5 @@ input ParkingPermitInput {
   startType: String
   contractType: String
   monthCount: Int
-  orderId: String
   zoneId: String
 }

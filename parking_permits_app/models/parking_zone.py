@@ -56,7 +56,12 @@ def post_zone_to_talpa(sender, instance, created, **kwargs):
             "namespaceEntityId": instance.pk,
             "name": instance.name,
         }
-        result = requests.post(settings.TALPA_PRODUCT_EXPERIENCE_API, data=data)
+        headers = {
+            "api-key": settings.TALPA_API_KEY,
+        }
+        result = requests.post(
+            settings.TALPA_PRODUCT_EXPERIENCE_API, data=data, headers=headers
+        )
         if result.status_code == 201:
             response = json.loads(result.text)
             instance.shared_product_id = response["productId"]
