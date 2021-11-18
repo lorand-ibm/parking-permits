@@ -21,6 +21,8 @@ env = environ.Env(
     TOKEN_AUTH_AUTHSERVER_URL=(str, ""),
     TOKEN_AUTH_REQUIRE_SCOPE_PREFIX=(str, ""),
     ALLOWED_ADMIN_AD_GROUPS=(list, None),
+    TALPA_API_KEY=(str, ""),
+    TALPA_NAMESPACE=(str, "asukaspysakointi"),
 )
 
 if path.exists(".env"):
@@ -126,8 +128,9 @@ STATIC_ROOT = BASE_DIR / "static-files"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # FOR TALPA
-NAMESPACE = "parkingPermits"
+NAMESPACE = env("TALPA_NAMESPACE")
 TALPA_PRODUCT_EXPERIENCE_API = env("TALPA_PRODUCT_EXPERIENCE_API")
+TALPA_API_KEY = env("TALPA_API_KEY")
 
 # cors
 CORS_ORIGIN_ALLOW_ALL = True
