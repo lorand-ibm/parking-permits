@@ -1,7 +1,9 @@
 import decimal
 
 import reversion
+from dateutil.relativedelta import relativedelta
 from django.contrib.gis.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -10,11 +12,15 @@ from ..constants import (
     LOW_EMISSION_DISCOUNT,
     SECONDARY_VEHICLE_PRICE_INCREASE,
     ContractType,
+    ParkingPermitEndType,
+    ParkingPermitStatus,
 )
-from ..utils import diff_months_floor
+from ..exceptions import PermitCanNotBeEnded, RefundCanNotBeCreated
+from ..utils import diff_months_ceil, get_day_start
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
+from .refund import Refund
 from .vehicle import Vehicle
 
 
@@ -23,6 +29,18 @@ def get_next_identifier():
     if not last:
         return 80000000
     return last.identifier + 1
+
+
+class ParkingPermitManager(models.Manager):
+    def active(self):
+        active_status = [
+            ParkingPermitStatus.VALID.value,
+            ParkingPermitStatus.PAYMENT_IN_PROGRESS.value,
+        ]
+        return self.filter(status__in=active_status)
+
+    def active_after(self, time):
+        return self.active().filter(Q(end_time__isnull=True) | Q(end_time__gt=time))
 
 
 @reversion.register()
@@ -74,6 +92,8 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         max_length=50, unique=True, blank=True, null=True
     )
 
+    objects = ParkingPermitManager()
+
     class Meta:
         db_table = "parking_permit"
         verbose_name = _("Parking permit")
@@ -82,15 +102,9 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     def __str__(self):
         return "%s" % self.identifier
 
-    @property
-    def months_left(self):
-        if self.contract_type == ContractType.OPEN_ENDED or not self.end_time:
-            return None
-        today = timezone.now().today()
-        return diff_months_floor(today, self.end_time.date())
-
     def get_prices(self):
-        monthly_price = self.parking_zone.price
+        # TODO: account for different prices in different years
+        monthly_price = self.parking_zone.resident_price
         month_count = self.month_count
 
         if self.contract_type == constants.ContractType.OPEN_ENDED.value:
@@ -104,3 +118,67 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
             monthly_price -= discount * monthly_price
 
         return monthly_price * month_count, monthly_price
+
+    @property
+    def months_used(self):
+        now = timezone.now()
+        diff_months = diff_months_ceil(self.start_time, now)
+        if self.contract_type == ContractType.FIXED_PERIOD.value:
+            return min(self.month_count, diff_months)
+        return diff_months
+
+    @property
+    def months_left(self):
+        if self.contract_type == ContractType.OPEN_ENDED.value:
+            return None
+        return self.month_count - self.months_used
+
+    @property
+    def current_period_end_time(self):
+        end_time = self.start_time + relativedelta(months=self.months_used)
+        return get_day_start(end_time)
+
+    @property
+    def has_refund(self):
+        return hasattr(self, "refund")
+
+    @property
+    def refund_amount(self):
+        # TODO: account for different prices in different years
+        return self.months_left * self.parking_zone.resident_price
+
+    def end_permit(self, end_type):
+        if end_type == ParkingPermitEndType.AFTER_CURRENT_PERIOD.value:
+            end_time = self.current_period_end_time
+        else:
+            end_time = timezone.now()
+
+        if (
+            self.primary_vehicle
+            and self.customer.parkingpermit_set.active_after(end_time)
+            .exclude(id=self.id)
+            .exists()
+        ):
+            raise PermitCanNotBeEnded(
+                _(
+                    "Cannot close primary vehicle permit if an active secondary vehicle permit exists"
+                )
+            )
+
+        self.end_time = end_time
+        if end_type == ParkingPermitEndType.IMMEDIATELY.value:
+            self.status = ParkingPermitStatus.CLOSED.value
+        self.save()
+
+    def create_refund(self, iban):
+        if self.contract_type != ContractType.FIXED_PERIOD.value:
+            raise RefundCanNotBeCreated(
+                f"Refund cannot be created for {self.contract_type}"
+            )
+        return Refund.objects.create(
+            permit=self, customer=self.customer, amount=self.refund_amount, iban=iban
+        )
+
+    def end_subscription(self):
+        # TODO: end subscription
+        pass

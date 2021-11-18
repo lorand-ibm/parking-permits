@@ -41,3 +41,7 @@ def diff_months_ceil(start_date, end_date):
     if diff.days >= 0:
         diff_months += 1
     return diff_months
+
+
+def get_day_start(dt):
+    return dt.replace(hour=0, minute=0, second=0, microsecond=0)
