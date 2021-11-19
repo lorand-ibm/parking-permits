@@ -11,6 +11,7 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, ["*"]),
     DATABASE_URL=(str, "sqlite:////tmp/my-tmp-sqlite.db"),
     TALPA_PRODUCT_EXPERIENCE_API=(str, ""),
+    TALPA_ORDER_EXPERIENCE_API=(str, ""),
     OPEN_CITY_PROFILE_GRAPHQL_API=(str, "https://profile-api.test.hel.ninja/graphql/"),
     KMO_URL=(str, "https://kartta.hel.fi/ws/geoserver/avoindata/wfs"),
     TOKEN_AUTH_ACCEPTED_AUDIENCE=(str, ""),
@@ -127,6 +128,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # FOR TALPA
 NAMESPACE = env("TALPA_NAMESPACE")
 TALPA_PRODUCT_EXPERIENCE_API = env("TALPA_PRODUCT_EXPERIENCE_API")
+TALPA_ORDER_EXPERIENCE_API = env("TALPA_ORDER_EXPERIENCE_API")
 TALPA_API_KEY = env("TALPA_API_KEY")
 
 # cors
