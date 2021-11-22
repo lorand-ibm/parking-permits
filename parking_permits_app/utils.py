@@ -43,5 +43,6 @@ def diff_months_ceil(start_date, end_date):
     return diff_months
 
 
-def get_day_start(dt):
-    return dt.replace(hour=0, minute=0, second=0, microsecond=0)
+def get_end_time(start_time, diff_months):
+    end_time = start_time + relativedelta(months=diff_months)
+    return end_time.replace(hour=0, minute=0, second=0, microsecond=0)

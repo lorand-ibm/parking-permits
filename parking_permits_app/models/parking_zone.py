@@ -1,4 +1,5 @@
 import json
+import logging
 
 import requests
 from django.conf import settings
@@ -10,6 +11,8 @@ from django.utils.translation import gettext_lazy as _
 from ..exceptions import PriceError
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .price import Price
+
+logger = logging.getLogger(__name__)
 
 
 class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
@@ -34,6 +37,13 @@ class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     @property
     def namespace(self):
         return settings.NAMESPACE
+
+    @property
+    def price(self):
+        logger.warning(
+            "price properly is deprecated and will be removed, use resident_price or company_price"
+        )
+        return self.resident_price
 
     @property
     def resident_price(self):

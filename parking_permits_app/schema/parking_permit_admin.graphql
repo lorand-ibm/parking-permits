@@ -109,6 +109,7 @@ type PermitDetailNode {
   contractType: String
   monthCount: Int
   monthsLeft: Int
+  monthlyPrice: Float
   currentPeriodEndTime: String
   changeLogs: [ChangeLog]!
 }
@@ -127,7 +128,7 @@ input ZoneInput {
   name: String
   description: String
   descriptionSv: String
-  price: Float
+  residentPrice: Float
 }
 
 input AddressInput {

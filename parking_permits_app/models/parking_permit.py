@@ -1,7 +1,6 @@
 import decimal
 
 import reversion
-from dateutil.relativedelta import relativedelta
 from django.contrib.gis.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -16,7 +15,7 @@ from ..constants import (
     ParkingPermitStatus,
 )
 from ..exceptions import PermitCanNotBeEnded, RefundCanNotBeCreated
-from ..utils import diff_months_ceil, get_day_start
+from ..utils import diff_months_ceil, get_end_time
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
@@ -135,8 +134,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     @property
     def current_period_end_time(self):
-        end_time = self.start_time + relativedelta(months=self.months_used)
-        return get_day_start(end_time)
+        return get_end_time(self.start_time, self.months_used)
 
     @property
     def has_refund(self):

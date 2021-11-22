@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import reversion
 from ariadne import (
     MutationType,
@@ -8,6 +6,7 @@ from ariadne import (
     convert_kwargs_to_snake_case,
     snake_case_fallback_resolvers,
 )
+from dateutil.parser import isoparse
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.db import transaction
@@ -25,7 +24,7 @@ from .constants import ContractType
 from .decorators import is_ad_admin
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
-from .utils import apply_filtering, apply_ordering
+from .utils import apply_filtering, apply_ordering, get_end_time
 
 query = QueryType()
 mutation = MutationType()
@@ -140,14 +139,17 @@ def resolve_create_resident_permit(_, info, permit):
         )
     parking_zone = ParkingZone.objects.get(name=customer_info["zone"]["name"])
     with reversion.create_revision():
+        start_time = isoparse(permit["start_time"])
+        end_time = get_end_time(start_time, permit["month_count"])
         permit = ParkingPermit.objects.create(
             contract_type=ContractType.FIXED_PERIOD.value,
             customer=customer,
             vehicle=vehicle,
             parking_zone=parking_zone,
             status=permit["status"],
-            start_time=datetime.strptime(permit["start_time"], "%Y-%m-%dT%H:%M:%S.%fZ"),
+            start_time=start_time,
             month_count=permit["month_count"],
+            end_time=end_time,
             consent_low_emission_accepted=vehicle_info["consent_low_emission_accepted"],
         )
         request = info.context["request"]
