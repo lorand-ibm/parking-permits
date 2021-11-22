@@ -91,6 +91,7 @@ class OrderView(APIView):
                     permit.status = (
                         constants.ParkingPermitStatus.PAYMENT_IN_PROGRESS.value
                     )
+                permit.subscription_id = item.get("subscriptionId")
                 permit.order_id = item.get("orderId")
                 permit.save()
 
