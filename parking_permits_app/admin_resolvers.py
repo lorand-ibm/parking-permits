@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import reversion
 from ariadne import (
     MutationType,
@@ -8,8 +6,10 @@ from ariadne import (
     convert_kwargs_to_snake_case,
     snake_case_fallback_resolvers,
 )
+from dateutil.parser import isoparse
 from django.conf import settings
 from django.contrib.gis.geos import Point
+from django.db import transaction
 
 from parking_permits_app.models import (
     Address,
@@ -24,7 +24,7 @@ from .constants import ContractType
 from .decorators import is_ad_admin
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
-from .utils import apply_filtering, apply_ordering
+from .utils import apply_filtering, apply_ordering, get_end_time
 
 query = QueryType()
 mutation = MutationType()
@@ -70,6 +70,7 @@ def resolve_zones(_, info):
 @mutation.field("createResidentPermit")
 @is_ad_admin
 @convert_kwargs_to_snake_case
+@transaction.atomic
 def resolve_create_resident_permit(_, info, permit):
     # TODO: Update this once we have proper Traficom and DVV integrations
     # This method relies on the mock data passed in from
@@ -138,18 +139,46 @@ def resolve_create_resident_permit(_, info, permit):
         )
     parking_zone = ParkingZone.objects.get(name=customer_info["zone"]["name"])
     with reversion.create_revision():
+        start_time = isoparse(permit["start_time"])
+        end_time = get_end_time(start_time, permit["month_count"])
         permit = ParkingPermit.objects.create(
             contract_type=ContractType.FIXED_PERIOD.value,
             customer=customer,
             vehicle=vehicle,
             parking_zone=parking_zone,
             status=permit["status"],
-            start_time=datetime.strptime(permit["start_time"], "%Y-%m-%dT%H:%M:%S.%fZ"),
+            start_time=start_time,
             month_count=permit["month_count"],
+            end_time=end_time,
             consent_low_emission_accepted=vehicle_info["consent_low_emission_accepted"],
         )
         request = info.context["request"]
         reversion.set_user(request.user)
         comment = get_reversion_comment(EventType.CREATED, permit)
         reversion.set_comment(comment)
+    return {"success": True}
+
+
+@mutation.field("endPermit")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_end_permit(_, info, permit_id, end_type, iban=None):
+    request = info.context["request"]
+    with reversion.create_revision():
+        permit = ParkingPermit.objects.get(identifier=permit_id)
+        permit.end_permit(end_type)
+
+        if permit.contract_type == ContractType.OPEN_ENDED.value:
+            permit.end_subscription()
+        elif (
+            permit.contract_type == ContractType.FIXED_PERIOD.value
+            and not permit.has_refund
+        ):
+            permit.create_refund(iban)
+
+        reversion.set_user(request.user)
+        comment = get_reversion_comment(EventType.CHANGED, permit)
+        reversion.set_comment(comment)
+
     return {"success": True}

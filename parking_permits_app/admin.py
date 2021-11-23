@@ -96,7 +96,7 @@ class ParkingZoneAdmin(admin.OSMGeoAdmin):
 
 @admin.register(Price)
 class PriceAdmin(admin.ModelAdmin):
-    list_display = ("id", "zone", "price", "start_date", "end_date")
+    list_display = ("id", "zone", "price", "year", "type")
     list_select_related = ("zone",)
 
 

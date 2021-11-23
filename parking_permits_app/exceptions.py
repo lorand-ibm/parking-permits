@@ -20,3 +20,11 @@ class NonDraftPermitUpdateError(Exception):
 
 class PermitCanNotBeDelete(Exception):
     pass
+
+
+class PermitCanNotBeEnded(Exception):
+    pass
+
+
+class RefundCanNotBeCreated(Exception):
+    pass

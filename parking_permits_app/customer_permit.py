@@ -17,7 +17,7 @@ from .mock_vehicle import get_mock_vehicle
 from .models import Customer, ParkingPermit, ParkingZone
 from .reversion import EventType, get_reversion_comment
 from .services.talpa import resolve_price_response
-from .utils import calc_months_diff
+from .utils import diff_months_floor
 
 IMMEDIATELY = constants.StartType.IMMEDIATELY.value
 OPEN_ENDED = constants.ContractType.OPEN_ENDED.value
@@ -287,7 +287,7 @@ class CustomerPermit:
         if not end_date:
             return 12 if count > 12 else count
 
-        month_diff = calc_months_diff(next_day(), end_date)
+        month_diff = diff_months_floor(next_day(), end_date)
         dangling_days = (end_date - get_end_time(next_day(), month_diff)).days
 
         month_count = month_diff + 1 if dangling_days >= 1 else month_diff

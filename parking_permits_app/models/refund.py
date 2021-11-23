@@ -2,7 +2,7 @@ from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
 from .. import constants
-from . import Customer, ParkingPermit
+from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
 
@@ -12,17 +12,16 @@ class Refund(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name=_("Customer"),
         on_delete=models.PROTECT,
     )
-    permit = models.ForeignKey(
-        ParkingPermit,
+    permit = models.OneToOneField(
+        "ParkingPermit",
         verbose_name=_("Permit"),
         on_delete=models.PROTECT,
-        related_name="refunds",
+        related_name="refund",
     )
     amount = models.DecimalField(
         _("Amount"), default=0.00, max_digits=6, decimal_places=2
     )
     iban = models.CharField(max_length=30)
-    request_date = models.DateField(_("Start date"))
     status = models.CharField(
         _("Status"),
         max_length=32,

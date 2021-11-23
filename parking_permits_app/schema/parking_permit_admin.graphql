@@ -3,7 +3,7 @@ type ZoneNode {
   name: String
   description: String
   descriptionSv: String
-  price: Float!
+  residentPrice: Float!
 }
 
 type AddressNode {
@@ -42,6 +42,7 @@ enum ParkingPermitStatus {
   PAYMENT_IN_PROGRESS
   VALID
   CLOSED
+
 }
 
 type PermitNode {
@@ -108,6 +109,11 @@ type PermitDetailNode {
   contractType: String
   monthCount: Int
   monthsLeft: Int
+  monthlyPrice: Float
+  currentPeriodEndTime: String
+  canEndImmediately: Boolean
+  canEndAfterCurrentPeriod: Boolean
+  hasRefund: Boolean
   changeLogs: [ChangeLog]!
 }
 
@@ -125,7 +131,7 @@ input ZoneInput {
   name: String
   description: String
   descriptionSv: String
-  price: Float
+  residentPrice: Float
 }
 
 input AddressInput {
@@ -180,12 +186,16 @@ input ResidentPermitInput {
   monthCount: Int
 }
 
-type ResponseNode {
+type MutationResponse {
   success: Boolean
 }
 
+enum PermitEndType {
+  IMMEDIATELY
+  AFTER_CURRENT_PERIOD
+}
 
 type Mutation {
-  createResidentPermit(permit: ResidentPermitInput!): ResponseNode
-
+  createResidentPermit(permit: ResidentPermitInput!): MutationResponse
+  endPermit(permitId: Int!, endType: PermitEndType!, iban: String): MutationResponse
 }
