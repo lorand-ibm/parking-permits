@@ -1,9 +1,13 @@
+import json
 import logging
 
+import requests
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from . import constants
 from .models import ParkingPermit
 from .services import talpa
 
@@ -69,5 +73,29 @@ class TalpaResolveRightOfPurchase(APIView):
 class OrderView(APIView):
     def post(self, request, format=None):
         logger.info("Order received.", request.data)
+        headers = {
+            "api-key": settings.TALPA_API_KEY,
+            "namespace": settings.NAMESPACE,
+        }
+        url = f"{settings.TALPA_ORDER_EXPERIENCE_API}/{request.data.get('orderId')}"
+        result = requests.get(url=url, headers=headers)
+
+        if result.status_code == 200:
+            order_item = json.loads(result.text)
+            for item in order_item.get("items"):
+                permit_id = talpa.get_meta_value(item["meta"], "permitId")
+                permit = ParkingPermit.objects.get(pk=permit_id)
+                if request.data.get("eventType") == "PAYMENT_PAID":
+                    permit.status = constants.ParkingPermitStatus.VALID.value
+                else:
+                    permit.status = (
+                        constants.ParkingPermitStatus.PAYMENT_IN_PROGRESS.value
+                    )
+                permit.subscription_id = item.get("subscriptionId")
+                permit.order_id = item.get("orderId")
+                permit.save()
+
+        if result.status_code >= 300:
+            raise Exception("Failed to create product on talpa: {}".format(result.text))
 
         return Response({"message": "Order received"}, status=200)
