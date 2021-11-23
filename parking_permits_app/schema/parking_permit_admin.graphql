@@ -111,6 +111,9 @@ type PermitDetailNode {
   monthsLeft: Int
   monthlyPrice: Float
   currentPeriodEndTime: String
+  canEndImmediately: Boolean
+  canEndAfterCurrentPeriod: Boolean
+  hasRefund: Boolean
   changeLogs: [ChangeLog]!
 }
 

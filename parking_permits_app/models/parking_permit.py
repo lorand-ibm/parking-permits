@@ -119,16 +119,39 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return monthly_price * month_count, monthly_price
 
     @property
+    def is_valid(self):
+        return self.status == ParkingPermitStatus.VALID.value
+
+    @property
+    def is_open_ended(self):
+        return self.contract_type == ContractType.OPEN_ENDED.value
+
+    @property
+    def is_fixed_period(self):
+        return self.contract_type == ContractType.FIXED_PERIOD.value
+
+    @property
+    def can_end_immediately(self):
+        now = timezone.now()
+        return self.is_valid and (self.end_time is None or now < self.end_time)
+
+    @property
+    def can_end_after_current_period(self):
+        return self.is_valid and (
+            self.end_time is None or self.current_period_end_time < self.end_time
+        )
+
+    @property
     def months_used(self):
         now = timezone.now()
         diff_months = diff_months_ceil(self.start_time, now)
-        if self.contract_type == ContractType.FIXED_PERIOD.value:
+        if self.is_fixed_period:
             return min(self.month_count, diff_months)
         return diff_months
 
     @property
     def months_left(self):
-        if self.contract_type == ContractType.OPEN_ENDED.value:
+        if self.is_open_ended:
             return None
         return self.month_count - self.months_used
 
@@ -174,7 +197,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         self.save()
 
     def create_refund(self, iban):
-        if self.contract_type != ContractType.FIXED_PERIOD.value:
+        if not self.is_fixed_period:
             raise RefundCanNotBeCreated(
                 f"Refund cannot be created for {self.contract_type}"
             )
