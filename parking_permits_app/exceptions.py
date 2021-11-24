@@ -1,30 +1,34 @@
-class PermitLimitExceeded(Exception):
+class ParkingPermitBaseException(Exception):
     pass
 
 
-class PriceError(Exception):
+class PermitLimitExceeded(ParkingPermitBaseException):
     pass
 
 
-class InvalidUserZone(Exception):
+class PriceError(ParkingPermitBaseException):
     pass
 
 
-class InvalidContractType(Exception):
+class InvalidUserZone(ParkingPermitBaseException):
     pass
 
 
-class NonDraftPermitUpdateError(Exception):
+class InvalidContractType(ParkingPermitBaseException):
     pass
 
 
-class PermitCanNotBeDelete(Exception):
+class NonDraftPermitUpdateError(ParkingPermitBaseException):
     pass
 
 
-class PermitCanNotBeEnded(Exception):
+class PermitCanNotBeDelete(ParkingPermitBaseException):
     pass
 
 
-class RefundCanNotBeCreated(Exception):
+class PermitCanNotBeEnded(ParkingPermitBaseException):
+    pass
+
+
+class RefundCanNotBeCreated(ParkingPermitBaseException):
     pass
