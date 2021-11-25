@@ -1,5 +1,4 @@
 import logging
-from datetime import date
 from importlib import import_module
 
 from django.core.management.base import BaseCommand
@@ -25,8 +24,7 @@ class Command(BaseCommand):
             obj, created = Price.objects.get_or_create(
                 zone=ParkingZone.objects.get(name=zone_name),
                 price=zone_price,
-                start_date=date(day=1, month=1, year=options.get("year")),
-                end_date=date(day=31, month=12, year=options.get("year")),
+                year=options.get("year"),
             )
 
             if created:
