@@ -14,10 +14,10 @@ class Customer(TimestampedModelMixin):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    first_name = models.CharField(_("First name"), max_length=32)
-    last_name = models.CharField(_("Last name"), max_length=32)
+    first_name = models.CharField(_("First name"), max_length=32, blank=True)
+    last_name = models.CharField(_("Last name"), max_length=32, blank=True)
     national_id_number = models.CharField(
-        _("National identification number"), max_length=16, blank=True, null=True
+        _("National identification number"), max_length=16, unique=True, blank=True
     )
     primary_address = models.ForeignKey(
         "Address",
