@@ -32,3 +32,7 @@ class PermitCanNotBeEnded(ParkingPermitBaseException):
 
 class RefundCanNotBeCreated(ParkingPermitBaseException):
     pass
+
+
+class ObjectNotFound(ParkingPermitBaseException):
+    pass

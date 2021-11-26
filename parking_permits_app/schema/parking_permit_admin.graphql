@@ -125,6 +125,8 @@ type Query {
    ): PagedPermits!
   permitDetail(permitId: ID!): PermitDetailNode!
   zones: [ZoneNode]
+  customer(nationalIdNumber: String!): CustomerNode!
+  vehicle(regNumber: String!): VehicleNode!
 }
 
 input ZoneInput {
