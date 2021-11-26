@@ -17,50 +17,50 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         VehicleType,
         verbose_name=_("Vehicle type"),
         on_delete=models.PROTECT,
-        blank=False,
-        null=False,
+        null=True,
+        blank=True,
     )
     category = models.CharField(
         _("Vehicle category"),
         max_length=16,
-        blank=False,
-        null=False,
         choices=[(tag.value, tag.value) for tag in constants.VehicleCategory],
     )
-    manufacturer = models.CharField(
-        _("Vehicle manufacturer"), max_length=32, blank=False, null=False
-    )
-    model = models.CharField(_("Vehicle model"), max_length=32, blank=False, null=False)
+    manufacturer = models.CharField(_("Vehicle manufacturer"), max_length=32)
+    model = models.CharField(_("Vehicle model"), max_length=32)
     production_year = models.IntegerField(
-        _("Vehicle production_year"), blank=False, null=False
+        _("Vehicle production_year"), blank=True, null=True
     )
     registration_number = models.CharField(
-        _("Vehicle registration number"), max_length=24, blank=False, null=False
+        _("Vehicle registration number"), max_length=24
     )
     euro_class = models.IntegerField(_("Euro class"), blank=True, null=True)
-    emission = models.IntegerField(_("Emission"), blank=False, null=False)
+    emission = models.IntegerField(_("Emission"), blank=True, null=True)
     low_emission_vehicle = models.BooleanField(_("Low emission vehicle"), default=False)
     emission_type = models.CharField(
         _("Emission type"),
         max_length=16,
-        blank=False,
-        null=True,
+        default=constants.EmissionType.EURO.value,
         choices=[(tag.value, tag.value) for tag in constants.EmissionType],
     )
+    serial_number = models.CharField(_("Serial number"), max_length=50, blank=True)
     last_inspection_date = models.DateField(
-        _("Last inspection date"), blank=False, null=False
+        _("Last inspection date"), null=True, blank=True
     )
     owner = models.ForeignKey(
         Customer,
         verbose_name=_("Owner"),
         on_delete=models.PROTECT,
         related_name="vehicles_owner",
+        null=True,
+        blank=True,
     )
     holder = models.ForeignKey(
         Customer,
         verbose_name=_("Holder"),
         on_delete=models.PROTECT,
         related_name="vehicles_holder",
+        null=True,
+        blank=True,
     )
 
     def is_due_for_inspection(self):
