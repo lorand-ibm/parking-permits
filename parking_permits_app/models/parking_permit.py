@@ -68,7 +68,6 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     identifier = models.IntegerField(
         default=get_next_identifier, editable=False, unique=True, db_index=True
     )
-    consent_low_emission_accepted = models.BooleanField(default=False)
     start_time = models.DateTimeField(_("Start time"), default=timezone.now)
     end_time = models.DateTimeField(_("End time"), blank=True, null=True)
     primary_vehicle = models.BooleanField(default=True)
@@ -100,6 +99,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     def __str__(self):
         return "%s" % self.identifier
+
+    @property
+    def consent_low_emission_accepted(self):
+        return self.vehicle.consent_low_emission_accepted
 
     def get_prices(self):
         # TODO: account for different prices in different years

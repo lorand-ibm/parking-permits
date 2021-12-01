@@ -36,6 +36,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     euro_class = models.IntegerField(_("Euro class"), blank=True, null=True)
     emission = models.IntegerField(_("Emission"), blank=True, null=True)
     low_emission_vehicle = models.BooleanField(_("Low emission vehicle"), default=False)
+    consent_low_emission_accepted = models.BooleanField(default=False)
     emission_type = models.CharField(
         _("Emission type"),
         max_length=16,

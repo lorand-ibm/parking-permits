@@ -108,10 +108,10 @@ class CustomerPermit:
 
         if "consent_low_emission_accepted" in keys:
             permit, is_primary = self._get_permit(permit_id)
-            permit.consent_low_emission_accepted = data.get(
+            permit.vehicle.consent_low_emission_accepted = data.get(
                 "consent_low_emission_accepted", False
             )
-            permit.save(update_fields=["consent_low_emission_accepted"])
+            permit.vehicle.save(update_fields=["consent_low_emission_accepted"])
             return permit
 
         if "primary_vehicle" in keys:
