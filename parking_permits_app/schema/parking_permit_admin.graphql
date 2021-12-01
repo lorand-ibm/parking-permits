@@ -14,15 +14,19 @@ type AddressNode {
   city: String
   citySv: String
   postalCode: String
+  zone: ZoneNode
 }
 
 type CustomerNode {
-  firstName: String!
-  lastName: String!
+  firstName: String
+  lastName: String
   nationalIdNumber: String
   primaryAddress: AddressNode
+  zone: ZoneNode
   email: String
   phoneNumber: String
+  addressSecurityBan: Boolean
+  driverLicenseChecked: Boolean
 }
 
 type VehicleNode {
@@ -129,13 +133,6 @@ type Query {
   vehicle(regNumber: String!): VehicleNode!
 }
 
-input ZoneInput {
-  name: String
-  description: String
-  descriptionSv: String
-  residentPrice: Float
-}
-
 input AddressInput {
   streetName: String
   streetNumber: Int
@@ -145,22 +142,24 @@ input AddressInput {
   postalCode: String
 }
 
-input CustomerInput {
-  firstName: String!
-  lastName: String!
-  address: AddressInput
-  addressSecurityBan: Boolean
-  nationalIdNumber: String
-  zone: ZoneInput
-  phoneNumber: String
-  email: String
-  driverLicenseChecked: Boolean
+input ZoneInput {
+  id: ID!
+  name: String
+  description: String
+  descriptionSv: String
+  residentPrice: Float!
 }
 
-input VehicleUserInput {
+input CustomerInput {
   firstName: String
   lastName: String
   nationalIdNumber: String
+  primaryAddress: AddressInput
+  zone: ZoneInput
+  email: String
+  phoneNumber: String
+  addressSecurityBan: Boolean
+  driverLicenseChecked: Boolean
 }
 
 input VehicleInput {
@@ -171,8 +170,6 @@ input VehicleInput {
   emission: Int!
   isLowEmission: Boolean!
   lastInspectionDate: String!
-  holder: VehicleUserInput
-  owner: VehicleUserInput
   serialNumber: String
   type: String
   engineType: String
