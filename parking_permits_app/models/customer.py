@@ -43,6 +43,13 @@ class Customer(TimestampedModelMixin):
     driver_license_checked = models.BooleanField(
         _("Driver's license checked"), default=False
     )
+    zone = models.ForeignKey(
+        "ParkingZone",
+        verbose_name=_("Zone"),
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
 
     def is_owner_or_holder_of_vehicle(self, vehicle):
         return vehicle.owner == self or vehicle.holder == self
