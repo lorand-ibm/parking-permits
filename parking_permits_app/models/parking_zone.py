@@ -15,16 +15,21 @@ from .price import Price
 logger = logging.getLogger(__name__)
 
 
+class ParkingZoneManager(models.Manager):
+    def get_for_location(self, location):
+        return self.get(location__intersects=location)
+
+
 class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
-    name = models.CharField(_("Name"), max_length=128, blank=False, null=False)
-    description = models.TextField(_("Description"), blank=True, null=True)
-    description_sv = models.TextField(_("Description sv"), blank=True, null=True)
+    name = models.CharField(_("Name"), max_length=128)
+    description = models.TextField(_("Description"), blank=True)
+    description_sv = models.TextField(_("Description sv"), blank=True)
     shared_product_id = models.UUIDField(
         unique=True, editable=False, blank=True, null=True
     )
-    location = models.MultiPolygonField(
-        _("Area (2D)"), srid=settings.SRID, blank=False, null=False
-    )
+    location = models.MultiPolygonField(_("Area (2D)"), srid=settings.SRID)
+
+    objects = ParkingZoneManager()
 
     class Meta:
         db_table = "parking_zone"
