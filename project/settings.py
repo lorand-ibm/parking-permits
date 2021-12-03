@@ -31,7 +31,7 @@ DEBUG = env("DEBUG")
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
-AUTH_USER_MODEL = "users_app.CustomUser"
+AUTH_USER_MODEL = "users.User"
 
 SRID = 4326
 KMO_URL = env("KMO_URL")
@@ -51,8 +51,8 @@ INSTALLED_APPS = [
     "ariadne.contrib.django",
     "django_extensions",
     "corsheaders",
-    "parking_permits_app",
-    "users_app",
+    "parking_permits",
+    "users",
     "rest_framework",
     "reversion",
 ]
