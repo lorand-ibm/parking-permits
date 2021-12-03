@@ -182,6 +182,25 @@ class CustomerPermit:
 
         return self._update_fields_to_all_draft(fields_to_update)
 
+    def end(self, permit_ids, end_type, iban=None):
+        for permit_id in permit_ids:
+            with reversion.create_revision():
+                permit = ParkingPermit.objects.get(id=permit_id)
+                permit.end_permit(end_type)
+
+                if permit.contract_type == ContractType.OPEN_ENDED:
+                    permit.end_subscription()
+                elif (
+                    permit.contract_type == ContractType.FIXED_PERIOD
+                    and not permit.has_refund
+                ):
+                    permit.create_refund(iban)
+
+                reversion.set_user(self.customer.user)
+                comment = get_reversion_comment(EventType.CHANGED, permit)
+                reversion.set_comment(comment)
+        return True
+
     def _update_fields_to_all_draft(self, data):
         permits = self.customer_permit_query.filter(status=DRAFT).all()
         return [self._update_permit(permit, data) for permit in permits]

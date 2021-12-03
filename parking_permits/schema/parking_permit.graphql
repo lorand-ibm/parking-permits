@@ -105,9 +105,15 @@ type DeletePermitResult {
   errors: [String]
 }
 
+enum PermitEndType {
+  IMMEDIATELY
+  AFTER_CURRENT_PERIOD
+}
+
 type Mutation {
   createParkingPermit(zoneId: ID!): PermitResult!
   deleteParkingPermit(permitId: ID!): DeletePermitResult!
+  endParkingPermit(permitIds: [String]!, endType: PermitEndType!, iban: String): DeletePermitResult
   updateParkingPermit(
     input: ParkingPermitInput!
     permitId: ID
