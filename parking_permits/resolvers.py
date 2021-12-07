@@ -128,6 +128,18 @@ def resolve_update_vehicle(obj, info, vehicle_id, registration):
     return {"success": True, "vehicle": vehicle}
 
 
+@mutation.field("endParkingPermit")
+@is_authenticated
+@convert_kwargs_to_snake_case
+def resolve_end_permit(_, info, permit_ids, end_type, iban=None):
+    request = info.context["request"]
+    return {
+        "success": CustomerPermit(request.user.customer.id).end(
+            permit_ids, end_type, iban
+        )
+    }
+
+
 def get_customer_permits(customer_id):
     return {
         "success": True,

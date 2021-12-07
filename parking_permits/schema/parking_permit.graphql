@@ -75,6 +75,12 @@ type PermitNode {
   parkingZone: ZoneNode
   consentLowEmissionAccepted: Boolean
   primaryVehicle: Boolean
+  monthsLeft: Int
+  currentPeriodEndTime: String
+  canEndImmediately: Boolean
+  canEndAfterCurrentPeriod: Boolean
+  hasRefund: Boolean
+  monthlyPrice: Float
 }
 
 type PermitResult {
@@ -99,9 +105,15 @@ type DeletePermitResult {
   errors: [String]
 }
 
+enum PermitEndType {
+  IMMEDIATELY
+  AFTER_CURRENT_PERIOD
+}
+
 type Mutation {
   createParkingPermit(zoneId: ID!): PermitResult!
   deleteParkingPermit(permitId: ID!): DeletePermitResult!
+  endParkingPermit(permitIds: [String]!, endType: PermitEndType!, iban: String): DeletePermitResult
   updateParkingPermit(
     input: ParkingPermitInput!
     permitId: ID
