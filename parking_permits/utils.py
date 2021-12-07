@@ -3,6 +3,7 @@ from functools import reduce
 
 from dateutil.relativedelta import relativedelta
 from django.db.models import Q
+from django.utils import timezone
 
 
 def apply_ordering(queryset, order_by):
@@ -44,5 +45,7 @@ def diff_months_ceil(start_date, end_date):
 
 
 def get_end_time(start_time, diff_months):
-    end_time = start_time + relativedelta(months=diff_months)
-    return end_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_time = start_time + relativedelta(months=diff_months, days=-1)
+    return timezone.make_aware(
+        end_time.replace(hour=23, minute=59, second=0, microsecond=0, tzinfo=None)
+    )
