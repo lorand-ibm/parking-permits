@@ -105,9 +105,14 @@ def resolve_vehicle(obj, info, reg_number, national_id_number):
 
 
 def create_customer(customer_info):
+    if customer_info["address_security_ban"]:
+        customer_info.pop("first_name", None)
+        customer_info.pop("last_name", None)
+        customer_info.pop("address", None)
+
     customer_data = {
-        "first_name": customer_info["first_name"],
-        "last_name": customer_info["last_name"],
+        "first_name": customer_info.get("first_name", ""),
+        "last_name": customer_info.get("last_name", ""),
         "national_id_number": customer_info["national_id_number"],
         "email": customer_info["email"],
         "phone_number": customer_info["phone_number"],
