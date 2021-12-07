@@ -1,0 +1,198 @@
+type ZoneNode {
+  id: ID!
+  name: String
+  description: String
+  descriptionSv: String
+  residentPrice: Float!
+}
+
+type AddressNode {
+  id: ID!
+  streetName: String
+  streetNumber: Int
+  streetNameSv: String
+  city: String
+  citySv: String
+  postalCode: String
+  zone: ZoneNode
+}
+
+type CustomerNode {
+  firstName: String
+  lastName: String
+  nationalIdNumber: String
+  primaryAddress: AddressNode
+  zone: ZoneNode
+  email: String
+  phoneNumber: String
+  addressSecurityBan: Boolean
+  driverLicenseChecked: Boolean
+}
+
+type VehicleNode {
+  manufacturer: String!
+  model: String!
+  registrationNumber: String!
+  isLowEmission: Boolean!
+  consentLowEmissionAccepted: Boolean!
+  serialNumber: String
+  category: String
+}
+
+enum ParkingPermitStatus {
+  DRAFT
+  ARRIVED
+  PROCESSING
+  ACCEPTED
+  REJECTED
+  PAYMENT_IN_PROGRESS
+  VALID
+  CLOSED
+
+}
+
+type PermitNode {
+  identifier: Int!
+  customer: CustomerNode!
+  vehicle: VehicleNode
+  parkingZone: ZoneNode
+  status: ParkingPermitStatus!
+  startTime: String
+  endTime: String
+}
+
+type PageInfo {
+  numPages: Int!
+  page: Int!
+  next: Int
+  prev: Int
+}
+
+type PagedPermits {
+  objects: [PermitNode]
+  pageInfo: PageInfo
+}
+
+enum OrderDirection {
+  ASC,
+  DESC
+}
+
+input PageInput {
+  page: Int!
+  pageSize: Int
+}
+
+input OrderByInput {
+  field: String!
+  orderFields: [String]!
+  orderDirection: OrderDirection!
+}
+
+input SearchItem {
+  matchType: String!
+  fields: [String]!
+  value: String!
+}
+
+type ChangeLog {
+  id: ID!
+  event: String!
+  description: String!
+  createdAt: String!
+  createdBy: String!
+}
+
+type PermitDetailNode {
+  identifier: Int!
+  customer: CustomerNode!
+  vehicle: VehicleNode
+  parkingZone: ZoneNode
+  status: ParkingPermitStatus!
+  startTime: String
+  endTime: String
+  consentLowEmissionAccepted: Boolean
+  contractType: String
+  monthCount: Int
+  monthsLeft: Int
+  monthlyPrice: Float
+  currentPeriodEndTime: String
+  canEndImmediately: Boolean
+  canEndAfterCurrentPeriod: Boolean
+  hasRefund: Boolean
+  changeLogs: [ChangeLog]!
+}
+
+type Query {
+  permits(
+    pageInput: PageInput!
+    orderBy: OrderByInput
+    searchItems: [SearchItem]
+   ): PagedPermits!
+  permitDetail(permitId: ID!): PermitDetailNode!
+  zones: [ZoneNode]
+  customer(nationalIdNumber: String!): CustomerNode!
+  vehicle(regNumber: String!, nationalIdNumber: String!): VehicleNode!
+}
+
+input AddressInput {
+  streetName: String
+  streetNumber: Int
+  streetNameSv: String
+  city: String
+  citySv: String
+  postalCode: String
+}
+
+input ZoneInput {
+  id: ID!
+  name: String
+  description: String
+  descriptionSv: String
+  residentPrice: Float!
+}
+
+input CustomerInput {
+  firstName: String
+  lastName: String
+  nationalIdNumber: String
+  primaryAddress: AddressInput
+  zone: String
+  email: String
+  phoneNumber: String
+  addressSecurityBan: Boolean
+  driverLicenseChecked: Boolean
+}
+
+input VehicleInput {
+  manufacturer: String!
+  model: String!
+  registrationNumber: String!
+  isLowEmission: Boolean!
+  serialNumber: String
+  consentLowEmissionAccepted: Boolean!
+  category: String
+}
+
+input ResidentPermitInput {
+  contractType: String
+  customer: CustomerInput!
+  vehicle: VehicleInput
+  status: ParkingPermitStatus!
+  startTime: String
+  monthCount: Int
+}
+
+type MutationResponse {
+  success: Boolean
+}
+
+enum PermitEndType {
+  IMMEDIATELY
+  AFTER_CURRENT_PERIOD
+}
+
+type Mutation {
+  createResidentPermit(permit: ResidentPermitInput!): MutationResponse
+  endPermit(permitId: Int!, endType: PermitEndType!, iban: String): MutationResponse
+}
