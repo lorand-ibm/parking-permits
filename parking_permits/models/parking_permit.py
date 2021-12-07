@@ -184,7 +184,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     @property
     def monthly_price(self):
         # TODO: return different price for different permit types
-        return self.parking_zone.resident_price
+        price = self.parking_zone.resident_price
+        if not self.primary_vehicle:
+            price += price * decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
+        return price
 
     @property
     def refund_amount(self):
