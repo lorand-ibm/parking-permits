@@ -22,7 +22,7 @@ type CustomerNode {
   lastName: String
   nationalIdNumber: String
   primaryAddress: AddressNode
-  zone: ZoneNode
+  zone: String
   email: String
   phoneNumber: String
   addressSecurityBan: Boolean
