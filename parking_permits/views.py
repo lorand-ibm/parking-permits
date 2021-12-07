@@ -89,7 +89,7 @@ class OrderView(APIView):
                     permit.status = ParkingPermitStatus.VALID
                 else:
                     permit.status = ParkingPermitStatus.PAYMENT_IN_PROGRESS
-                permit.subscription_id = item.get("subscriptionId")
+                permit.subscription_id = item.get("subscriptionId", "")
                 permit.order_id = item.get("orderId")
                 permit.save()
 
