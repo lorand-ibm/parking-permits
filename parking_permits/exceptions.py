@@ -38,5 +38,9 @@ class ObjectNotFound(ParkingPermitBaseException):
     pass
 
 
+class CreateTalpaProductError(ParkingPermitBaseException):
+    pass
+
+
 class OrderCreationFailed(ParkingPermitBaseException):
     pass
