@@ -77,7 +77,9 @@ class OrderView(APIView):
             "api-key": settings.TALPA_API_KEY,
             "namespace": settings.NAMESPACE,
         }
-        url = f"{settings.TALPA_ORDER_EXPERIENCE_API}/{request.data.get('orderId')}"
+        url = (
+            f"{settings.TALPA_ORDER_EXPERIENCE_API}admin/{request.data.get('orderId')}"
+        )
         result = requests.get(url=url, headers=headers)
 
         if result.status_code == 200:
