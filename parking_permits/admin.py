@@ -88,7 +88,7 @@ class ParkingPermitAdmin(admin.ModelAdmin):
 
 @admin.register(ParkingZone)
 class ParkingZoneAdmin(admin.OSMGeoAdmin):
-    list_display = ("id", "name", "description", "description_sv", "shared_product_id")
+    list_display = ("id", "name", "description", "description_sv")
     ordering = ("name",)
 
 
