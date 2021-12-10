@@ -18,13 +18,13 @@ def resolve_price_response(total_price=0, monthly_price=0):
     price_vat = decimal.Decimal(VAT_PERCENTAGE) / 100 * total_price
     row_price_vat = decimal.Decimal(VAT_PERCENTAGE) / 100 * monthly_price
     return {
-        "row_price_net": total_price - price_vat,
-        "row_price_vat": price_vat,
-        "row_price_total": total_price,
-        "price_net": monthly_price - row_price_vat,
-        "price_vat": row_price_vat,
-        "price_gross": monthly_price,
-        "vat_percentage": VAT_PERCENTAGE,
+        "row_price_net": float(total_price - price_vat),
+        "row_price_vat": float(price_vat),
+        "row_price_total": float(total_price),
+        "price_net": float(monthly_price - row_price_vat),
+        "price_vat": float(row_price_vat),
+        "price_gross": float(monthly_price),
+        "vat_percentage": float(VAT_PERCENTAGE),
     }
 
 
