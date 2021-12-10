@@ -36,3 +36,7 @@ class RefundCanNotBeCreated(ParkingPermitBaseException):
 
 class ObjectNotFound(ParkingPermitBaseException):
     pass
+
+
+class OrderCreationFailed(ParkingPermitBaseException):
+    pass

@@ -110,8 +110,19 @@ enum PermitEndType {
   AFTER_CURRENT_PERIOD
 }
 
+type TalpaOrderNode {
+  checkoutUrl: String
+}
+
+type TalpaOrderResult {
+  success: Boolean!
+  errors: [String]
+  order: TalpaOrderNode
+}
+
 type Mutation {
   createParkingPermit(zoneId: ID!): PermitResult!
+  createTalpaOrder: TalpaOrderResult!
   deleteParkingPermit(permitId: ID!): DeletePermitResult!
   endParkingPermit(permitIds: [String]!, endType: PermitEndType!, iban: String): DeletePermitResult
   updateParkingPermit(
