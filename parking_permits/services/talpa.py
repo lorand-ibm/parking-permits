@@ -33,6 +33,8 @@ def snake_to_camel_dict(dictionary):
     for key in dictionary.keys():
         if isinstance(dictionary[key], dict):
             res[camel_str(key)] = snake_to_camel_dict(dictionary[key])
+        elif isinstance(dictionary[key], list):
+            res[camel_str(key)] = [snake_to_camel_dict(val) for val in dictionary[key]]
         else:
             res[camel_str(key)] = dictionary[key]
     return res
