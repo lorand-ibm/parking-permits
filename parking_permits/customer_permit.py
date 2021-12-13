@@ -199,6 +199,8 @@ class CustomerPermit:
                 reversion.set_user(self.customer.user)
                 comment = get_reversion_comment(EventType.CHANGED, permit)
                 reversion.set_comment(comment)
+        # Delete all the draft permit while ending the customer valid permits
+        self.customer_permit_query.filter(status=DRAFT).delete()
         return True
 
     def _update_fields_to_all_draft(self, data):
