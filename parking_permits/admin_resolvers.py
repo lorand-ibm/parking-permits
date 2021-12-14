@@ -23,7 +23,7 @@ from parking_permits.models import (
 )
 
 from .decorators import is_ad_admin
-from .exceptions import ObjectNotFound
+from .exceptions import ObjectNotFound, UpdatePermitError
 from .models.parking_permit import ContractType
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
@@ -104,7 +104,7 @@ def resolve_vehicle(obj, info, reg_number, national_id_number):
     return vehicle
 
 
-def create_customer(customer_info):
+def update_or_create_customer(customer_info):
     if customer_info["address_security_ban"]:
         customer_info.pop("first_name", None)
         customer_info.pop("last_name", None)
@@ -137,19 +137,26 @@ def create_customer(customer_info):
             primary=True,
         )
         customer_data["primary_address"] = address
-    return Customer.objects.create(**customer_data)
+    else:
+        customer_data["primary_address"] = None
+    return Customer.objects.update_or_create(
+        national_id_number=customer_info["national_id_number"], defaults=customer_data
+    )[0]
 
 
-def create_vehicle(vehicle_info):
-    return Vehicle.objects.create(
-        registration_number=vehicle_info["registration_number"],
-        manufacturer=vehicle_info["manufacturer"],
-        model=vehicle_info["model"],
-        low_emission_vehicle=vehicle_info["is_low_emission"],
-        consent_low_emission_accepted=vehicle_info["consent_low_emission_accepted"],
-        serial_number=vehicle_info["serial_number"],
-        category=vehicle_info["category"],
-    )
+def update_or_create_vehicle(vehicle_info):
+    vehicle_data = {
+        "registration_number": vehicle_info["registration_number"],
+        "manufacturer": vehicle_info["manufacturer"],
+        "model": vehicle_info["model"],
+        "low_emission_vehicle": vehicle_info["is_low_emission"],
+        "consent_low_emission_accepted": vehicle_info["consent_low_emission_accepted"],
+        "serial_number": vehicle_info["serial_number"],
+        "category": vehicle_info["category"],
+    }
+    return Vehicle.objects.update_or_create(
+        registration_number=vehicle_info["registration_number"], defaults=vehicle_data
+    )[0]
 
 
 @mutation.field("createResidentPermit")
@@ -158,20 +165,12 @@ def create_vehicle(vehicle_info):
 @transaction.atomic
 def resolve_create_resident_permit(obj, info, permit):
     customer_info = permit["customer"]
-    customer = Customer.objects.filter(
-        national_id_number=customer_info["national_id_number"]
-    ).first()
-    if not customer:
-        customer = create_customer(customer_info)
+    customer = update_or_create_customer(customer_info)
 
     vehicle_info = permit["vehicle"]
-    vehicle = Vehicle.objects.filter(
-        registration_number=vehicle_info["registration_number"]
-    ).first()
-    if not vehicle:
-        vehicle = create_vehicle(vehicle_info)
+    vehicle = update_or_create_vehicle(vehicle_info)
 
-    parking_zone = ParkingZone.objects.get(name=customer_info["zone"])
+    parking_zone = ParkingZone.objects.get(name=customer_info["zone"]["name"])
     with reversion.create_revision():
         start_time = isoparse(permit["start_time"])
         end_time = get_end_time(start_time, permit["month_count"])
@@ -188,6 +187,37 @@ def resolve_create_resident_permit(obj, info, permit):
         request = info.context["request"]
         reversion.set_user(request.user)
         comment = get_reversion_comment(EventType.CREATED, permit)
+        reversion.set_comment(comment)
+    return {"success": True}
+
+
+@mutation.field("updateResidentPermit")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_update_resident_permit(obj, info, permit_id, permit_info):
+    try:
+        permit = ParkingPermit.objects.get(identifier=permit_id)
+    except ParkingPermit.DoesNotExist:
+        raise ObjectNotFound(_("Parking permit not found"))
+
+    customer_info = permit_info["customer"]
+    if permit.customer.national_id_number != customer_info["national_id_number"]:
+        raise UpdatePermitError(_("Cannot change the customer of the permit"))
+    update_or_create_customer(customer_info)
+
+    vehicle_info = permit_info["vehicle"]
+    vehicle = update_or_create_vehicle(vehicle_info)
+
+    parking_zone = ParkingZone.objects.get(name=customer_info["zone"]["name"])
+    with reversion.create_revision():
+        permit.status = permit_info["status"]
+        permit.parking_zone = parking_zone
+        permit.vehicle = vehicle
+        permit.save()
+        request = info.context["request"]
+        reversion.set_user(request.user)
+        comment = get_reversion_comment(EventType.CHANGED, permit)
         reversion.set_comment(comment)
     return {"success": True}
 
