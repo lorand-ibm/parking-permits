@@ -18,7 +18,7 @@ class ParkingZoneManager(models.Manager):
 
 
 class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
-    name = models.CharField(_("Name"), max_length=128)
+    name = models.CharField(_("Name"), max_length=128, unique=True)
     description = models.TextField(_("Description"), blank=True)
     description_sv = models.TextField(_("Description sv"), blank=True)
     shared_product_id = models.UUIDField(
