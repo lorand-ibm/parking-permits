@@ -23,7 +23,7 @@ from parking_permits.models import (
 )
 
 from .decorators import is_ad_admin
-from .exceptions import ObjectNotFound
+from .exceptions import ObjectNotFound, UpdatePermitError
 from .models.parking_permit import ContractType
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
@@ -170,7 +170,7 @@ def resolve_create_resident_permit(obj, info, permit):
     vehicle_info = permit["vehicle"]
     vehicle = update_or_create_vehicle(vehicle_info)
 
-    parking_zone = ParkingZone.objects.get(name=customer_info["zone"])
+    parking_zone = ParkingZone.objects.get(name=customer_info["zone"]["name"])
     with reversion.create_revision():
         start_time = isoparse(permit["start_time"])
         end_time = get_end_time(start_time, permit["month_count"])
@@ -187,6 +187,37 @@ def resolve_create_resident_permit(obj, info, permit):
         request = info.context["request"]
         reversion.set_user(request.user)
         comment = get_reversion_comment(EventType.CREATED, permit)
+        reversion.set_comment(comment)
+    return {"success": True}
+
+
+@mutation.field("updateResidentPermit")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_update_resident_permit(obj, info, permit_id, permit_info):
+    try:
+        permit = ParkingPermit.objects.get(identifier=permit_id)
+    except ParkingPermit.DoesNotExist:
+        raise ObjectNotFound(_("Parking permit not found"))
+
+    customer_info = permit_info["customer"]
+    if permit.customer.national_id_number != customer_info["national_id_number"]:
+        raise UpdatePermitError(_("Cannot change the customer of the permit"))
+    update_or_create_customer(customer_info)
+
+    vehicle_info = permit_info["vehicle"]
+    vehicle = update_or_create_vehicle(vehicle_info)
+
+    parking_zone = ParkingZone.objects.get(name=customer_info["zone"]["name"])
+    with reversion.create_revision():
+        permit.status = permit_info["status"]
+        permit.parking_zone = parking_zone
+        permit.vehicle = vehicle
+        permit.save()
+        request = info.context["request"]
+        reversion.set_user(request.user)
+        comment = get_reversion_comment(EventType.CHANGED, permit)
         reversion.set_comment(comment)
     return {"success": True}
 

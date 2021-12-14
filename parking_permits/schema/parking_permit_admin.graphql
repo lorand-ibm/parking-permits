@@ -145,7 +145,6 @@ input AddressInput {
 }
 
 input ZoneInput {
-  id: ID!
   name: String
   description: String
   descriptionSv: String
@@ -157,7 +156,7 @@ input CustomerInput {
   lastName: String
   nationalIdNumber: String
   primaryAddress: AddressInput
-  zone: String
+  zone: ZoneInput!
   email: String
   phoneNumber: String
   addressSecurityBan: Boolean
@@ -180,6 +179,7 @@ input ResidentPermitInput {
   vehicle: VehicleInput
   status: ParkingPermitStatus!
   startTime: String
+  endTime: String
   monthCount: Int
 }
 
@@ -195,4 +195,5 @@ enum PermitEndType {
 type Mutation {
   createResidentPermit(permit: ResidentPermitInput!): MutationResponse
   endPermit(permitId: Int!, endType: PermitEndType!, iban: String): MutationResponse
+  updateResidentPermit(permitId: ID!, permitInfo: ResidentPermitInput!): MutationResponse
 }
