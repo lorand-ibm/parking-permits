@@ -1,40 +1,57 @@
-import logging
-from datetime import date
-from importlib import import_module
+from datetime import date, datetime
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from parking_permits.models.vehicle import EmissionType, LowEmissionCriteria
+from parking_permits.models.vehicle import (
+    EmissionType,
+    LowEmissionCriteria,
+    VehiclePowerType,
+)
 
-logger = logging.getLogger(__name__)
+LOW_EMISSION_CRITERIA = {
+    VehiclePowerType.BENSIN: {
+        EmissionType.EURO: 6,
+        EmissionType.NEDC: 95,
+        EmissionType.WLTP: 126,
+    },
+    VehiclePowerType.DIESEL: {
+        EmissionType.EURO: 6,
+        EmissionType.NEDC: 50,
+        EmissionType.WLTP: 70,
+    },
+    VehiclePowerType.BIFUEL: {
+        EmissionType.EURO: 6,
+        EmissionType.NEDC: 150,
+        EmissionType.WLTP: 180,
+    },
+}
 
 
 class Command(BaseCommand):
-    help = "Usage: python manage.py create_low_emission_criteria --year 2021 --data-module parking_permits.data.2021"  # noqa
+    help = "Create test low emission criteria"
 
     def add_arguments(self, parser):
-        parser.add_argument("--year", type=int, required=True)
-        parser.add_argument("--data-module", type=str, required=True)
+        parser.add_argument("--year", type=int, default=datetime.now().year)
 
     @transaction.atomic
     def handle(self, *args, **options):
-        data_module = import_module(options.get("data_module"))
+        if not settings.DEBUG:
+            self.stdout.write("Cannot create test data in production environment")
+            return
 
-        for (
-            power_type,
-            emission_criteria,
-        ) in data_module.LOW_EMISSION_CRITERIA.items():
-            obj, created = LowEmissionCriteria.objects.get_or_create(
+        start_date = date(options["year"], 1, 1)
+        end_date = date(options["year"], 12, 31)
+        for (power_type, emission_criteria) in LOW_EMISSION_CRITERIA.items():
+            LowEmissionCriteria.objects.get_or_create(
                 power_type=power_type,
-                nedc_max_emission_limit=emission_criteria.get(EmissionType.NEDC),
-                wltp_max_emission_limit=emission_criteria.get(EmissionType.WLTP),
-                euro_min_class_limit=emission_criteria.get(EmissionType.EURO),
-                start_date=date(day=1, month=1, year=options.get("year")),
-                end_date=date(day=31, month=12, year=options.get("year")),
+                start_date=start_date,
+                end_date=end_date,
+                defaults={
+                    "nedc_max_emission_limit": emission_criteria.get(EmissionType.NEDC),
+                    "wltp_max_emission_limit": emission_criteria.get(EmissionType.WLTP),
+                    "euro_min_class_limit": emission_criteria.get(EmissionType.EURO),
+                },
             )
-
-            if created:
-                logger.info(f"{obj.power_type} emission criteria created")
-            else:
-                logger.info(f"{obj.power_type} emission criteria already exists")
+        self.stdout.write("Test LowEmissionCriteria created")
