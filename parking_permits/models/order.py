@@ -78,7 +78,7 @@ class OrderItem(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     product = models.ForeignKey(
         Product, verbose_name=_("Product"), on_delete=models.PROTECT
     )
-    permit = models.OneToOneField(
+    permit = models.ForeignKey(
         ParkingPermit,
         verbose_name=_("Parking permit"),
         related_name="order_item",
