@@ -7,9 +7,12 @@ from parking_permits.models import (
     DrivingClass,
     DrivingLicence,
     LowEmissionCriteria,
+    Order,
+    OrderItem,
     ParkingPermit,
     ParkingZone,
     Price,
+    Product,
     Refund,
     Vehicle,
 )
@@ -120,3 +123,43 @@ class RefundAdmin(admin.ModelAdmin):
         "amount",
         "iban",
     )
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = (
+        "zone",
+        "type",
+        "start_date",
+        "end_date",
+        "unit_price",
+        "vat_percentage",
+    )
+    list_select_related = ("zone",)
+    readonly_fields = ("talpa_product_id",)
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_filter = ("order_type", "status")
+    list_display = (
+        "customer",
+        "order_type",
+        "status",
+    )
+    list_select_related = ("customer",)
+    readonly_fields = ("talpa_order_id", "talpa_subscription_id")
+
+
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = (
+        "order",
+        "product",
+        "permit",
+        "unit_price",
+        "vat_percentage",
+        "quantity",
+    )
+    list_select_related = ("order", "product", "permit")
+    readonly_fields = ("talpa_order_item_id",)
