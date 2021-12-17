@@ -1,3 +1,4 @@
+import json
 import logging
 
 import requests
@@ -77,7 +78,7 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
         data = {
             "namespace": settings.NAMESPACE,
-            "namespaceEntityId": self.id,
+            "namespaceEntityId": str(self.id),
             "name": self.name,
         }
         headers = {
@@ -85,7 +86,9 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
             "Content-Type": "application/json",
         }
         response = requests.post(
-            settings.TALPA_PRODUCT_EXPERIENCE_API, data=data, headers=headers
+            settings.TALPA_PRODUCT_EXPERIENCE_API,
+            data=json.dumps(data),
+            headers=headers,
         )
         if response.status_code == 201:
             logger.info("Talpa product created")
