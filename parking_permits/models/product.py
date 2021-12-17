@@ -61,6 +61,10 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return self.name
 
     @property
+    def vat_percentage(self):
+        return self.vat * 100
+
+    @property
     def name(self):
         # the product name is the same for different languages
         # so no translation needed
@@ -78,6 +82,7 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         }
         headers = {
             "api-key": settings.TALPA_API_KEY,
+            "Content-Type": "application/json",
         }
         response = requests.post(
             settings.TALPA_PRODUCT_EXPERIENCE_API, data=data, headers=headers

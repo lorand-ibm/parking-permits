@@ -48,3 +48,7 @@ class OrderCreationFailed(ParkingPermitBaseException):
 
 class UpdatePermitError(ParkingPermitBaseException):
     pass
+
+
+class ProductCatalogError(ParkingPermitBaseException):
+    pass
