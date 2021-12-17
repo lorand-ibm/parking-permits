@@ -13,10 +13,12 @@ from .customer_permit import CustomerPermit
 from .decorators import is_authenticated
 from .exceptions import OrderCreationFailed
 from .models import Address, Customer, ParkingZone, Vehicle
+from .models.order import Order
 from .models.parking_permit import ParkingPermitStatus
 from .services.hel_profile import HelsinkiProfile
 from .services.kmo import get_address_detail_from_kmo
 from .services.talpa import create_talpa_order, resolve_price_response
+from .talpa.order import TalpaOrderManager
 
 helsinki_profile_query = load_schema_from_path(
     BASE_DIR / "parking_permits" / "schema" / "helsinki_profile.graphql"
@@ -164,3 +166,13 @@ def resolve_prices_and_low_emission(permit):
     total_price, monthly_price = permit.get_prices()
     permit.prices = resolve_price_response(total_price, monthly_price)
     return permit
+
+
+@mutation.field("createOrder")
+@is_authenticated
+@convert_kwargs_to_snake_case
+def resolve_create_order(_, info):
+    customer = info.context["request"].user.customer
+    order = Order.objects.create_for_customer(customer)
+    checkout_url = TalpaOrderManager.send_to_talpa(order)
+    return {"success": True, "order": {"checkoutUrl": checkout_url}}
