@@ -1,6 +1,8 @@
 import decimal
+import logging
 
 import reversion
+from dateutil.relativedelta import relativedelta
 from django.contrib.gis.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -11,13 +13,16 @@ from ..constants import (
     SECONDARY_VEHICLE_PRICE_INCREASE,
     ParkingPermitEndType,
 )
-from ..exceptions import PermitCanNotBeEnded, RefundCanNotBeCreated
+from ..exceptions import PermitCanNotBeEnded, ProductCatalogError, RefundCanNotBeCreated
 from ..utils import diff_months_ceil, get_end_time
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
+from .product import Product, ProductType
 from .refund import Refund
 from .vehicle import Vehicle
+
+logger = logging.getLogger(__name__)
 
 
 class ContractType(models.TextChoices):
@@ -229,3 +234,67 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     def end_subscription(self):
         # TODO: end subscription
         pass
+
+    def get_products_with_quantities(self):
+        """Return a list of product and quantities for the permit"""
+        # TODO: currently, company permit type is not available
+        qs = Product.objects.filter(type=ProductType.RESIDENT)
+
+        if self.is_open_ended:
+            permit_start_date = timezone.localdate(self.start_time)
+            try:
+                product = qs.get(
+                    zone=self.parking_zone,
+                    start_date__lte=permit_start_date,
+                    end_date__gte=permit_start_date,
+                )
+                return [(product, 1)]
+            except Product.DoesNotExist:
+                logger.error(f"Product does not exist for date {permit_start_date}")
+                raise ProductCatalogError(
+                    _("Product catalog error, please report to admin")
+                )
+            except Product.MultipleObjectsReturned:
+                logger.error(
+                    f"Products date range overlapping for date {permit_start_date}"
+                )
+                raise ProductCatalogError(
+                    _("Product catalog error, please report to admin")
+                )
+
+        if self.is_fixed_period:
+            permit_start_date = timezone.localdate(self.start_time)
+            permit_end_date = timezone.localdate(self.end_time)
+            query = Q(zone=self.parking_zone) & (
+                Q(start_date__range=(permit_start_date, permit_end_date))
+                | Q(end_date__range=(permit_start_date, permit_end_date))
+            )
+            # convert to list to enable minus indexing
+            products = list(qs.filter(query).order_by("start_date"))
+            # check product date range covers the whole duration of the permit
+            if (
+                permit_start_date < products[0].start_date
+                or permit_end_date > products[-1].end_date
+            ):
+                logger.error("Products does not cover permit duration")
+                raise ProductCatalogError(
+                    _("Product catalog error, please report to admin")
+                )
+
+            products_with_quantities = [[product, 0] for product in products]
+
+            # the price of the month is determined by the start date of month period
+            period_starts = [
+                permit_start_date + relativedelta(months=n)
+                for n in range(self.month_count)
+            ]
+            product_index = 0
+            period_index = 0
+            while product_index < len(products) and period_index < len(period_starts):
+                if period_starts[period_index] <= products[product_index].end_date:
+                    products_with_quantities[product_index][1] += 1
+                    period_index += 1
+                else:
+                    product_index += 1
+
+            return products_with_quantities

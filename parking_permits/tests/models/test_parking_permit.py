@@ -1,15 +1,21 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from django.test import TestCase
 from django.utils import timezone
 from freezegun import freeze_time
 
 from parking_permits.constants import ParkingPermitEndType
-from parking_permits.exceptions import PermitCanNotBeEnded, RefundCanNotBeCreated
+from parking_permits.exceptions import (
+    PermitCanNotBeEnded,
+    ProductCatalogError,
+    RefundCanNotBeCreated,
+)
 from parking_permits.models.parking_permit import ContractType, ParkingPermitStatus
+from parking_permits.models.product import ProductType
 from parking_permits.tests.factories import ParkingZoneFactory, PriceFactory
 from parking_permits.tests.factories.customer import CustomerFactory
 from parking_permits.tests.factories.parking_permit import ParkingPermitFactory
+from parking_permits.tests.factories.product import ProductFactory
 from parking_permits.utils import get_end_time
 
 
@@ -206,3 +212,172 @@ class ParkingZoneTestCase(TestCase):
         permit.create_refund("dummy-iban")
         self.assertTrue(permit.has_refund)
         self.assertEqual(permit.refund.amount, 150)
+
+    def test_get_products_with_quantities_should_return_a_single_product_for_open_ended(
+        self,
+    ):
+        zone = ParkingZoneFactory()
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 1, 1),
+            end_date=date(2021, 12, 31),
+        )
+        start_time = timezone.make_aware(datetime(2021, 2, 15))
+        permit = ParkingPermitFactory(
+            parking_zone=zone,
+            contract_type=ContractType.OPEN_ENDED,
+            start_time=start_time,
+            month_count=1,
+        )
+        products = permit.get_products_with_quantities()
+        self.assertEqual(len(products), 1)
+        self.assertEqual(products[0][1], 1)
+
+    def test_get_products_with_quantities_raise_error_when_no_product_available_for_open_ended(
+        self,
+    ):
+        zone = ParkingZoneFactory()
+        start_time = timezone.make_aware(datetime(2021, 2, 15))
+        permit = ParkingPermitFactory(
+            parking_zone=zone,
+            contract_type=ContractType.OPEN_ENDED,
+            start_time=start_time,
+            month_count=1,
+        )
+        with self.assertRaises(ProductCatalogError):
+            permit.get_products_with_quantities()
+
+    def test_get_products_with_quantities_raise_error_when_multiple_products_available_for_open_ended(
+        self,
+    ):
+        zone = ParkingZoneFactory()
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 1, 1),
+            end_date=date(2021, 6, 30),
+        )
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 5, 1),
+            end_date=date(2021, 12, 31),
+        )
+        start_time = timezone.make_aware(datetime(2021, 6, 15))
+        permit = ParkingPermitFactory(
+            parking_zone=zone,
+            contract_type=ContractType.OPEN_ENDED,
+            start_time=start_time,
+            month_count=1,
+        )
+        with self.assertRaises(ProductCatalogError):
+            permit.get_products_with_quantities()
+
+    def test_get_products_with_quantities_should_return_products_with_quantities_for_fix_period(
+        self,
+    ):
+        zone = ParkingZoneFactory()
+        product_1 = ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 1, 1),
+            end_date=date(2021, 5, 31),
+        )
+        product_2 = ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 6, 1),
+            end_date=date(2021, 7, 31),
+        )
+        product_3 = ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 8, 1),
+            end_date=date(2021, 12, 31),
+        )
+
+        start_time = timezone.make_aware(datetime(2021, 2, 15))
+        end_time = get_end_time(start_time, 10)  # ends at 2021-2-14, 23:59
+        permit = ParkingPermitFactory(
+            parking_zone=zone,
+            contract_type=ContractType.FIXED_PERIOD,
+            start_time=start_time,
+            end_time=end_time,
+            month_count=10,
+        )
+        products_with_quantities = permit.get_products_with_quantities()
+        self.assertEqual(products_with_quantities[0][0].id, product_1.id)
+        self.assertEqual(products_with_quantities[0][1], 4)
+        self.assertEqual(products_with_quantities[1][0].id, product_2.id)
+        self.assertEqual(products_with_quantities[1][1], 2)
+        self.assertEqual(products_with_quantities[2][0].id, product_3.id)
+        self.assertEqual(products_with_quantities[2][1], 4)
+
+    def test_get_products_with_quantities_should_return_products_with_quantities_for_fix_period_with_mid_month_start(
+        self,
+    ):
+        zone = ParkingZoneFactory()
+        product_1 = ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 1, 10),
+            end_date=date(2021, 5, 9),
+        )
+        product_2 = ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 5, 10),
+            end_date=date(2021, 8, 9),
+        )
+        product_3 = ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 8, 10),
+            end_date=date(2021, 12, 31),
+        )
+
+        start_time = timezone.make_aware(datetime(2021, 2, 15))
+        end_time = get_end_time(start_time, 10)  # ends at 2021-2-14, 23:59
+        permit = ParkingPermitFactory(
+            parking_zone=zone,
+            contract_type=ContractType.FIXED_PERIOD,
+            start_time=start_time,
+            end_time=end_time,
+            month_count=10,
+        )
+        products_with_quantities = permit.get_products_with_quantities()
+        self.assertEqual(products_with_quantities[0][0].id, product_1.id)
+        self.assertEqual(products_with_quantities[0][1], 3)
+        self.assertEqual(products_with_quantities[1][0].id, product_2.id)
+        self.assertEqual(products_with_quantities[1][1], 3)
+        self.assertEqual(products_with_quantities[2][0].id, product_3.id)
+        self.assertEqual(products_with_quantities[2][1], 4)
+
+    def test_get_products_with_quantities_should_raise_error_when_products_does_not_cover_permit_duration(
+        self,
+    ):
+        zone = ParkingZoneFactory()
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 1, 10),
+            end_date=date(2021, 5, 9),
+        )
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 5, 10),
+            end_date=date(2021, 10, 9),
+        )
+        start_time = timezone.make_aware(datetime(2021, 2, 15))
+        end_time = get_end_time(start_time, 10)  # ends at 2021-2-14, 23:59
+        permit = ParkingPermitFactory(
+            parking_zone=zone,
+            contract_type=ContractType.FIXED_PERIOD,
+            start_time=start_time,
+            end_time=end_time,
+            month_count=10,
+        )
+        with self.assertRaises(ProductCatalogError):
+            permit.get_products_with_quantities()
