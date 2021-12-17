@@ -1,11 +1,16 @@
+import logging
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from parking_permits.mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
+from ..exceptions import OrderCreationFailed
 from .customer import Customer
-from .parking_permit import ParkingPermit
+from .parking_permit import ContractType, ParkingPermit, ParkingPermitStatus
 from .product import Product
+
+logger = logging.getLogger(__name__)
 
 
 class OrderType(models.TextChoices):
@@ -17,6 +22,38 @@ class OrderStatus(models.TextChoices):
     DRAFT = "DRAFT", _("Draft")
     CONFIRMED = "CONFIRMED", _("Confirmed")
     CANCELLED = "CANCELLED", _("Cancelled")
+
+
+class OrderManager(models.Manager):
+    def create_for_customer(self, customer):
+        permits = ParkingPermit.objects.filter(
+            customer=customer, status=ParkingPermitStatus.DRAFT
+        )
+
+        if len(permits) > 2:
+            raise OrderCreationFailed("More than 2 draft permits found")
+        if len(permits) == 2 and permits[0].contract_type != permits[1].contract_type:
+            raise OrderCreationFailed("Permit contract types do not match")
+
+        if permits[0].contract_type == ContractType.OPEN_ENDED:
+            order_type = OrderType.SUBSCRIPTION
+        else:
+            order_type = OrderType.ORDER
+
+        order = Order.objects.create(customer=customer, order_type=order_type)
+        for permit in permits:
+            products_with_quantity = permit.get_products_with_quantities()
+            for product, quantity in products_with_quantity:
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    permit=permit,
+                    unit_price=product.unit_price,
+                    vat=product.vat,
+                    quantity=quantity,
+                )
+
+        return order
 
 
 class Order(TimestampedModelMixin, UUIDPrimaryKeyMixin):
@@ -44,6 +81,7 @@ class Order(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         choices=OrderStatus.choices,
         default=OrderStatus.DRAFT,
     )
+    objects = OrderManager()
 
     class Meta:
         verbose_name = _("Order")
@@ -94,6 +132,10 @@ class OrderItem(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     def __str__(self):
         return f"Order item: {self.id}"
+
+    @property
+    def vat_percentage(self):
+        return self.vat * 100
 
     @property
     def unit_price_net(self):
