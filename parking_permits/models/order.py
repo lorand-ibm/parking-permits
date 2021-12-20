@@ -1,6 +1,6 @@
 import logging
 
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
 from parking_permits.mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
@@ -25,6 +25,7 @@ class OrderStatus(models.TextChoices):
 
 
 class OrderManager(models.Manager):
+    @transaction.atomic
     def create_for_customer(self, customer):
         permits = ParkingPermit.objects.filter(
             customer=customer, status=ParkingPermitStatus.DRAFT

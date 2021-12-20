@@ -170,7 +170,6 @@ def resolve_prices_and_low_emission(permit):
 
 @mutation.field("createOrder")
 @is_authenticated
-@convert_kwargs_to_snake_case
 def resolve_create_order(_, info):
     customer = info.context["request"].user.customer
     order = Order.objects.create_for_customer(customer)
