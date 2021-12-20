@@ -11,13 +11,11 @@ from project.settings import BASE_DIR
 
 from .customer_permit import CustomerPermit
 from .decorators import is_authenticated
-from .exceptions import OrderCreationFailed
 from .models import Address, Customer, ParkingZone, Vehicle
 from .models.order import Order
 from .models.parking_permit import ParkingPermitStatus
 from .services.hel_profile import HelsinkiProfile
 from .services.kmo import get_address_detail_from_kmo
-from .services.talpa import create_talpa_order
 from .talpa.order import TalpaOrderManager
 
 helsinki_profile_query = load_schema_from_path(
@@ -141,18 +139,6 @@ def resolve_end_permit(_, info, permit_ids, end_type, iban=None):
             permit_ids, end_type, iban
         )
     }
-
-
-@mutation.field("createTalpaOrder")
-@is_authenticated
-@convert_kwargs_to_snake_case
-def resolve_create_talpa_order(_, info):
-    request = info.context["request"]
-    res = create_talpa_order(request.user.customer)
-    try:
-        return {"success": True, "order": {"checkout_url": res["checkoutUrl"]}}
-    except OrderCreationFailed as e:
-        return {"success": False, "errors": [e]}
 
 
 def get_customer_permits(customer_id):
