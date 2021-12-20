@@ -17,7 +17,7 @@ from .models.order import Order
 from .models.parking_permit import ParkingPermitStatus
 from .services.hel_profile import HelsinkiProfile
 from .services.kmo import get_address_detail_from_kmo
-from .services.talpa import create_talpa_order, resolve_price_response
+from .services.talpa import create_talpa_order
 from .talpa.order import TalpaOrderManager
 
 helsinki_profile_query = load_schema_from_path(
@@ -160,12 +160,6 @@ def get_customer_permits(customer_id):
         "success": True,
         "permits": CustomerPermit(customer_id).get(),
     }
-
-
-def resolve_prices_and_low_emission(permit):
-    total_price, monthly_price = permit.get_prices()
-    permit.prices = resolve_price_response(total_price, monthly_price)
-    return permit
 
 
 @mutation.field("createOrder")
