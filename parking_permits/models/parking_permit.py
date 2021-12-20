@@ -18,7 +18,7 @@ from ..utils import diff_months_ceil, get_end_time
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
-from .product import Product, ProductType
+from .product import Product
 from .refund import Refund
 from .vehicle import Vehicle
 
@@ -126,6 +126,9 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     def get_prices(self):
         # TODO: account for different prices in different years
+        logger.error(
+            "To be removed. This method is replaced by get_products_with_quantities"
+        )
         monthly_price = self.parking_zone.resident_price
         month_count = self.month_count
 
@@ -238,13 +241,12 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     def get_products_with_quantities(self):
         """Return a list of product and quantities for the permit"""
         # TODO: currently, company permit type is not available
-        qs = Product.objects.filter(type=ProductType.RESIDENT)
+        qs = self.parking_zone.products.for_resident()
 
         if self.is_open_ended:
             permit_start_date = timezone.localdate(self.start_time)
             try:
                 product = qs.get(
-                    zone=self.parking_zone,
                     start_date__lte=permit_start_date,
                     end_date__gte=permit_start_date,
                 )
@@ -265,12 +267,8 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         if self.is_fixed_period:
             permit_start_date = timezone.localdate(self.start_time)
             permit_end_date = timezone.localdate(self.end_time)
-            query = Q(zone=self.parking_zone) & (
-                Q(start_date__range=(permit_start_date, permit_end_date))
-                | Q(end_date__range=(permit_start_date, permit_end_date))
-            )
             # convert to list to enable minus indexing
-            products = list(qs.filter(query).order_by("start_date"))
+            products = list(qs.for_date_range(permit_start_date, permit_end_date))
             # check product date range covers the whole duration of the permit
             if (
                 permit_start_date < products[0].start_date

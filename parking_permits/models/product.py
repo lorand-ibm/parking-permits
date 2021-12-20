@@ -4,6 +4,7 @@ import logging
 import requests
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from parking_permits.exceptions import CreateTalpaProductError
@@ -21,6 +22,20 @@ class ProductType(models.TextChoices):
 
 class Unit(models.TextChoices):
     MONTHLY = "MONTHLY", _("Monthly")
+
+
+class ProductQuerySet(models.QuerySet):
+    def for_resident(self):
+        return self.filter(type=ProductType.RESIDENT)
+
+    def for_company(self):
+        return self.filter(type=ProductType.COMPANY)
+
+    def for_date_range(self, start_date, end_date):
+        return self.filter(
+            Q(start_date__range=(start_date, end_date))
+            | Q(end_date__range=(start_date, end_date))
+        ).order_by("start_date")
 
 
 class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
@@ -53,6 +68,7 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     low_emission_discount = models.DecimalField(
         _("Low emission discount"), max_digits=4, decimal_places=2
     )
+    objects = ProductQuerySet.as_manager()
 
     class Meta:
         verbose_name = _("Product")
