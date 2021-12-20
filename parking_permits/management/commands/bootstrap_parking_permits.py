@@ -8,12 +8,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command("import_parking_zones")
         call_command(
-            "create_parking_zone_prices",
+            "create_parking_zone_products",
             year=2021,
-            data_module="parking_permits.data.2021",
+        )
+        call_command(
+            "create_parking_zone_products",
+            year=2022,
         )
         call_command(
             "create_low_emission_criteria",
             year=2021,
-            data_module="parking_permits.data.2021",
+        )
+        call_command(
+            "create_low_emission_criteria",
+            year=2022,
         )
