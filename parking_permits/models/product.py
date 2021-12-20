@@ -1,3 +1,4 @@
+import json
 import logging
 
 import requests
@@ -61,6 +62,10 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return self.name
 
     @property
+    def vat_percentage(self):
+        return self.vat * 100
+
+    @property
     def name(self):
         # the product name is the same for different languages
         # so no translation needed
@@ -73,14 +78,17 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
         data = {
             "namespace": settings.NAMESPACE,
-            "namespaceEntityId": self.id,
+            "namespaceEntityId": str(self.id),
             "name": self.name,
         }
         headers = {
             "api-key": settings.TALPA_API_KEY,
+            "Content-Type": "application/json",
         }
         response = requests.post(
-            settings.TALPA_PRODUCT_EXPERIENCE_API, data=data, headers=headers
+            settings.TALPA_PRODUCT_EXPERIENCE_API,
+            data=json.dumps(data),
+            headers=headers,
         )
         if response.status_code == 201:
             logger.info("Talpa product created")

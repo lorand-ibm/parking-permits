@@ -123,6 +123,7 @@ type TalpaOrderResult {
 type Mutation {
   createParkingPermit(zoneId: ID!): PermitResult!
   createTalpaOrder: TalpaOrderResult!
+  createOrder: TalpaOrderResult!
   deleteParkingPermit(permitId: ID!): DeletePermitResult!
   endParkingPermit(permitIds: [String]!, endType: PermitEndType!, iban: String): DeletePermitResult
   updateParkingPermit(
