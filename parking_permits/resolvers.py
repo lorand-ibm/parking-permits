@@ -154,4 +154,4 @@ def resolve_create_order(_, info):
     customer = info.context["request"].user.customer
     order = Order.objects.create_for_customer(customer)
     checkout_url = TalpaOrderManager.send_to_talpa(order)
-    return {"success": True, "order": {"checkoutUrl": checkout_url}}
+    return {"success": True, "order": {"checkout_url": checkout_url}}
