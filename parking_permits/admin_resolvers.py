@@ -170,7 +170,7 @@ def resolve_create_resident_permit(obj, info, permit):
     vehicle_info = permit["vehicle"]
     vehicle = update_or_create_vehicle(vehicle_info)
 
-    parking_zone = ParkingZone.objects.get(name=customer_info["zone"]["name"])
+    parking_zone = ParkingZone.objects.get(name=customer_info["zone"])
     with reversion.create_revision():
         start_time = isoparse(permit["start_time"])
         end_time = get_end_time(start_time, permit["month_count"])
@@ -209,7 +209,7 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info):
     vehicle_info = permit_info["vehicle"]
     vehicle = update_or_create_vehicle(vehicle_info)
 
-    parking_zone = ParkingZone.objects.get(name=customer_info["zone"]["name"])
+    parking_zone = ParkingZone.objects.get(name=customer_info["zone"])
     with reversion.create_revision():
         permit.status = permit_info["status"]
         permit.parking_zone = parking_zone
