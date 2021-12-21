@@ -1,3 +1,5 @@
+import decimal
+
 import reversion
 from dateutil.parser import isoparse, parse
 from dateutil.relativedelta import relativedelta
@@ -5,6 +7,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone as tz
 
+from .constants import LOW_EMISSION_DISCOUNT, SECONDARY_VEHICLE_PRICE_INCREASE
 from .exceptions import (
     InvalidContractType,
     InvalidUserZone,
@@ -20,7 +23,6 @@ from .models.parking_permit import (
     ParkingPermitStatus,
 )
 from .reversion import EventType, get_reversion_comment
-from .services.talpa import resolve_price_response
 from .utils import diff_months_floor
 
 IMMEDIATELY = ParkingPermitStartType.IMMEDIATELY
@@ -60,18 +62,28 @@ class CustomerPermit:
         for permit in self.customer_permit_query.order_by("start_time"):
             if permit.status == DRAFT:
                 permit.start_time = next_day()
-                permit.save(update_fields=["start_time"])
-            permits.append(self._resolve_prices(permit))
+                permit.end_time = get_end_time(next_day(), permit.month_count)
+                permit.save(update_fields=["start_time", "end_time"])
+            products = []
+            for product_with_qty in permit.get_products_with_quantities():
+                product = self._calculate_prices(permit, product_with_qty)
+                if product.quantity:
+                    products.append(product)
+            permit.products = products
+            permits.append(permit)
         return permits
 
     def create(self, zone_id):
         if self._can_buy_permit_for_zone(zone_id):
             contract_type = OPEN_ENDED
             primary_vehicle = True
+            end_time = None
             if self.customer_permit_query.count():
                 primary_permit = self.customer_permit_query.get(primary_vehicle=True)
                 contract_type = primary_permit.contract_type
                 primary_vehicle = not primary_permit.primary_vehicle
+                if contract_type == FIXED_PERIOD:
+                    end_time = primary_permit.end_time
 
             with reversion.create_revision():
                 permit = ParkingPermit.objects.create(
@@ -80,6 +92,7 @@ class CustomerPermit:
                     primary_vehicle=primary_vehicle,
                     contract_type=contract_type,
                     start_time=next_day(),
+                    end_time=end_time,
                     vehicle=get_mock_vehicle(self.customer, ""),
                 )
                 comment = get_reversion_comment(EventType.CREATED, permit)
@@ -223,10 +236,23 @@ class CustomerPermit:
             reversion.set_comment(comment)
             return permit
 
-    def _resolve_prices(self, permit):
-        total_price, monthly_price = permit.get_prices()
-        permit.prices = resolve_price_response(total_price, monthly_price)
-        return permit
+    def _calculate_prices(self, permit, product_with_qty):
+        product = product_with_qty[0]
+        quantity = product_with_qty[1]
+        unit_price = product.unit_price
+
+        if not permit.primary_vehicle:
+            increase = decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
+            unit_price += increase * unit_price
+
+        if permit.vehicle.is_low_emission:
+            discount = decimal.Decimal(LOW_EMISSION_DISCOUNT) / 100
+            unit_price -= discount * unit_price
+
+        product.quantity = quantity
+        product.unit_price = unit_price
+        product.total_price = unit_price * quantity
+        return product
 
     def _can_buy_permit_for_zone(self, zone_id):
         if not self._is_valid_user_zone(zone_id):

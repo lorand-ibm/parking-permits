@@ -2,7 +2,6 @@ type ZoneNode  {
   id: ID!
   sharedProductId: String
   name: String
-  price: Float
   description: String
   descriptionSv: String
   location: [[[[Float]]]]
@@ -49,14 +48,14 @@ type VehicleNode {
   isLowEmission: Boolean
 }
 
-type PriceNode {
-  priceNet: Float!
-  priceVat: Float!
-  priceGross: Float!
-  rowPriceNet: Float!
-  rowPriceVat: Float!
-  rowPriceTotal: Float!
-  vatPercentage: Int!
+type ProductNode {
+  vat: Float!
+  quantity: Int!
+  unitPrice: Float!
+  totalPrice: Float!
+  endDate: String!
+  startDate: String!
+  lowEmissionDiscount: Float!
 }
 
 type PermitNode {
@@ -65,7 +64,7 @@ type PermitNode {
   orderId: String
   subscriptionId: String
   vehicle: VehicleNode!
-  prices: PriceNode!
+  products: [ProductNode]!
   contractType: String
   monthCount: Int
   startType: String
@@ -80,7 +79,6 @@ type PermitNode {
   canEndImmediately: Boolean
   canEndAfterCurrentPeriod: Boolean
   hasRefund: Boolean
-  monthlyPrice: Float
 }
 
 type PermitResult {
@@ -122,7 +120,6 @@ type TalpaOrderResult {
 
 type Mutation {
   createParkingPermit(zoneId: ID!): PermitResult!
-  createTalpaOrder: TalpaOrderResult!
   createOrder: TalpaOrderResult!
   deleteParkingPermit(permitId: ID!): DeletePermitResult!
   endParkingPermit(permitIds: [String]!, endType: PermitEndType!, iban: String): DeletePermitResult
