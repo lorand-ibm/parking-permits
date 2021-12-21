@@ -1,8 +1,17 @@
+type ProductNode {
+  unitPrice: Float!
+  startDate: String!
+  endDate: String!
+  vat: Float!
+  lowEmissionDiscount: Float!
+  secondaryVehicleIncreaseRate: Float!
+}
+
 type ZoneNode {
   name: String
   description: String
   descriptionSv: String
-  residentPrice: Float!
+  residentProducts: [ProductNode]
 }
 
 type AddressNode {
@@ -147,7 +156,6 @@ input ZoneInput {
   name: String
   description: String
   descriptionSv: String
-  residentPrice: Float!
 }
 
 input CustomerInput {
@@ -155,7 +163,7 @@ input CustomerInput {
   lastName: String
   nationalIdNumber: String
   primaryAddress: AddressInput
-  zone: ZoneInput!
+  zone: String
   email: String
   phoneNumber: String
   addressSecurityBan: Boolean

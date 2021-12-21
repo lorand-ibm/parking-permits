@@ -1,5 +1,6 @@
 import json
 import logging
+from decimal import Decimal
 
 import requests
 from django.conf import settings
@@ -13,6 +14,9 @@ from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
 
 logger = logging.getLogger(__name__)
+
+
+SECONDARY_VEHICLE_INCREASE_RATE = Decimal(0.5)
 
 
 class ProductType(models.TextChoices):
@@ -76,6 +80,10 @@ class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     def __str__(self):
         return self.name
+
+    @property
+    def secondary_vehicle_increase_rate(self):
+        return SECONDARY_VEHICLE_INCREASE_RATE
 
     @property
     def vat_percentage(self):
