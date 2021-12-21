@@ -20,10 +20,10 @@ from parking_permits.models.vehicle import VehiclePowerType
 from parking_permits.tests.factories import (
     LowEmissionCriteriaFactory,
     ParkingZoneFactory,
-    PriceFactory,
 )
 from parking_permits.tests.factories.customer import CustomerFactory
 from parking_permits.tests.factories.parking_permit import ParkingPermitFactory
+from parking_permits.tests.factories.product import ProductFactory
 from parking_permits.tests.factories.vehicle import VehicleFactory
 
 DRAFT = ParkingPermitStatus.DRAFT
@@ -65,7 +65,7 @@ class GetCustomerPermitTestCase(TestCase):
         self.vehicle_a = VehicleFactory(power_type=VehiclePowerType.BENSIN)
         self.vehicle_b = VehicleFactory(power_type=VehiclePowerType.BENSIN)
         self.vehicle_c = VehicleFactory(power_type=VehiclePowerType.BENSIN)
-        PriceFactory(zone=self.zone)
+        ProductFactory(zone=self.zone)
         LowEmissionCriteriaFactory(power_type=VehiclePowerType.BENSIN)
         ParkingPermitFactory(
             customer=self.customer_a,
@@ -137,8 +137,8 @@ class CreateCustomerPermitTestCase(TestCase):
         self.customer_a_zone = self.customer_a.primary_address.zone
         self.zone = ParkingZoneFactory()
         self.vehicle_a = VehicleFactory(power_type=BENSIN)
-        PriceFactory(zone=self.zone)
-        PriceFactory(zone=self.customer_a_zone)
+        ProductFactory(zone=self.zone)
+        ProductFactory(zone=self.customer_a_zone)
         LowEmissionCriteriaFactory(power_type=BENSIN)
         ParkingPermitFactory(
             customer=self.customer_a,
