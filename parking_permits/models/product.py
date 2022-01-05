@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 
 from parking_permits.exceptions import CreateTalpaProductError
 
-from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
+from .mixins import TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class ProductQuerySet(models.QuerySet):
         ).order_by("start_date")
 
 
-class Product(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+class Product(TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin):
     talpa_product_id = models.UUIDField(
         _("Talpa product id"),
         unique=True,
