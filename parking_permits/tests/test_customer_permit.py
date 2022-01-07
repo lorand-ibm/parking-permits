@@ -1,7 +1,11 @@
+from datetime import date, datetime
+
 from dateutil.relativedelta import relativedelta
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase
+from django.utils import timezone
 from django.utils import timezone as tz
+from freezegun import freeze_time
 
 from parking_permits.customer_permit import CustomerPermit
 from parking_permits.exceptions import (
@@ -16,6 +20,7 @@ from parking_permits.models.parking_permit import (
     ParkingPermitStartType,
     ParkingPermitStatus,
 )
+from parking_permits.models.product import ProductType
 from parking_permits.models.vehicle import VehiclePowerType
 from parking_permits.tests.factories import (
     LowEmissionCriteriaFactory,
@@ -53,6 +58,7 @@ def get_end_time(start, month=0):
     return tz.localtime(start + relativedelta(months=month))
 
 
+@freeze_time(timezone.make_aware(datetime(2022, 1, 7)))
 class GetCustomerPermitTestCase(TestCase):
     def setUp(self):
         self.customer_a = CustomerFactory(
@@ -65,7 +71,12 @@ class GetCustomerPermitTestCase(TestCase):
         self.vehicle_a = VehicleFactory(power_type=VehiclePowerType.BENSIN)
         self.vehicle_b = VehicleFactory(power_type=VehiclePowerType.BENSIN)
         self.vehicle_c = VehicleFactory(power_type=VehiclePowerType.BENSIN)
-        ProductFactory(zone=self.zone)
+        ProductFactory(
+            zone=self.zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2022, 1, 1),
+            end_date=date(2022, 12, 31),
+        )
         LowEmissionCriteriaFactory(power_type=VehiclePowerType.BENSIN)
         ParkingPermitFactory(
             customer=self.customer_a,
@@ -123,6 +134,7 @@ class GetCustomerPermitTestCase(TestCase):
         self.assertEqual(len(permits), 0)
 
 
+@freeze_time(timezone.make_aware(datetime(2022, 1, 7)))
 class CreateCustomerPermitTestCase(TestCase):
     def setUp(self):
         self.customer_a = CustomerFactory(
@@ -137,8 +149,18 @@ class CreateCustomerPermitTestCase(TestCase):
         self.customer_a_zone = self.customer_a.primary_address.zone
         self.zone = ParkingZoneFactory()
         self.vehicle_a = VehicleFactory(power_type=BENSIN)
-        ProductFactory(zone=self.zone)
-        ProductFactory(zone=self.customer_a_zone)
+        ProductFactory(
+            zone=self.zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2022, 1, 1),
+            end_date=date(2022, 12, 31),
+        )
+        ProductFactory(
+            zone=self.customer_a_zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2022, 1, 1),
+            end_date=date(2022, 12, 31),
+        )
         LowEmissionCriteriaFactory(power_type=BENSIN)
         ParkingPermitFactory(
             customer=self.customer_a,
