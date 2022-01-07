@@ -19,6 +19,7 @@ from parking_permits.models import (
     Customer,
     ParkingPermit,
     ParkingZone,
+    Product,
     Vehicle,
 )
 
@@ -244,3 +245,19 @@ def resolve_end_permit(obj, info, permit_id, end_type, iban=None):
         reversion.set_comment(comment)
 
     return {"success": True}
+
+
+@query.field("products")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+def resolve_products(obj, info, page_input, order_by=None, search_items=None):
+    products = Product.objects.all().order_by("zone__name")
+    if order_by:
+        products = apply_ordering(products, order_by)
+    if search_items:
+        products = apply_filtering(products, search_items)
+    paginator = QuerySetPaginator(products, page_input)
+    return {
+        "page_info": paginator.page_info,
+        "objects": paginator.object_list,
+    }

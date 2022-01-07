@@ -1,10 +1,16 @@
 type ProductNode {
+  id: ID!
+  type: String!
   unitPrice: Float!
   startDate: String!
   endDate: String!
   vat: Float!
+  vatPercentage: Float!
+  zone: String!
   lowEmissionDiscount: Float!
   secondaryVehicleIncreaseRate: Float!
+  modifiedAt: String
+  modifiedBy: String
 }
 
 type ZoneNode {
@@ -81,6 +87,11 @@ type PagedPermits {
   pageInfo: PageInfo
 }
 
+type PagedProducts {
+  objects: [ProductNode]
+  pageInfo: PageInfo
+}
+
 enum OrderDirection {
   ASC,
   DESC
@@ -141,6 +152,10 @@ type Query {
   zones: [ZoneNode]
   customer(nationalIdNumber: String!): CustomerNode!
   vehicle(regNumber: String!, nationalIdNumber: String!): VehicleNode!
+  products(
+    pageInput: PageInput!
+    orderBy: OrderByInput
+  ): PagedProducts!
 }
 
 input AddressInput {
