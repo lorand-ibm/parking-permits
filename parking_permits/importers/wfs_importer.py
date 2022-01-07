@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 
 class WfsImporter(metaclass=abc.ABCMeta):

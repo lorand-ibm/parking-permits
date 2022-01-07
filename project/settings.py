@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "users",
     "rest_framework",
     "reversion",
+    "django_db_logger",
 ]
 
 MIDDLEWARE = [
@@ -148,3 +149,20 @@ OIDC_API_TOKEN_AUTH = {
 
 ALLOWED_ADMIN_AD_GROUPS = env.list("ALLOWED_ADMIN_AD_GROUPS")
 MAX_ALLOWED_USER_PERMIT = 2
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
+        },
+        "simple": {"format": "%(levelname)s %(asctime)s %(message)s"},
+    },
+    "handlers": {
+        "db_log": {
+            "level": "DEBUG",
+            "class": "django_db_logger.db_log_handler.DatabaseLogHandler",
+        },
+    },
+    "loggers": {"db": {"handlers": ["db_log"], "level": "DEBUG"}},
+}

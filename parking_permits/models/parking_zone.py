@@ -10,7 +10,7 @@ from ..exceptions import PriceError
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .price import Price, PriceType
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 
 class ParkingZoneManager(models.Manager):

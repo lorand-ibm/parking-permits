@@ -10,7 +10,7 @@ from .customer import Customer
 from .parking_permit import ContractType, ParkingPermit, ParkingPermitStatus
 from .product import Product
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 
 class OrderType(models.TextChoices):

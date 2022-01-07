@@ -6,7 +6,7 @@ from parking_permits.models import ParkingZone
 
 from .wfs_importer import WfsImporter
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 PARKING_ZONE_DESCRIPTION_SV = {
     "A": "Kampen",
