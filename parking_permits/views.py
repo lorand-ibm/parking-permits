@@ -11,7 +11,7 @@ from .models import ParkingPermit
 from .models.parking_permit import ParkingPermitStatus
 from .services import talpa
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 
 class TalpaResolveAvailability(APIView):
@@ -72,7 +72,7 @@ class TalpaResolveRightOfPurchase(APIView):
 
 class OrderView(APIView):
     def post(self, request, format=None):
-        logger.info("Order received.", request.data)
+        logger.info(f"Order received. Data = {json.dumps(request.data)}")
         headers = {
             "api-key": settings.TALPA_API_KEY,
             "namespace": settings.NAMESPACE,
@@ -96,6 +96,7 @@ class OrderView(APIView):
                 permit.save()
 
         if result.status_code >= 300:
+            logger.exception(result.text)
             raise Exception("Failed to create product on talpa: {}".format(result.text))
 
         return Response({"message": "Order received"}, status=200)

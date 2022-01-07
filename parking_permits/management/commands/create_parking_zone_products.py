@@ -9,7 +9,7 @@ from django.db import transaction
 from parking_permits.models import ParkingZone, Product
 from parking_permits.models.product import ProductType
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 ZONE_MONTHLY_PRICES = {
     "A": Decimal("30.00"),

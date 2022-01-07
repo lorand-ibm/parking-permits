@@ -22,7 +22,7 @@ from .product import Product
 from .refund import Refund
 from .vehicle import Vehicle
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 
 class ContractType(models.TextChoices):

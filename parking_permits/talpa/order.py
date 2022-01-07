@@ -9,7 +9,7 @@ from django.utils.translation import gettext as _
 from parking_permits.exceptions import OrderCreationFailed
 from parking_permits.models.order import OrderType
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 
 class TalpaOrderManager:

@@ -13,7 +13,7 @@ from parking_permits.exceptions import CreateTalpaProductError
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 
 SECONDARY_VEHICLE_INCREASE_RATE = Decimal(0.5)

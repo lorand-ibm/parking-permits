@@ -30,7 +30,7 @@ from .reversion import EventType, get_obj_changelogs, get_reversion_comment
 from .services.kmo import get_address_detail_from_kmo
 from .utils import apply_filtering, apply_ordering, get_end_time
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 query = QueryType()
 mutation = MutationType()
