@@ -214,7 +214,7 @@ input ProductInput {
   unit: String!
   startDate: String!
   endDate: String!
-  vat: Float!
+  vatPercentage: Float!
   lowEmissionDiscount: Float!
 }
 
