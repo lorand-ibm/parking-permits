@@ -2,6 +2,7 @@ type ProductNode {
   id: ID!
   type: String!
   unitPrice: Float!
+  unit: String!
   startDate: String!
   endDate: String!
   vat: Float!
@@ -156,6 +157,7 @@ type Query {
     pageInput: PageInput!
     orderBy: OrderByInput
   ): PagedProducts!
+  product(productId: ID!): ProductNode!
 }
 
 input AddressInput {
