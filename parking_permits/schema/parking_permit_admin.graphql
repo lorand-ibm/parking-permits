@@ -207,6 +207,17 @@ input ResidentPermitInput {
   monthCount: Int
 }
 
+input ProductInput {
+  type: String!
+  zone: String!
+  unitPrice: Float!
+  unit: String!
+  startDate: String!
+  endDate: String!
+  vat: Float!
+  lowEmissionDiscount: Float!
+}
+
 type MutationResponse {
   success: Boolean
 }
@@ -220,4 +231,5 @@ type Mutation {
   createResidentPermit(permit: ResidentPermitInput!): MutationResponse
   endPermit(permitId: Int!, endType: PermitEndType!, iban: String): MutationResponse
   updateResidentPermit(permitId: ID!, permitInfo: ResidentPermitInput!): MutationResponse
+  updateProduct(productId: ID!, product: ProductInput!): MutationResponse
 }
