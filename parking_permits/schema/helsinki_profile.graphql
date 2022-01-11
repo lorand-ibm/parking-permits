@@ -4,6 +4,9 @@ query MyProfileQuery {
     firstName
     lastName
     language
+    verifiedPersonalInformation {
+      nationalIdentificationNumber
+    }
     primaryPhone {
       phone
     }
