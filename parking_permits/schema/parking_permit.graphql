@@ -28,6 +28,7 @@ enum Language {
 
 type CustomerNode {
   id: ID!
+  age: Int!
   firstName: String!
   lastName: String!
   language: Language
