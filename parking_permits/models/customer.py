@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
@@ -52,6 +55,17 @@ class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         blank=True,
         null=True,
     )
+
+    @property
+    def age(self):
+        ssn = self.national_id_number
+        key_centuries = {"+": "18", "-": "19", "A": "20"}
+        date_of_birth = datetime(
+            year=int(key_centuries[ssn[6]] + ssn[4:6]),
+            month=int(ssn[2:4]),
+            day=int(ssn[0:2]),
+        )
+        return relativedelta(datetime.today(), date_of_birth).years
 
     def is_owner_or_holder_of_vehicle(self, vehicle):
         return vehicle.owner == self or vehicle.holder == self
