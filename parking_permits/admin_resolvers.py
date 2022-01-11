@@ -11,7 +11,6 @@ from ariadne import (
 from dateutil.parser import isoparse
 from django.db import transaction
 from django.db.models import Q
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from parking_permits.models import (
@@ -71,7 +70,7 @@ def resolve_permit_detail_history(permit, info):
 @is_ad_admin
 @convert_kwargs_to_snake_case
 def resolve_zones(obj, info):
-    return ParkingZone.objects.filter(prices__year=timezone.now().year)
+    return ParkingZone.objects.all()
 
 
 @query.field("customer")
@@ -261,3 +260,41 @@ def resolve_products(obj, info, page_input, order_by=None, search_items=None):
         "page_info": paginator.page_info,
         "objects": paginator.object_list,
     }
+
+
+@query.field("product")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+def resolve_product(obj, info, product_id):
+    return Product.objects.get(id=product_id)
+
+
+@mutation.field("updateProduct")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_update_product(obj, info, product_id, product):
+    request = info.context["request"]
+    zone = ParkingZone.objects.get(name=product["zone"])
+    _product = Product.objects.get(id=product_id)
+    _product.type = product["type"]
+    _product.zone = zone
+    _product.unitPrice = product["unit_price"]
+    _product.unit = product["unit"]
+    _product.start_date = product["start_date"]
+    _product.end_date = product["end_date"]
+    _product.vat = product["vat"]
+    _product.low_emission_discount = product["low_emission_discount"]
+    _product.modified_by = request.user
+    _product.save()
+    return {"success": True}
+
+
+@mutation.field("deleteProduct")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_delete_product(obj, info, product_id):
+    product = Product.objects.get(id=product_id)
+    product.delete()
+    return {"success": True}
