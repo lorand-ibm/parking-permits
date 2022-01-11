@@ -288,3 +288,13 @@ def resolve_update_product(obj, info, product_id, product):
     _product.modified_by = request.user
     _product.save()
     return {"success": True}
+
+
+@mutation.field("deleteProduct")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_delete_product(obj, info, product_id):
+    product = Product.objects.get(id=product_id)
+    product.delete()
+    return {"success": True}
