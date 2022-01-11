@@ -283,7 +283,7 @@ def resolve_update_product(obj, info, product_id, product):
     _product.unit = product["unit"]
     _product.start_date = product["start_date"]
     _product.end_date = product["end_date"]
-    _product.vat = product["vat"]
+    _product.vat_percentage = product["vat_percentage"]
     _product.low_emission_discount = product["low_emission_discount"]
     _product.modified_by = request.user
     _product.save()

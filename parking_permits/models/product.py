@@ -90,6 +90,10 @@ class Product(TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin)
     def vat_percentage(self):
         return self.vat * 100
 
+    @vat_percentage.setter
+    def vat_percentage(self, value):
+        self.vat = value / 100
+
     @property
     def name(self):
         # the product name is the same for different languages
