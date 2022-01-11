@@ -26,6 +26,7 @@ class ProductType(models.TextChoices):
 
 class Unit(models.TextChoices):
     MONTHLY = "MONTHLY", _("Monthly")
+    PIECES = "PIECES", _("Pieces")
 
 
 class ProductQuerySet(models.QuerySet):
