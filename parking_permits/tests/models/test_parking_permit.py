@@ -110,7 +110,7 @@ class ParkingZoneTestCase(TestCase):
         )
         self.assertEqual(
             permit.current_period_end_time,
-            timezone.make_aware(datetime(2022, 2, 14, 23, 59)),
+            timezone.make_aware(datetime(2022, 2, 14, 23, 59, 59, 999999)),
         )
 
         start_time = timezone.make_aware(datetime(2021, 11, 20))
@@ -123,7 +123,7 @@ class ParkingZoneTestCase(TestCase):
         )
         self.assertEqual(
             permit.current_period_end_time,
-            timezone.make_aware(datetime(2022, 2, 19, 23, 59)),
+            timezone.make_aware(datetime(2022, 2, 19, 23, 59, 59, 999999)),
         )
 
     @freeze_time(timezone.make_aware(datetime(2021, 11, 20, 12, 10, 50)))
@@ -153,7 +153,8 @@ class ParkingZoneTestCase(TestCase):
         )
         permit.end_permit(ParkingPermitEndType.AFTER_CURRENT_PERIOD)
         self.assertEqual(
-            permit.end_time, timezone.make_aware(datetime(2021, 12, 14, 23, 59))
+            permit.end_time,
+            timezone.make_aware(datetime(2021, 12, 14, 23, 59, 59, 999999)),
         )
 
     @freeze_time(timezone.make_aware(datetime(2021, 11, 20, 12, 10, 50)))

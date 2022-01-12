@@ -47,5 +47,5 @@ def diff_months_ceil(start_date, end_date):
 def get_end_time(start_time, diff_months):
     end_time = start_time + relativedelta(months=diff_months, days=-1)
     return timezone.make_aware(
-        end_time.replace(hour=23, minute=59, second=0, microsecond=0, tzinfo=None)
+        end_time.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=None)
     )
