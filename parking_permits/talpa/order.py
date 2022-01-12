@@ -96,18 +96,18 @@ class TalpaOrderManager:
 
         response_data = response.json()
         with transaction.atomic():
-            order.talpa_order_id = response_data["orderId"]
-            order.talpa_subscription_id = response_data["subscriptionId"]
-            order.talpa_checkout_url = response_data["checkoutUrl"]
-            order.talpa_receipt_url = response_data["receiptUrl"]
+            order.talpa_order_id = response_data.get("orderId")
+            order.talpa_subscription_id = response_data.get("subscriptionId")
+            order.talpa_checkout_url = response_data.get("checkoutUrl")
+            order.talpa_receipt_url = response_data.get("receiptUrl")
             order.save()
             talpa_order_item_id_mapping = {
                 item["meta"][0]["value"]: item["orderItemId"]
-                for item in response_data["items"]
+                for item in response_data.get("items")
             }
             for order_item in order.order_items.select_related("product"):
                 order_item.talpa_order_item_id = talpa_order_item_id_mapping.get(
                     str(order_item.id)
                 )
                 order_item.save()
-        return response_data["checkoutUrl"]
+        return response_data.get("checkoutUrl")
