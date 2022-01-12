@@ -35,6 +35,9 @@ class ProductQuerySet(models.QuerySet):
     def for_company(self):
         return self.filter(type=ProductType.COMPANY)
 
+    def get_for_date(self, dt):
+        return self.get(start_date__lte=dt, end_date__gte=dt)
+
     def for_date_range(self, start_date, end_date):
         return self.filter(
             start_date__lte=end_date,
@@ -98,6 +101,14 @@ class Product(TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin)
         # the product name is the same for different languages
         # so no translation needed
         return f"Pysäköintialue {self.zone.name}"
+
+    def get_modified_unit_price(self, is_low_emission, is_secondary):
+        price = self.unit_price
+        if is_low_emission:
+            price -= price * self.low_emission_discount
+        if is_secondary:
+            price += price * self.secondary_vehicle_increase_rate
+        return price
 
     def create_talpa_product(self):
         if self.talpa_product_id:
