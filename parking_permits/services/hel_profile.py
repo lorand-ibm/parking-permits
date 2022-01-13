@@ -34,6 +34,9 @@ class HelsinkiProfile:
             "last_name": self.__profile.get("lastName"),
             "email": email_node.get("email") if email_node else None,
             "phone_number": phone_node.get("phone") if phone_node else None,
+            "national_id_number": self.__profile.get(
+                "verifiedPersonalInformation", {}
+            ).get("nationalIdentificationNumber"),
         }
 
     def get_addresses(self):
