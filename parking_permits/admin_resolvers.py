@@ -9,6 +9,8 @@ from ariadne import (
     snake_case_fallback_resolvers,
 )
 from dateutil.parser import isoparse
+from django.conf import settings
+from django.contrib.gis.geos import Point
 from django.db import transaction
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -27,7 +29,6 @@ from .exceptions import ObjectNotFound, UpdatePermitError
 from .models.parking_permit import ContractType
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
-from .services.kmo import get_address_detail_from_kmo
 from .utils import apply_filtering, apply_ordering, get_end_time
 
 logger = logging.getLogger("db")
@@ -120,22 +121,25 @@ def update_or_create_customer(customer_info):
         "driver_license_checked": customer_info["driver_license_checked"],
     }
 
-    address_info = customer_info.get("address")
+    address_info = customer_info.get("primary_address")
     if address_info:
-        kmo_address_detail = get_address_detail_from_kmo(
-            address_info["street_name"], address_info["street_number"]
-        )
-        zone = ParkingZone.objects.get_for_location(kmo_address_detail["location"])
-        address = Address.objects.create(
-            street_name=address_info["street_name"],
-            street_name_sv=kmo_address_detail["street_name_sv"],
-            street_number=address_info["street_number"],
-            city=address_info["city"],
-            city_sv=kmo_address_detail["city_sv"],
-            location=kmo_address_detail["location"],
-            zone=zone,
-            primary=True,
-        )
+        location = Point(*address_info["location"], srid=settings.SRID)
+        zone = ParkingZone.objects.get_for_location(location)
+        address = Address.objects.update_or_create(
+            source_system=address_info["source_system"],
+            source_id=address_info["source_id"],
+            defaults={
+                "street_name": address_info["street_name"],
+                "street_name_sv": address_info["street_name_sv"],
+                "street_number": address_info["street_number"],
+                "city": address_info["city"],
+                "city_sv": address_info["city_sv"],
+                "postal_code": address_info["postal_code"],
+                "location": location,
+                "zone": zone,
+                "primary": True,
+            },
+        )[0]
         customer_data["primary_address"] = address
     else:
         customer_data["primary_address"] = None
