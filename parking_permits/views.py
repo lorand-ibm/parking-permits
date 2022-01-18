@@ -3,18 +3,40 @@ import logging
 
 import requests
 from django.conf import settings
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import ParkingPermit
 from .models.parking_permit import ParkingPermitStatus
+from .serializers import (
+    MessageResponseSerializer,
+    OrderItemSerializer,
+    OrderSerializer,
+    ResolveAvailabilityResponseSerializer,
+    ResolveAvailabilitySerializer,
+    RightOfPurchaseResponseSerializer,
+    RightOfPurchaseSerializer,
+)
 from .services import talpa
 
 logger = logging.getLogger("db")
 
 
 class TalpaResolveAvailability(APIView):
+    @swagger_auto_schema(
+        operation_description="Resolve product availability.",
+        request_body=ResolveAvailabilitySerializer,
+        responses={
+            200: openapi.Response(
+                "Product is always available for purchase.",
+                ResolveAvailabilityResponseSerializer,
+            )
+        },
+        tags=["ResolveAvailability"],
+    )
     def post(self, request, format=None):
         shared_product_id = request.data.get("productId")
         res = {"product_id": shared_product_id, "value": True}
@@ -22,6 +44,16 @@ class TalpaResolveAvailability(APIView):
 
 
 class TalpaResolvePrice(APIView):
+    @swagger_auto_schema(
+        operation_description="Resolve price of product from an order item.",
+        request_body=OrderItemSerializer,
+        responses={
+            200: openapi.Response(
+                "Right of purchase response", MessageResponseSerializer
+            )
+        },
+        tags=["ResolvePrice"],
+    )
     def post(self, request, format=None):
         permit_id = talpa.get_meta_value(request.data.get("meta"), "permitId")
 
@@ -44,6 +76,16 @@ class TalpaResolvePrice(APIView):
 
 
 class TalpaResolveRightOfPurchase(APIView):
+    @swagger_auto_schema(
+        operation_description="Used as an webhook by Talpa in order to send an order notification.",
+        request_body=RightOfPurchaseSerializer,
+        responses={
+            200: openapi.Response(
+                "Right of purchase response", RightOfPurchaseResponseSerializer
+            )
+        },
+        tags=["RightOfPurchase"],
+    )
     def post(self, request):
         order_item = request.data.get("orderItem")
         permit_id = talpa.get_meta_value(order_item.get("meta"), "permitId")
@@ -71,6 +113,15 @@ class TalpaResolveRightOfPurchase(APIView):
 
 
 class OrderView(APIView):
+    @swagger_auto_schema(
+        operation_description="Used as an webhook by Talpa in order to send an order notification.",
+        request_body=OrderSerializer,
+        security=[],
+        responses={
+            200: openapi.Response("Order received response", MessageResponseSerializer)
+        },
+        tags=["Order"],
+    )
     def post(self, request, format=None):
         logger.info(f"Order received. Data = {json.dumps(request.data)}")
         headers = {

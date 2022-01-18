@@ -14,3 +14,4 @@ xmltodict==0.12.0                             # parsing xml to dictionary
 django-helusers
 django-reversion
 django_db_logger
+drf-yasg

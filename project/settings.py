@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "reversion",
     "django_db_logger",
+    "drf_yasg",
 ]
 
 MIDDLEWARE = [

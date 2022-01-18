@@ -16,11 +16,17 @@ certifi==2021.10.8
     # via requests
 charset-normalizer==2.0.10
     # via requests
+coreapi==2.3.3
+    # via drf-yasg
+coreschema==0.0.4
+    # via
+    #   coreapi
+    #   drf-yasg
 deprecation==2.1.0
     # via django-helusers
 dj-database-url==0.5.0
     # via -r requirements.in
-django-cors-headers==3.10.1
+django-cors-headers==3.11.0
     # via -r requirements.in
 django-db-logger==0.1.11
     # via -r requirements.in
@@ -41,18 +47,33 @@ django==3.2
     #   django-helusers
     #   django-reversion
     #   djangorestframework
+    #   drf-yasg
 djangorestframework==3.12.4
+    # via
+    #   -r requirements.in
+    #   drf-yasg
+drf-yasg==1.20.0
     # via -r requirements.in
 ecdsa==0.17.0
     # via python-jose
-graphql-core==3.1.7
+graphql-core==3.2.0
     # via ariadne
 gunicorn==20.1.0
     # via -r requirements.in
 idna==3.3
     # via requests
+inflection==0.5.1
+    # via drf-yasg
+itypes==1.2.0
+    # via coreapi
+jinja2==3.0.3
+    # via coreschema
+markupsafe==2.0.1
+    # via jinja2
 packaging==21.3
-    # via deprecation
+    # via
+    #   deprecation
+    #   drf-yasg
 psycopg2-binary==2.8.6
     # via -r requirements.in
 pyasn1==0.4.8
@@ -70,9 +91,14 @@ pytz==2021.3
 requests==2.27.1
     # via
     #   -r requirements.in
+    #   coreapi
     #   django-helusers
 rsa==4.8
     # via python-jose
+ruamel.yaml.clib==0.2.6
+    # via ruamel.yaml
+ruamel.yaml==0.17.20
+    # via drf-yasg
 six==1.16.0
     # via
     #   django-db-logger
@@ -83,11 +109,12 @@ sqlparse==0.4.2
 starlette==0.14.2
     # via ariadne
 typing-extensions==4.0.1
+    # via ariadne
+uritemplate==4.1.1
     # via
-    #   ariadne
-    #   arrow
-    #   asgiref
-urllib3==1.26.7
+    #   coreapi
+    #   drf-yasg
+urllib3==1.26.8
     # via requests
 whitenoise==5.2.0
     # via -r requirements.in
