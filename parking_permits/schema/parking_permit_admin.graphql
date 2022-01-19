@@ -16,8 +16,8 @@ type ProductNode {
 
 type ZoneNode {
   name: String
-  description: String
-  descriptionSv: String
+  label: String
+  labelSv: String
   residentProducts: [ProductNode]
 }
 
@@ -175,8 +175,8 @@ input AddressInput {
 
 input ZoneInput {
   name: String
-  description: String
-  descriptionSv: String
+  label: String
+  labelSv: String
 }
 
 input CustomerInput {
