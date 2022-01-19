@@ -158,6 +158,7 @@ type Query {
     orderBy: OrderByInput
   ): PagedProducts!
   product(productId: ID!): ProductNode!
+  zoneByLocation(location: [Float]!): ZoneNode!
 }
 
 input AddressInput {
