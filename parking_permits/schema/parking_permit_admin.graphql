@@ -24,7 +24,7 @@ type ZoneNode {
 type AddressNode {
   id: ID!
   streetName: String
-  streetNumber: Int
+  streetNumber: String
   streetNameSv: String
   city: String
   citySv: String
@@ -161,12 +161,15 @@ type Query {
 }
 
 input AddressInput {
+  sourceSystem: String
+  sourceId: String
   streetName: String
-  streetNumber: Int
+  streetNumber: String
   streetNameSv: String
   city: String
   citySv: String
   postalCode: String
+  location: [Float]
 }
 
 input ZoneInput {
