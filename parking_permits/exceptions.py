@@ -52,3 +52,7 @@ class UpdatePermitError(ParkingPermitBaseException):
 
 class ProductCatalogError(ParkingPermitBaseException):
     pass
+
+
+class ParkingZoneError(ParkingPermitBaseException):
+    pass

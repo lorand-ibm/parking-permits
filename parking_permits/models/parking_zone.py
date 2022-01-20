@@ -37,6 +37,14 @@ class ParkingZone(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return self.name
 
     @property
+    def label(self):
+        return f"{self.name} - {self.description}"
+
+    @property
+    def label_sv(self):
+        return f"{self.name} - {self.description_sv}"
+
+    @property
     def price(self):
         logger.error("To be removed. This property should not be used anymore.")
         return self.resident_price

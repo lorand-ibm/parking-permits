@@ -25,7 +25,7 @@ from parking_permits.models import (
 )
 
 from .decorators import is_ad_admin
-from .exceptions import ObjectNotFound, UpdatePermitError
+from .exceptions import ObjectNotFound, ParkingZoneError, UpdatePermitError
 from .models.parking_permit import ContractType
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
@@ -72,6 +72,19 @@ def resolve_permit_detail_history(permit, info):
 @convert_kwargs_to_snake_case
 def resolve_zones(obj, info):
     return ParkingZone.objects.all().order_by("name")
+
+
+@query.field("zoneByLocation")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+def resolve_zone_by_location(obj, info, location):
+    _location = Point(*location, srid=settings.SRID)
+    try:
+        return ParkingZone.objects.get_for_location(_location)
+    except ParkingZone.DoesNotExist:
+        raise ParkingZoneError(_("No parking zone found for the location"))
+    except ParkingZone.MultipleObjectsReturned:
+        raise ParkingZoneError(_("Multiple parking zones found for the location"))
 
 
 @query.field("customer")
