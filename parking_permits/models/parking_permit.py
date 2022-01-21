@@ -107,8 +107,14 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         default=ParkingPermitStartType.IMMEDIATELY,
     )
     month_count = models.IntegerField(_("Month count"), default=1)
-    order_id = models.CharField(max_length=50, blank=True)
-    subscription_id = models.CharField(max_length=50, blank=True)
+    order = models.ForeignKey(
+        "Order",
+        related_name="permits",
+        verbose_name=_("Order"),
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+    )
 
     objects = ParkingPermitManager()
 
@@ -182,6 +188,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return self.month_count - self.months_used
 
     @property
+    def current_period_start_time(self):
+        return self.start_time + relativedelta(months=self.months_used - 1)
+
+    @property
     def current_period_end_time(self):
         return get_end_time(self.start_time, self.months_used)
 
@@ -191,11 +201,30 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     @property
     def monthly_price(self):
-        # TODO: return different price for different permit types
-        price = self.parking_zone.resident_price
-        if not self.primary_vehicle:
-            price += price * decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
-        return price
+        """
+        Return the monthly price for current period
+
+        Current monthly price is determined by the start date of current period
+        """
+        period_start_date = timezone.localdate(self.current_period_start_time)
+        try:
+            product = self.parking_zone.products.for_resident().get_for_date(
+                period_start_date
+            )
+            is_secondary = not self.primary_vehicle
+            return product.get_modified_unit_price(
+                self.vehicle.is_low_emission, is_secondary
+            )
+        except Product.DoesNotExist:
+            logger.error(f"Product does not exist for date {period_start_date}")
+            raise ProductCatalogError(
+                _("Product catalog error, please report to admin")
+            )
+        except Product.MultipleObjectsReturned:
+            f"Products date range overlapping for date {period_start_date}"
+            raise ProductCatalogError(
+                _("Product catalog error, please report to admin")
+            )
 
     @property
     def refund_amount(self):
