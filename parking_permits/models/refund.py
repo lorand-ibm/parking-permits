@@ -1,8 +1,7 @@
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .customer import Customer
-from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
+from .mixins import TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin
 
 
 class RefundStatus(models.TextChoices):
@@ -11,14 +10,10 @@ class RefundStatus(models.TextChoices):
     ACCEPTED = "ACCEPTED", _("Accepted")
 
 
-class Refund(TimestampedModelMixin, UUIDPrimaryKeyMixin):
-    customer = models.ForeignKey(
-        Customer,
-        verbose_name=_("Customer"),
-        on_delete=models.PROTECT,
-    )
-    permit = models.OneToOneField(
-        "ParkingPermit",
+class Refund(TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin):
+    name = models.CharField(_("Name"), max_length=200, blank=True)
+    order = models.OneToOneField(
+        "Order",
         verbose_name=_("Permit"),
         on_delete=models.PROTECT,
         related_name="refund",
@@ -39,8 +34,4 @@ class Refund(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         verbose_name_plural = _("Refunds")
 
     def __str__(self):
-        return "%s -> %s -> %s" % (
-            self.customer,
-            self.permit,
-            str(self.amount),
-        )
+        return f"{self.name} ({self.iban})"
