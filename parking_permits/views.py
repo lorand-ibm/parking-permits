@@ -1,15 +1,15 @@
 import json
 import logging
 
-import requests
-from django.conf import settings
+from django.db import transaction
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import ParkingPermit
+from .models import Order, ParkingPermit
+from .models.order import OrderStatus
 from .models.parking_permit import ParkingPermitStatus
 from .serializers import (
     MessageResponseSerializer,
@@ -122,32 +122,22 @@ class OrderView(APIView):
         },
         tags=["Order"],
     )
+    @transaction.atomic
     def post(self, request, format=None):
         logger.info(f"Order received. Data = {json.dumps(request.data)}")
-        headers = {
-            "api-key": settings.TALPA_API_KEY,
-            "namespace": settings.NAMESPACE,
-        }
-        url = (
-            f"{settings.TALPA_ORDER_EXPERIENCE_API}admin/{request.data.get('orderId')}"
-        )
-        result = requests.get(url=url, headers=headers)
+        talpa_order_id = request.data.get("orderId")
+        event_type = request.data.get("eventType")
+        if not talpa_order_id:
+            logger.error("Talpa order id is missing from request data")
+            return Response({"message": "No order id is provided"}, status=400)
 
-        if result.status_code == 200:
-            order_item = json.loads(result.text)
-            for item in order_item.get("items"):
-                permit_id = talpa.get_meta_value(item["meta"], "permitId")
-                permit = ParkingPermit.objects.get(pk=permit_id)
-                if request.data.get("eventType") == "PAYMENT_PAID":
-                    permit.status = ParkingPermitStatus.VALID
-                else:
-                    permit.status = ParkingPermitStatus.PAYMENT_IN_PROGRESS
-                permit.subscription_id = item.get("subscriptionId", "")
-                permit.order_id = item.get("orderId")
+        if event_type == "PAYMENT_PAID":
+            order = Order.objects.get(talpa_order_id=talpa_order_id)
+            order.status = OrderStatus.CONFIRMED
+            order.save()
+            for permit in order.permits.all():
+                permit.status = ParkingPermitStatus.VALID
                 permit.save()
 
-        if result.status_code >= 300:
-            logger.exception(result.text)
-            raise Exception("Failed to create product on talpa: {}".format(result.text))
-
+        logger.info(f"{order} is confirmed and order permits are set to VALID ")
         return Response({"message": "Order received"}, status=200)
