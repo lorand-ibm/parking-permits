@@ -126,6 +126,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return "%s" % self.identifier
 
     @property
+    def is_secondary_vehicle(self):
+        return not self.primary_vehicle
+
+    @property
     def consent_low_emission_accepted(self):
         return self.vehicle.consent_low_emission_accepted
 
@@ -139,7 +143,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
         if self.contract_type == ContractType.OPEN_ENDED:
             month_count = 1
-        if not self.primary_vehicle:
+        if self.is_secondary_vehicle:
             increase = decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
             monthly_price += increase * monthly_price
 
@@ -193,6 +197,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     @property
     def current_period_end_time(self):
         return get_end_time(self.start_time, self.months_used)
+
+    @property
+    def next_period_start_time(self):
+        return self.start_time + relativedelta(months=self.months_used)
 
     @property
     def has_refund(self):

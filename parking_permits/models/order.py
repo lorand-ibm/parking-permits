@@ -1,6 +1,7 @@
 import logging
 
 from django.db import models, transaction
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from parking_permits.mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
@@ -45,14 +46,75 @@ class OrderManager(models.Manager):
         for permit in permits:
             products_with_quantity = permit.get_products_with_quantities()
             for product, quantity in products_with_quantity:
+                unit_price = product.get_modified_unit_price(
+                    permit.vehicle.is_low_emission, permit.is_secondary_vehicle
+                )
                 OrderItem.objects.create(
                     order=order,
                     product=product,
                     permit=permit,
-                    unit_price=product.unit_price,
+                    unit_price=unit_price,
                     vat=product.vat,
                     quantity=quantity,
                 )
+            permit.order = order
+            permit.save()
+
+        return order
+
+    @transaction.atomic
+    def create_renewal_order(self, order):
+        """
+        Replace original order with update permits information
+        """
+        permits = order.permits.all()
+        # validations for renewal
+        date_ranges = []
+        for permit in permits:
+            if permit.status != ParkingPermitStatus.VALID:
+                raise OrderCreationFailed(
+                    "Cannot create renewal order for non-valid permits"
+                )
+            if permit.is_open_ended:
+                raise OrderCreationFailed(
+                    "Cannot create renewal order for open ended permits"
+                )
+            start_date = timezone.localdate(permit.next_period_start_time)
+            end_date = timezone.localdate(permit.end_time)
+            date_ranges.append([start_date, end_date])
+
+        if all([start_date >= end_date for start_date, end_date in date_ranges]):
+            raise OrderCreationFailed(
+                "Cannot create renewal order. All permits are ending or ended already."
+            )
+
+        # creating new order with updated prices starting from next period
+        order = Order.objects.create(
+            customer=order.customer, order_type=order.order_type
+        )
+        for permit, date_range in zip(permits, date_ranges):
+            start_date, end_date = date_ranges
+            if start_date >= end_date:
+                logger.info(
+                    f"Skip permit from order, the permit is ending or already ended: {permit}"
+                )
+                continue
+            qs = Product.objects.for_resident()
+            products_with_quantity = qs.get_products_with_quantities(*date_range)
+            for product, quantity in products_with_quantity:
+                unit_price = product.get_modified_unit_price(
+                    permit.vehicle.is_low_emission, permit.is_secondary_vehicle
+                )
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    permit=permit,
+                    unit_price=unit_price,
+                    vat=product.vat,
+                    quantity=quantity,
+                )
+            permit.order = order
+            permit.save()
 
         return order
 
