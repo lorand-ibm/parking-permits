@@ -1,5 +1,6 @@
 import json
 import logging
+from collections import defaultdict
 
 import requests
 from django.conf import settings
@@ -10,6 +11,8 @@ from parking_permits.exceptions import OrderCreationFailed
 from parking_permits.models.order import OrderType
 
 logger = logging.getLogger("db")
+DATE_FORMAT = "%d.%m.%Y"
+TIME_FORMAT = "%d.%m.%Y %H:%M"
 
 
 class TalpaOrderManager:
@@ -21,10 +24,26 @@ class TalpaOrderManager:
     }
 
     @classmethod
+    def _get_label(cls, permit, permit_index, has_multiple_permit):
+        registration_number = permit.vehicle.registration_number
+        manufacturer = permit.vehicle.manufacturer
+        model = permit.vehicle.model
+        car_info = f"{registration_number} {manufacturer} {model}"
+        permit_info = f"{permit_index + 1}. Ajoneuvo, "
+        return (permit_info + car_info) if has_multiple_permit else car_info
+
+    @classmethod
+    def _get_product_description(cls, product):
+        start_time = product.start_date.strftime(DATE_FORMAT)
+        end_time = product.start_date.strftime(DATE_FORMAT)
+        return f"{start_time} - {end_time}"
+
+    @classmethod
     def _create_item_data(cls, order, order_item):
         item = {
             "productId": str(order_item.product.talpa_product_id),
             "productName": order_item.product.name,
+            "productDescription": cls._get_product_description(order_item.product),
             "unit": "kk",
             "quantity": order_item.quantity,
             "rowPriceNet": float(order_item.unit_price_net),
@@ -41,20 +60,52 @@ class TalpaOrderManager:
                     "visibleInCheckout": False,
                     "ordinal": 0,
                 },
-                {
-                    "key": "vehicle",
-                    "label": "Vehicle",
-                    "value": str(order_item.permit.vehicle),
-                    "visibleInCheckout": True,
-                    "ordinal": 1,
-                },
             ],
         }
         if order.order_type == OrderType.SUBSCRIPTION:
             item.update(
                 {
-                    "period_unit": "monthly",
-                    "period_frequency": "1",
+                    "periodUnit": "monthly",
+                    "periodFrequency": "1",
+                }
+            )
+        return item
+
+    @classmethod
+    def _append_detail_meta(cls, item, permit):
+        item["meta"] += [
+            {
+                "key": "permitDuration",
+                "label": _("Duration of parking permit"),
+                "value": _("Fixed period %(month)d kk") % {"month": permit.month_count},
+                "visibleInCheckout": True,
+                "ordinal": 1,
+            },
+            {
+                "key": "startDate",
+                "label": _("Parking permit start date*"),
+                "value": f"{permit.start_time.strftime(DATE_FORMAT)}",
+                "visibleInCheckout": True,
+                "ordinal": 2,
+            },
+            {
+                "key": "terms",
+                "label": "",
+                "value": _(
+                    "* The permit is valid from the selected start date once the payment has been accepted"
+                ),
+                "visibleInCheckout": True,
+                "ordinal": 4,
+            },
+        ]
+        if permit.end_time:
+            item["meta"].append(
+                {
+                    "key": "endDate",
+                    "label": _("Parking permit expiration date"),
+                    "value": f"{permit.end_time.strftime(TIME_FORMAT)}",
+                    "visibleInCheckout": True,
+                    "ordinal": 3,
                 }
             )
         return item
@@ -69,8 +120,32 @@ class TalpaOrderManager:
 
     @classmethod
     def _create_order_data(cls, order):
+        items = []
         order_items = order.order_items.all().select_related("product", "permit")
-        items = [cls._create_item_data(order, order_item) for order_item in order_items]
+        order_items_by_permit = defaultdict(list)
+        for order_item in order_items:
+            order_items_by_permit[order_item.permit].append(order_item)
+
+        for permit in set([item.permit for item in order_items]):
+            order_items_of_single_permit = []
+            for index, order_item in enumerate(order_items_by_permit[permit]):
+                if order_item.quantity:
+                    item = cls._create_item_data(order, order_item)
+                    item.update(
+                        {
+                            "productLabel": cls._get_label(
+                                order_item.permit,
+                                index,
+                                len(order_items_by_permit[permit]) > 1,
+                            ),
+                        }
+                    )
+                    order_items_of_single_permit.append(item)
+
+            # Append details of permit only to the last order item of permit.
+            cls._append_detail_meta(order_items_of_single_permit[-1], permit)
+            items += order_items_of_single_permit
+
         customer = cls._create_customer_data(order.customer)
         return {
             "namespace": settings.NAMESPACE,
