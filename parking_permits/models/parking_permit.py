@@ -13,12 +13,11 @@ from ..constants import (
     SECONDARY_VEHICLE_PRICE_INCREASE,
     ParkingPermitEndType,
 )
-from ..exceptions import PermitCanNotBeEnded, ProductCatalogError, RefundCanNotBeCreated
+from ..exceptions import PermitCanNotBeEnded, RefundCanNotBeCreated
 from ..utils import diff_months_ceil, get_end_time
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
-from .product import Product
 from .refund import Refund
 from .vehicle import Vehicle
 
@@ -207,24 +206,13 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         Current monthly price is determined by the start date of current period
         """
         period_start_date = timezone.localdate(self.current_period_start_time)
-        try:
-            product = self.parking_zone.products.for_resident().get_for_date(
-                period_start_date
-            )
-            is_secondary = not self.primary_vehicle
-            return product.get_modified_unit_price(
-                self.vehicle.is_low_emission, is_secondary
-            )
-        except Product.DoesNotExist:
-            logger.error(f"Product does not exist for date {period_start_date}")
-            raise ProductCatalogError(
-                _("Product catalog error, please report to admin")
-            )
-        except Product.MultipleObjectsReturned:
-            f"Products date range overlapping for date {period_start_date}"
-            raise ProductCatalogError(
-                _("Product catalog error, please report to admin")
-            )
+        product = self.parking_zone.products.for_resident().get_for_date(
+            period_start_date
+        )
+        is_secondary = not self.primary_vehicle
+        return product.get_modified_unit_price(
+            self.vehicle.is_low_emission, is_secondary
+        )
 
     @property
     def refund_amount(self):
@@ -274,54 +262,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
         if self.is_open_ended:
             permit_start_date = timezone.localdate(self.start_time)
-            try:
-                product = qs.get(
-                    start_date__lte=permit_start_date,
-                    end_date__gte=permit_start_date,
-                )
-                return [(product, 1)]
-            except Product.DoesNotExist:
-                logger.error(f"Product does not exist for date {permit_start_date}")
-                raise ProductCatalogError(
-                    _("Product catalog error, please report to admin")
-                )
-            except Product.MultipleObjectsReturned:
-                logger.error(
-                    f"Products date range overlapping for date {permit_start_date}"
-                )
-                raise ProductCatalogError(
-                    _("Product catalog error, please report to admin")
-                )
+            product = qs.get_for_date(permit_start_date)
+            return [(product, 1)]
 
         if self.is_fixed_period:
             permit_start_date = timezone.localdate(self.start_time)
             permit_end_date = timezone.localdate(self.end_time)
-            # convert to list to enable minus indexing
-            products = list(qs.for_date_range(permit_start_date, permit_end_date))
-            # check product date range covers the whole duration of the permit
-            if (
-                permit_start_date < products[0].start_date
-                or permit_end_date > products[-1].end_date
-            ):
-                logger.error("Products does not cover permit duration")
-                raise ProductCatalogError(
-                    _("Product catalog error, please report to admin")
-                )
-
-            products_with_quantities = [[product, 0] for product in products]
-
-            # the price of the month is determined by the start date of month period
-            period_starts = [
-                permit_start_date + relativedelta(months=n)
-                for n in range(self.month_count)
-            ]
-            product_index = 0
-            period_index = 0
-            while product_index < len(products) and period_index < len(period_starts):
-                if period_starts[period_index] <= products[product_index].end_date:
-                    products_with_quantities[product_index][1] += 1
-                    period_index += 1
-                else:
-                    product_index += 1
-
-            return products_with_quantities
+            return qs.get_products_with_quantities(permit_start_date, permit_end_date)

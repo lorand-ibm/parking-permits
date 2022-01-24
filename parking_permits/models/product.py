@@ -3,11 +3,12 @@ import logging
 from decimal import Decimal
 
 import requests
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from parking_permits.exceptions import CreateTalpaProductError
+from parking_permits.exceptions import CreateTalpaProductError, ProductCatalogError
 
 from .mixins import TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
@@ -36,13 +37,48 @@ class ProductQuerySet(models.QuerySet):
         return self.filter(type=ProductType.COMPANY)
 
     def get_for_date(self, dt):
-        return self.get(start_date__lte=dt, end_date__gte=dt)
+        try:
+            return self.get(start_date__lte=dt, end_date__gte=dt)
+        except Product.DoesNotExist:
+            logger.error(f"Product does not exist for date {dt}")
+            raise ProductCatalogError(
+                _("Product catalog error, please report to admin")
+            )
+        except Product.MultipleObjectsReturned:
+            logger.error(f"Products date range overlapping for date {dt}")
+            raise ProductCatalogError(
+                _("Product catalog error, please report to admin")
+            )
 
     def for_date_range(self, start_date, end_date):
         return self.filter(
             start_date__lte=end_date,
             end_date__gte=start_date,
         ).order_by("start_date")
+
+    def get_products_with_quantities(self, start_date, end_date):
+        # convert to list to enable minus indexing
+        products = list(self.for_date_range(start_date, end_date))
+        # check product date range covers the whole duration of the permit
+        if start_date < products[0].start_date or end_date > products[-1].end_date:
+            logger.error("Products does not cover permit duration")
+            raise ProductCatalogError(
+                _("Product catalog error, please report to admin")
+            )
+
+        products_with_quantities = [[product, 0] for product in products]
+
+        # the price of the month is determined by the start date of month period
+        product_index = 0
+        period_start = start_date
+        while product_index < len(products) and period_start < end_date:
+            if period_start <= products[product_index].end_date:
+                products_with_quantities[product_index][1] += 1
+                period_start += relativedelta(months=1)
+            else:
+                product_index += 1
+
+        return products_with_quantities
 
 
 class Product(TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin):
