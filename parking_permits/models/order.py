@@ -100,7 +100,9 @@ class OrderManager(models.Manager):
                 )
                 continue
             qs = Product.objects.for_resident()
-            products_with_quantity = qs.get_products_with_quantities(*date_range)
+            products_with_quantity = qs.get_products_with_quantities(
+                start_date, end_date
+            )
             for product, quantity in products_with_quantity:
                 unit_price = product.get_modified_unit_price(
                     permit.vehicle.is_low_emission, permit.is_secondary_vehicle
@@ -190,6 +192,8 @@ class OrderItem(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     unit_price = models.DecimalField(_("Unit price"), max_digits=6, decimal_places=2)
     vat = models.DecimalField(_("VAT"), max_digits=6, decimal_places=4)
     quantity = models.IntegerField(_("Quantity"))
+    start_date = models.DateField(_("Start date"), null=True, blank=True)
+    end_date = models.DateField(_("End date"), null=True, blank=True)
 
     class Meta:
         verbose_name = _("Order item")
