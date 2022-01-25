@@ -186,7 +186,7 @@ class OrderItem(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     permit = models.ForeignKey(
         ParkingPermit,
         verbose_name=_("Parking permit"),
-        related_name="order_item",
+        related_name="order_items",
         on_delete=models.PROTECT,
     )
     unit_price = models.DecimalField(_("Unit price"), max_digits=6, decimal_places=2)
