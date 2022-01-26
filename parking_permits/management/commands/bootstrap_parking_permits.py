@@ -16,10 +16,18 @@ class Command(BaseCommand):
             year=2022,
         )
         call_command(
+            "create_parking_zone_products",
+            year=2023,
+        )
+        call_command(
             "create_low_emission_criteria",
             year=2021,
         )
         call_command(
             "create_low_emission_criteria",
             year=2022,
+        )
+        call_command(
+            "create_low_emission_criteria",
+            year=2023,
         )
