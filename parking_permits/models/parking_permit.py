@@ -13,7 +13,7 @@ from ..constants import (
     SECONDARY_VEHICLE_PRICE_INCREASE,
     ParkingPermitEndType,
 )
-from ..exceptions import PermitCanNotBeEnded, RefundCanNotBeCreated
+from ..exceptions import InvalidContractType, PermitCanNotBeEnded, RefundCanNotBeCreated
 from ..utils import diff_months_ceil, get_end_time
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
@@ -263,6 +263,41 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         # TODO: end subscription
         pass
 
+    def get_unused_order_items(self):
+        if self.is_open_ended:
+            raise InvalidContractType(
+                "Cannot get unused order items for open ended permit"
+            )
+
+        unused_start_date = timezone.localdate(self.next_period_start_time)
+        order_items = self.order_items.filter(end_date__gte=unused_start_date).order_by(
+            "start_date"
+        )
+
+        if len(order_items) == 0:
+            return []
+
+        # first order item is partially used, so should calculate
+        # the remaining quantity and date range starting from
+        # unused_start_date
+        first_item = order_items[0]
+        first_item_unused_quantity = diff_months_ceil(
+            unused_start_date, first_item.end_date
+        )
+        first_item_with_quantity = [
+            first_item,
+            first_item_unused_quantity,
+            (unused_start_date, first_item.end_date),
+        ]
+
+        return [
+            first_item_with_quantity,
+            *[
+                [item, item.quantity, (item.start_date, item.end_date)]
+                for item in order_items[1:]
+            ],
+        ]
+
     def get_products_with_quantities(self):
         """Return a list of product and quantities for the permit"""
         # TODO: currently, company permit type is not available
@@ -271,7 +306,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         if self.is_open_ended:
             permit_start_date = timezone.localdate(self.start_time)
             product = qs.get_for_date(permit_start_date)
-            return [(product, 1)]
+            return [[product, 1, (permit_start_date, None)]]
 
         if self.is_fixed_period:
             permit_start_date = timezone.localdate(self.start_time)

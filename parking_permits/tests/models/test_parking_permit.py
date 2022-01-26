@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 
 from django.test import TestCase
 from django.utils import timezone
@@ -6,10 +7,12 @@ from freezegun import freeze_time
 
 from parking_permits.constants import ParkingPermitEndType
 from parking_permits.exceptions import (
+    InvalidContractType,
     PermitCanNotBeEnded,
     ProductCatalogError,
     RefundCanNotBeCreated,
 )
+from parking_permits.models import Order
 from parking_permits.models.parking_permit import ContractType, ParkingPermitStatus
 from parking_permits.models.product import ProductType
 from parking_permits.tests.factories import ParkingZoneFactory, PriceFactory
@@ -382,3 +385,65 @@ class ParkingZoneTestCase(TestCase):
         )
         with self.assertRaises(ProductCatalogError):
             permit.get_products_with_quantities()
+
+    def test_get_unused_order_items_raise_error_for_open_ended_permit(self):
+        zone = ParkingZoneFactory()
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 1, 1),
+            end_date=date(2021, 6, 30),
+            unit_price=Decimal(20),
+        )
+        start_time = timezone.make_aware(datetime(2021, 1, 1))
+        customer = CustomerFactory()
+        permit = ParkingPermitFactory(
+            customer=customer,
+            parking_zone=zone,
+            contract_type=ContractType.OPEN_ENDED,
+            start_time=start_time,
+            month_count=12,
+        )
+        self.assertRaises(InvalidContractType, permit.get_unused_order_items)
+
+    def test_get_unused_order_items_return_unused_items(self):
+        zone = ParkingZoneFactory()
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 1, 1),
+            end_date=date(2021, 6, 30),
+            unit_price=Decimal(20),
+        )
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 7, 1),
+            end_date=date(2021, 12, 31),
+            unit_price=Decimal(30),
+        )
+        start_time = timezone.make_aware(datetime(2021, 1, 1))
+        end_time = get_end_time(start_time, 12)
+        customer = CustomerFactory()
+        permit = ParkingPermitFactory(
+            customer=customer,
+            parking_zone=zone,
+            contract_type=ContractType.FIXED_PERIOD,
+            start_time=start_time,
+            end_time=end_time,
+            month_count=12,
+        )
+        Order.objects.create_for_customer(customer)
+        permit.refresh_from_db()
+        permit.status = ParkingPermitStatus.VALID
+        permit.save()
+
+        with freeze_time(datetime(2021, 4, 15)):
+            unused_items = permit.get_unused_order_items()
+            self.assertEqual(len(unused_items), 2)
+            self.assertEqual(unused_items[0][0].unit_price, Decimal(20))
+            self.assertEqual(unused_items[0][1], 2)
+            self.assertEqual(unused_items[0][2], (date(2021, 5, 1), date(2021, 6, 30)))
+            self.assertEqual(unused_items[1][0].unit_price, Decimal(30))
+            self.assertEqual(unused_items[1][1], 6)
+            self.assertEqual(unused_items[1][2], (date(2021, 7, 1), date(2021, 12, 31)))
