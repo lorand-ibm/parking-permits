@@ -259,6 +259,16 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
             permit=self, customer=self.customer, amount=self.refund_amount, iban=iban
         )
 
+    def get_refund_amount_for_unused_items(self):
+        if self.is_open_ended or not self.order or not self.order.is_confirmed:
+            return decimal.Decimal(0)
+
+        unused_order_items = self.get_unused_order_items()
+        total = decimal.Decimal(0)
+        for order_item, quantity, date_range in unused_order_items:
+            total += order_item.unit_price * quantity
+        return total
+
     def end_subscription(self):
         # TODO: end subscription
         pass

@@ -13,6 +13,7 @@ from parking_permits.exceptions import (
     RefundCanNotBeCreated,
 )
 from parking_permits.models import Order
+from parking_permits.models.order import OrderStatus
 from parking_permits.models.parking_permit import ContractType, ParkingPermitStatus
 from parking_permits.models.product import ProductType
 from parking_permits.tests.factories import ParkingZoneFactory, PriceFactory
@@ -216,6 +217,44 @@ class ParkingZoneTestCase(TestCase):
         permit.create_refund("dummy-iban")
         self.assertTrue(permit.has_refund)
         self.assertEqual(permit.refund.amount, 150)
+
+    def test_get_refund_amount_for_unused_items_should_return_correct_total(self):
+        zone = ParkingZoneFactory()
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 1, 1),
+            end_date=date(2021, 6, 30),
+            unit_price=Decimal(20),
+        )
+        ProductFactory(
+            zone=zone,
+            type=ProductType.RESIDENT,
+            start_date=date(2021, 7, 1),
+            end_date=date(2021, 12, 31),
+            unit_price=Decimal(30),
+        )
+        start_time = timezone.make_aware(datetime(2021, 1, 1))
+        end_time = get_end_time(start_time, 12)
+        customer = CustomerFactory()
+        permit = ParkingPermitFactory(
+            customer=customer,
+            parking_zone=zone,
+            contract_type=ContractType.FIXED_PERIOD,
+            start_time=start_time,
+            end_time=end_time,
+            month_count=12,
+        )
+        order = Order.objects.create_for_customer(customer)
+        order.status = OrderStatus.CONFIRMED
+        order.save()
+        permit.refresh_from_db()
+        permit.status = ParkingPermitStatus.VALID
+        permit.save()
+
+        with freeze_time(datetime(2021, 4, 15)):
+            refund_amount = permit.get_refund_amount_for_unused_items()
+            self.assertEqual(refund_amount, Decimal(220))
 
     def test_get_products_with_quantities_should_return_a_single_product_for_open_ended(
         self,

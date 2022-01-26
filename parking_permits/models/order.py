@@ -213,6 +213,10 @@ class Order(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return f"Order: {self.id} ({self.order_type})"
 
     @property
+    def is_confirmed(self):
+        return self.status == OrderStatus.CONFIRMED
+
+    @property
     def total_price(self):
         return sum([item.total_price for item in self.order_items.all()])
 
