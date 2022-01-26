@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 
 from parking_permits.exceptions import CreateTalpaProductError, ProductCatalogError
 
+from ..utils import diff_months_ceil, find_next_date
 from .mixins import TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
 
@@ -59,6 +60,18 @@ class ProductQuerySet(models.QuerySet):
     def get_products_with_quantities(self, start_date, end_date):
         # convert to list to enable minus indexing
         products = list(self.for_date_range(start_date, end_date))
+
+        # check that there is no gap and overlapping between product date ranges
+        for current_product, next_product in zip(products, products[1:]):
+            if (
+                current_product.end_date + relativedelta(days=1)
+                != next_product.start_date
+            ):
+                logger.error("There are gaps or overlaps in product date ranges")
+                raise ProductCatalogError(
+                    _("Product catalog error, please report to admin")
+                )
+
         # check product date range covers the whole duration of the permit
         if start_date < products[0].start_date or end_date > products[-1].end_date:
             logger.error("Products does not cover permit duration")
@@ -66,17 +79,22 @@ class ProductQuerySet(models.QuerySet):
                 _("Product catalog error, please report to admin")
             )
 
-        products_with_quantities = [[product, 0] for product in products]
-
-        # the price of the month is determined by the start date of month period
-        product_index = 0
-        period_start = start_date
-        while product_index < len(products) and period_start < end_date:
-            if period_start <= products[product_index].end_date:
-                products_with_quantities[product_index][1] += 1
-                period_start += relativedelta(months=1)
+        products_with_quantities = []
+        for index, product in enumerate(products):
+            if index == 0:
+                period_start_date = start_date
             else:
-                product_index += 1
+                period_start_date = find_next_date(product.start_date, start_date.day)
+
+            if index == len(products) - 1:
+                period_end_date = end_date
+            else:
+                period_end_date = find_next_date(product.end_date, end_date.day)
+
+            quantity = diff_months_ceil(period_start_date, period_end_date)
+            products_with_quantities.append(
+                [product, quantity, (period_start_date, period_end_date)]
+            )
 
         return products_with_quantities
 
