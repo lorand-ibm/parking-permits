@@ -28,6 +28,7 @@ class Refund(TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin):
         choices=RefundStatus.choices,
         default=RefundStatus.OPEN,
     )
+    description = models.TextField(_("Description"), blank=True)
 
     class Meta:
         verbose_name = _("Refund")
