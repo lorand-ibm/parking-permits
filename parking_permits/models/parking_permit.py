@@ -13,12 +13,11 @@ from ..constants import (
     SECONDARY_VEHICLE_PRICE_INCREASE,
     ParkingPermitEndType,
 )
-from ..exceptions import InvalidContractType, PermitCanNotBeEnded, RefundCanNotBeCreated
+from ..exceptions import InvalidContractType, PermitCanNotBeEnded, RefundError
 from ..utils import diff_months_ceil, get_end_time
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
-from .refund import Refund
 from .vehicle import Vehicle
 
 logger = logging.getLogger("db")
@@ -223,9 +222,8 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         )
 
     @property
-    def refund_amount(self):
-        # TODO: account for different prices in different years
-        return self.months_left * self.monthly_price
+    def can_be_refunded(self):
+        return self.is_fixed_period and self.order and self.order.is_confirmed
 
     def end_permit(self, end_type):
         if end_type == ParkingPermitEndType.AFTER_CURRENT_PERIOD:
@@ -250,28 +248,15 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
             self.status = ParkingPermitStatus.CLOSED
         self.save()
 
-    def create_refund(self, iban):
-        if not self.is_fixed_period:
-            raise RefundCanNotBeCreated(
-                f"Refund cannot be created for {self.contract_type}"
-            )
-        return Refund.objects.create(
-            permit=self, customer=self.customer, amount=self.refund_amount, iban=iban
-        )
-
     def get_refund_amount_for_unused_items(self):
-        if self.is_open_ended or not self.order or not self.order.is_confirmed:
-            return decimal.Decimal(0)
+        if not self.can_be_refunded:
+            raise RefundError("This permit cannot be refunded")
 
         unused_order_items = self.get_unused_order_items()
         total = decimal.Decimal(0)
         for order_item, quantity, date_range in unused_order_items:
             total += order_item.unit_price * quantity
         return total
-
-    def end_subscription(self):
-        # TODO: end subscription
-        pass
 
     def get_unused_order_items(self):
         if self.is_open_ended:

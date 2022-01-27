@@ -10,13 +10,12 @@ from parking_permits.exceptions import (
     InvalidContractType,
     PermitCanNotBeEnded,
     ProductCatalogError,
-    RefundCanNotBeCreated,
 )
 from parking_permits.models import Order
 from parking_permits.models.order import OrderStatus
 from parking_permits.models.parking_permit import ContractType, ParkingPermitStatus
 from parking_permits.models.product import ProductType
-from parking_permits.tests.factories import ParkingZoneFactory, PriceFactory
+from parking_permits.tests.factories import ParkingZoneFactory
 from parking_permits.tests.factories.customer import CustomerFactory
 from parking_permits.tests.factories.parking_permit import ParkingPermitFactory
 from parking_permits.tests.factories.product import ProductFactory
@@ -189,34 +188,6 @@ class ParkingZoneTestCase(TestCase):
         )
         with self.assertRaises(PermitCanNotBeEnded):
             primary_vehicle_permit.end_permit(ParkingPermitEndType.AFTER_CURRENT_PERIOD)
-
-    @freeze_time(timezone.make_aware(datetime(2021, 11, 20, 12, 10, 50)))
-    def test_should_raise_error_when_create_refund_for_open_ended_permit(self):
-        start_time = timezone.make_aware(datetime(2021, 11, 15))
-        permit = ParkingPermitFactory(
-            contract_type=ContractType.OPEN_ENDED,
-            start_time=start_time,
-        )
-        with self.assertRaises(RefundCanNotBeCreated):
-            permit.create_refund("dummy-iban")
-
-    @freeze_time(timezone.make_aware(datetime(2021, 11, 20, 12, 10, 50)))
-    def test_should_create_refund_when_create_refund_for_fixed_period_permit(self):
-        start_time = timezone.make_aware(datetime(2021, 11, 15))
-        end_time = get_end_time(start_time, 6)
-        zone = ParkingZoneFactory()
-        PriceFactory(zone=zone, price=30, year=2021)
-        permit = ParkingPermitFactory(
-            parking_zone=zone,
-            contract_type=ContractType.FIXED_PERIOD,
-            start_time=start_time,
-            end_time=end_time,
-            month_count=6,
-        )
-        permit.end_permit(ParkingPermitEndType.AFTER_CURRENT_PERIOD)
-        permit.create_refund("dummy-iban")
-        self.assertTrue(permit.has_refund)
-        self.assertEqual(permit.refund.amount, 150)
 
     def test_get_refund_amount_for_unused_items_should_return_correct_total(self):
         zone = ParkingZoneFactory()

@@ -18,6 +18,10 @@ class InvalidContractType(ParkingPermitBaseException):
     pass
 
 
+class RefundError(ParkingPermitBaseException):
+    pass
+
+
 class NonDraftPermitUpdateError(ParkingPermitBaseException):
     pass
 
@@ -27,10 +31,6 @@ class PermitCanNotBeDelete(ParkingPermitBaseException):
 
 
 class PermitCanNotBeEnded(ParkingPermitBaseException):
-    pass
-
-
-class RefundCanNotBeCreated(ParkingPermitBaseException):
     pass
 
 

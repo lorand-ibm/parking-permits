@@ -21,11 +21,12 @@ from parking_permits.models import (
     ParkingPermit,
     ParkingZone,
     Product,
+    Refund,
     Vehicle,
 )
 
 from .decorators import is_ad_admin
-from .exceptions import ObjectNotFound, ParkingZoneError, UpdatePermitError
+from .exceptions import ObjectNotFound, ParkingZoneError, RefundError, UpdatePermitError
 from .models.parking_permit import ContractType
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
@@ -245,17 +246,24 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info):
 @transaction.atomic
 def resolve_end_permit(obj, info, permit_id, end_type, iban=None):
     request = info.context["request"]
+    permit = ParkingPermit.objects.get(identifier=permit_id)
+    if permit.can_be_refunded:
+        if not iban:
+            raise RefundError("IBAN is not provided")
+        description = f"Refund for ending permit #{permit.identifier}"
+        Refund.objects.create(
+            name=str(permit.customer),
+            order=permit.order,
+            amount=permit.get_refund_amount_for_unused_items(),
+            iban=iban,
+            description=description,
+        )
+    if permit.is_open_ended:
+        # TODO: handle open ended. Currently how to handle
+        # open ended permit are not defined.
+        pass
     with reversion.create_revision():
-        permit = ParkingPermit.objects.get(identifier=permit_id)
         permit.end_permit(end_type)
-
-        if permit.contract_type == ContractType.OPEN_ENDED:
-            permit.end_subscription()
-        elif (
-            permit.contract_type == ContractType.FIXED_PERIOD and not permit.has_refund
-        ):
-            permit.create_refund(iban)
-
         reversion.set_user(request.user)
         comment = get_reversion_comment(EventType.CHANGED, permit)
         reversion.set_comment(comment)
