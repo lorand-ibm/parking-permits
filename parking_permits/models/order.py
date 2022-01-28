@@ -32,7 +32,6 @@ class OrderManager(models.Manager):
         permits = ParkingPermit.objects.filter(
             customer=customer, status=ParkingPermitStatus.DRAFT
         )
-
         if len(permits) > 2:
             raise OrderCreationFailed("More than 2 draft permits found")
         if len(permits) == 2 and permits[0].contract_type != permits[1].contract_type:

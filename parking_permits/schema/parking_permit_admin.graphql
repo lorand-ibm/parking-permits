@@ -63,7 +63,6 @@ enum ParkingPermitStatus {
   PAYMENT_IN_PROGRESS
   VALID
   CLOSED
-
 }
 
 type PermitNode {
@@ -139,7 +138,7 @@ type PermitDetailNode {
   currentPeriodEndTime: String
   canEndImmediately: Boolean
   canEndAfterCurrentPeriod: Boolean
-  hasRefund: Boolean
+  canBeRefunded: Boolean
   changeLogs: [ChangeLog]!
 }
 

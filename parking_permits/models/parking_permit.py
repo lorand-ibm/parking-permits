@@ -202,10 +202,6 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return self.start_time + relativedelta(months=self.months_used)
 
     @property
-    def has_refund(self):
-        return hasattr(self, "refund")
-
-    @property
     def monthly_price(self):
         """
         Return the monthly price for current period
@@ -223,7 +219,13 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     @property
     def can_be_refunded(self):
-        return self.is_fixed_period and self.order and self.order.is_confirmed
+        return (
+            self.is_valid
+            and self.is_fixed_period
+            and self.order
+            and self.order.is_confirmed
+            and not hasattr(self.order, "refund")
+        )
 
     def end_permit(self, end_type):
         if end_type == ParkingPermitEndType.AFTER_CURRENT_PERIOD:
