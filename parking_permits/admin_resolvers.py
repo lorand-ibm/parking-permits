@@ -18,6 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from parking_permits.models import (
     Address,
     Customer,
+    Order,
     ParkingPermit,
     ParkingZone,
     Product,
@@ -192,7 +193,7 @@ def resolve_create_resident_permit(obj, info, permit):
     with reversion.create_revision():
         start_time = isoparse(permit["start_time"])
         end_time = get_end_time(start_time, permit["month_count"])
-        permit = ParkingPermit.objects.create(
+        parking_permit = ParkingPermit.objects.create(
             contract_type=ContractType.FIXED_PERIOD,
             customer=customer,
             vehicle=vehicle,
@@ -204,8 +205,10 @@ def resolve_create_resident_permit(obj, info, permit):
         )
         request = info.context["request"]
         reversion.set_user(request.user)
-        comment = get_reversion_comment(EventType.CREATED, permit)
+        comment = get_reversion_comment(EventType.CREATED, parking_permit)
         reversion.set_comment(comment)
+
+    Order.objects.create_for_permits([parking_permit])
     return {"success": True}
 
 

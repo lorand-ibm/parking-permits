@@ -27,22 +27,26 @@ class OrderStatus(models.TextChoices):
 
 
 class OrderManager(models.Manager):
-    @transaction.atomic
-    def create_for_customer(self, customer):
-        permits = ParkingPermit.objects.filter(
-            customer=customer, status=ParkingPermitStatus.DRAFT
-        )
+    def _validate_permits(self, permits):
         if len(permits) > 2:
             raise OrderCreationFailed("More than 2 draft permits found")
-        if len(permits) == 2 and permits[0].contract_type != permits[1].contract_type:
-            raise OrderCreationFailed("Permit contract types do not match")
+        if len(permits) == 2:
+            if permits[0].contract_type != permits[1].contract_type:
+                raise OrderCreationFailed("Permits contract types do not match")
+            if permits[0].customer_id != permits[1].customer_id:
+                raise OrderCreationFailed("Permits customer do not match")
 
+    @transaction.atomic
+    def create_for_permits(self, permits):
+        self._validate_permits(permits)
         if permits[0].contract_type == ContractType.OPEN_ENDED:
             order_type = OrderType.SUBSCRIPTION
         else:
             order_type = OrderType.ORDER
 
-        order = Order.objects.create(customer=customer, order_type=order_type)
+        order = Order.objects.create(
+            customer=permits[0].customer, order_type=order_type
+        )
         for permit in permits:
             products_with_quantity = permit.get_products_with_quantities()
             for product, quantity, date_range in products_with_quantity:

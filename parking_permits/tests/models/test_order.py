@@ -41,7 +41,7 @@ class TestOrderManager(TestCase):
     def test_create_for_customer_should_create_order_with_items(self):
         start_time = timezone.make_aware(datetime(2021, 3, 15))
         end_time = get_end_time(start_time, 6)  # end at 2021-09-14 23:59
-        ParkingPermitFactory(
+        permit = ParkingPermitFactory(
             parking_zone=self.zone,
             customer=self.customer,
             contract_type=ContractType.FIXED_PERIOD,
@@ -50,7 +50,7 @@ class TestOrderManager(TestCase):
             end_time=end_time,
             month_count=6,
         )
-        order = Order.objects.create_for_customer(self.customer)
+        order = Order.objects.create_for_permits([permit])
         order_items = order.order_items.all().order_by("-quantity")
         self.assertEqual(order_items.count(), 2)
         self.assertEqual(order_items[0].unit_price, Decimal(30))
@@ -73,7 +73,7 @@ class TestOrderManager(TestCase):
             end_time=end_time,
             month_count=6,
         )
-        order = Order.objects.create_for_customer(self.customer)
+        order = Order.objects.create_for_permits([permit])
         order.status = OrderStatus.CONFIRMED
         order.save()
         permit.refresh_from_db()
@@ -95,7 +95,7 @@ class TestOrderManager(TestCase):
     def test_create_renewable_order_should_raise_error_for_draft_permits(self):
         start_time = timezone.make_aware(datetime(2021, 3, 15))
         end_time = get_end_time(start_time, 6)  # end at 2021-09-14 23:59
-        ParkingPermitFactory(
+        permit = ParkingPermitFactory(
             parking_zone=self.zone,
             customer=self.customer,
             contract_type=ContractType.FIXED_PERIOD,
@@ -104,7 +104,7 @@ class TestOrderManager(TestCase):
             end_time=end_time,
             month_count=6,
         )
-        order = Order.objects.create_for_customer(self.customer)
+        order = Order.objects.create_for_permits([permit])
         with freeze_time(timezone.make_aware(datetime(2021, 5, 5))):
             with self.assertRaises(OrderCreationFailed):
                 Order.objects.create_renewal_order(order)
@@ -121,7 +121,7 @@ class TestOrderManager(TestCase):
             end_time=end_time,
             month_count=6,
         )
-        order = Order.objects.create_for_customer(self.customer)
+        order = Order.objects.create_for_permits([permit])
         permit.status = ParkingPermitStatus.VALID
         permit.save()
         with freeze_time(timezone.make_aware(datetime(2021, 5, 5))):

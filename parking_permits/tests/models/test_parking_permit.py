@@ -216,7 +216,7 @@ class ParkingZoneTestCase(TestCase):
             end_time=end_time,
             month_count=12,
         )
-        order = Order.objects.create_for_customer(customer)
+        order = Order.objects.create_for_permits([permit])
         order.status = OrderStatus.CONFIRMED
         order.save()
         permit.refresh_from_db()
@@ -443,7 +443,7 @@ class ParkingZoneTestCase(TestCase):
             end_time=end_time,
             month_count=12,
         )
-        Order.objects.create_for_customer(customer)
+        Order.objects.create_for_permits([permit])
         permit.refresh_from_db()
         permit.status = ParkingPermitStatus.VALID
         permit.save()
