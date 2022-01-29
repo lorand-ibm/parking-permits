@@ -348,3 +348,19 @@ def resolve_create_product(obj, info, product):
         modified_by=request.user,
     )
     return {"success": True}
+
+
+@query.field("refunds")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+def resolve_refunds(obj, info, page_input, order_by=None, search_items=None):
+    refunds = Refund.objects.all().order_by("-created_at")
+    if order_by:
+        refunds = apply_ordering(refunds, order_by)
+    if search_items:
+        refunds = apply_filtering(refunds, search_items)
+    paginator = QuerySetPaginator(refunds, page_input)
+    return {
+        "page_info": paginator.page_info,
+        "objects": paginator.object_list,
+    }
