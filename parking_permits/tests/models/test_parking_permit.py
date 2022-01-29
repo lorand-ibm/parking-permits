@@ -23,6 +23,24 @@ from parking_permits.utils import get_end_time
 
 
 class ParkingZoneTestCase(TestCase):
+    def setUp(self):
+        self.customer = CustomerFactory()
+        self.zone = ParkingZoneFactory()
+
+    def _create_test_products(self, product_detail_list):
+        products = []
+        for date_range, unit_price in product_detail_list:
+            start_date, end_date = date_range
+            product = ProductFactory(
+                zone=self.zone,
+                type=ProductType.RESIDENT,
+                start_date=start_date,
+                end_date=end_date,
+                unit_price=unit_price,
+            )
+            products.append(product)
+        return products
+
     @freeze_time(timezone.make_aware(datetime(2021, 11, 15)))
     def test_should_return_correct_months_used(self):
         start_time = timezone.make_aware(datetime(2021, 9, 15))
@@ -164,11 +182,10 @@ class ParkingZoneTestCase(TestCase):
     def test_should_raise_error_when_end_primary_vehicle_permit_with_active_secondary_vehicle_permit(
         self,
     ):
-        customer = CustomerFactory()
         primary_start_time = timezone.make_aware(datetime(2021, 11, 15))
         primary_end_time = get_end_time(primary_start_time, 6)
         primary_vehicle_permit = ParkingPermitFactory(
-            customer=customer,
+            customer=self.customer,
             primary_vehicle=True,
             contract_type=ContractType.FIXED_PERIOD,
             status=ParkingPermitStatus.VALID,
@@ -179,7 +196,7 @@ class ParkingZoneTestCase(TestCase):
         secondary_start_time = timezone.make_aware(datetime(2022, 1, 1))
         secondary_end_time = get_end_time(secondary_start_time, 2)
         ParkingPermitFactory(
-            customer=customer,
+            customer=self.customer,
             contract_type=ContractType.FIXED_PERIOD,
             status=ParkingPermitStatus.VALID,
             start_time=secondary_start_time,
@@ -190,27 +207,16 @@ class ParkingZoneTestCase(TestCase):
             primary_vehicle_permit.end_permit(ParkingPermitEndType.AFTER_CURRENT_PERIOD)
 
     def test_get_refund_amount_for_unused_items_should_return_correct_total(self):
-        zone = ParkingZoneFactory()
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 1, 1),
-            end_date=date(2021, 6, 30),
-            unit_price=Decimal(20),
-        )
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 7, 1),
-            end_date=date(2021, 12, 31),
-            unit_price=Decimal(30),
-        )
+        product_detail_list = [
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(20)],
+            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal(30)],
+        ]
+        self._create_test_products(product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 1, 1))
         end_time = get_end_time(start_time, 12)
-        customer = CustomerFactory()
         permit = ParkingPermitFactory(
-            customer=customer,
-            parking_zone=zone,
+            customer=self.customer,
+            parking_zone=self.zone,
             contract_type=ContractType.FIXED_PERIOD,
             start_time=start_time,
             end_time=end_time,
@@ -230,16 +236,11 @@ class ParkingZoneTestCase(TestCase):
     def test_get_products_with_quantities_should_return_a_single_product_for_open_ended(
         self,
     ):
-        zone = ParkingZoneFactory()
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 1, 1),
-            end_date=date(2021, 12, 31),
-        )
+        product_detail_list = [[(date(2021, 1, 1), date(2021, 12, 31)), Decimal(30)]]
+        self._create_test_products(product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 2, 15))
         permit = ParkingPermitFactory(
-            parking_zone=zone,
+            parking_zone=self.zone,
             contract_type=ContractType.OPEN_ENDED,
             start_time=start_time,
             month_count=1,
@@ -265,22 +266,14 @@ class ParkingZoneTestCase(TestCase):
     def test_get_products_with_quantities_raise_error_when_multiple_products_available_for_open_ended(
         self,
     ):
-        zone = ParkingZoneFactory()
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 1, 1),
-            end_date=date(2021, 6, 30),
-        )
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 5, 1),
-            end_date=date(2021, 12, 31),
-        )
+        product_detail_list = [
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(30)],
+            [(date(2021, 5, 1), date(2021, 12, 31)), Decimal(30)],
+        ]
+        self._create_test_products(product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 6, 15))
         permit = ParkingPermitFactory(
-            parking_zone=zone,
+            parking_zone=self.zone,
             contract_type=ContractType.OPEN_ENDED,
             start_time=start_time,
             month_count=1,
@@ -291,103 +284,67 @@ class ParkingZoneTestCase(TestCase):
     def test_get_products_with_quantities_should_return_products_with_quantities_for_fix_period(
         self,
     ):
-        zone = ParkingZoneFactory()
-        product_1 = ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 1, 1),
-            end_date=date(2021, 5, 31),
-        )
-        product_2 = ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 6, 1),
-            end_date=date(2021, 7, 31),
-        )
-        product_3 = ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 8, 1),
-            end_date=date(2021, 12, 31),
-        )
-
+        product_detail_list = [
+            [(date(2021, 1, 1), date(2021, 5, 31)), Decimal(30)],
+            [(date(2021, 6, 1), date(2021, 7, 31)), Decimal(30)],
+            [(date(2021, 8, 1), date(2021, 12, 31)), Decimal(30)],
+        ]
+        products = self._create_test_products(product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 2, 15))
         end_time = get_end_time(start_time, 10)  # ends at 2021-2-14, 23:59
         permit = ParkingPermitFactory(
-            parking_zone=zone,
+            parking_zone=self.zone,
             contract_type=ContractType.FIXED_PERIOD,
             start_time=start_time,
             end_time=end_time,
             month_count=10,
         )
         products_with_quantities = permit.get_products_with_quantities()
-        self.assertEqual(products_with_quantities[0][0].id, product_1.id)
+        self.assertEqual(products_with_quantities[0][0].id, products[0].id)
         self.assertEqual(products_with_quantities[0][1], 4)
-        self.assertEqual(products_with_quantities[1][0].id, product_2.id)
+        self.assertEqual(products_with_quantities[1][0].id, products[1].id)
         self.assertEqual(products_with_quantities[1][1], 2)
-        self.assertEqual(products_with_quantities[2][0].id, product_3.id)
+        self.assertEqual(products_with_quantities[2][0].id, products[2].id)
         self.assertEqual(products_with_quantities[2][1], 4)
 
     def test_get_products_with_quantities_should_return_products_with_quantities_for_fix_period_with_mid_month_start(
         self,
     ):
-        zone = ParkingZoneFactory()
-        product_1 = ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 1, 10),
-            end_date=date(2021, 5, 9),
-        )
-        product_2 = ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 5, 10),
-            end_date=date(2021, 8, 9),
-        )
-        product_3 = ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 8, 10),
-            end_date=date(2021, 12, 31),
-        )
-
+        product_detail_list = [
+            [(date(2021, 1, 10), date(2021, 5, 9)), Decimal(30)],
+            [(date(2021, 5, 10), date(2021, 8, 9)), Decimal(30)],
+            [(date(2021, 8, 10), date(2021, 12, 31)), Decimal(30)],
+        ]
+        products = self._create_test_products(product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 2, 15))
         end_time = get_end_time(start_time, 10)  # ends at 2021-2-14, 23:59
         permit = ParkingPermitFactory(
-            parking_zone=zone,
+            parking_zone=self.zone,
             contract_type=ContractType.FIXED_PERIOD,
             start_time=start_time,
             end_time=end_time,
             month_count=10,
         )
         products_with_quantities = permit.get_products_with_quantities()
-        self.assertEqual(products_with_quantities[0][0].id, product_1.id)
+        self.assertEqual(products_with_quantities[0][0].id, products[0].id)
         self.assertEqual(products_with_quantities[0][1], 3)
-        self.assertEqual(products_with_quantities[1][0].id, product_2.id)
+        self.assertEqual(products_with_quantities[1][0].id, products[1].id)
         self.assertEqual(products_with_quantities[1][1], 3)
-        self.assertEqual(products_with_quantities[2][0].id, product_3.id)
+        self.assertEqual(products_with_quantities[2][0].id, products[2].id)
         self.assertEqual(products_with_quantities[2][1], 4)
 
     def test_get_products_with_quantities_should_raise_error_when_products_does_not_cover_permit_duration(
         self,
     ):
-        zone = ParkingZoneFactory()
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 1, 10),
-            end_date=date(2021, 5, 9),
-        )
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 5, 10),
-            end_date=date(2021, 10, 9),
-        )
+        product_detail_list = [
+            [(date(2021, 1, 10), date(2021, 5, 9)), Decimal(30)],
+            [(date(2021, 5, 10), date(2021, 10, 9)), Decimal(30)],
+        ]
+        self._create_test_products(product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 2, 15))
         end_time = get_end_time(start_time, 10)  # ends at 2021-2-14, 23:59
         permit = ParkingPermitFactory(
-            parking_zone=zone,
+            parking_zone=self.zone,
             contract_type=ContractType.FIXED_PERIOD,
             start_time=start_time,
             end_time=end_time,
@@ -397,19 +354,14 @@ class ParkingZoneTestCase(TestCase):
             permit.get_products_with_quantities()
 
     def test_get_unused_order_items_raise_error_for_open_ended_permit(self):
-        zone = ParkingZoneFactory()
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 1, 1),
-            end_date=date(2021, 6, 30),
-            unit_price=Decimal(20),
-        )
+        product_detail_list = [
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(30)],
+        ]
+        self._create_test_products(product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 1, 1))
-        customer = CustomerFactory()
         permit = ParkingPermitFactory(
-            customer=customer,
-            parking_zone=zone,
+            customer=self.customer,
+            parking_zone=self.zone,
             contract_type=ContractType.OPEN_ENDED,
             start_time=start_time,
             month_count=12,
@@ -417,27 +369,16 @@ class ParkingZoneTestCase(TestCase):
         self.assertRaises(InvalidContractType, permit.get_unused_order_items)
 
     def test_get_unused_order_items_return_unused_items(self):
-        zone = ParkingZoneFactory()
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 1, 1),
-            end_date=date(2021, 6, 30),
-            unit_price=Decimal(20),
-        )
-        ProductFactory(
-            zone=zone,
-            type=ProductType.RESIDENT,
-            start_date=date(2021, 7, 1),
-            end_date=date(2021, 12, 31),
-            unit_price=Decimal(30),
-        )
+        product_detail_list = [
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(20)],
+            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal(30)],
+        ]
+        self._create_test_products(product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 1, 1))
         end_time = get_end_time(start_time, 12)
-        customer = CustomerFactory()
         permit = ParkingPermitFactory(
-            customer=customer,
-            parking_zone=zone,
+            customer=self.customer,
+            parking_zone=self.zone,
             contract_type=ContractType.FIXED_PERIOD,
             start_time=start_time,
             end_time=end_time,
