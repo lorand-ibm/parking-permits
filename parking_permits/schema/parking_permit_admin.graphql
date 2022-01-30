@@ -63,7 +63,6 @@ enum ParkingPermitStatus {
   PAYMENT_IN_PROGRESS
   VALID
   CLOSED
-
 }
 
 type PermitNode {
@@ -74,6 +73,16 @@ type PermitNode {
   status: ParkingPermitStatus!
   startTime: String
   endTime: String
+}
+
+type RefundNode {
+  id: ID!
+  name: String
+  amount: Float!
+  iban: String!
+  status: String!
+  description: String
+  createdAt: String
 }
 
 type PageInfo {
@@ -90,6 +99,11 @@ type PagedPermits {
 
 type PagedProducts {
   objects: [ProductNode]
+  pageInfo: PageInfo
+}
+
+type PagedRefunds {
+  objects: [RefundNode]
   pageInfo: PageInfo
 }
 
@@ -139,7 +153,7 @@ type PermitDetailNode {
   currentPeriodEndTime: String
   canEndImmediately: Boolean
   canEndAfterCurrentPeriod: Boolean
-  hasRefund: Boolean
+  canBeRefunded: Boolean
   changeLogs: [ChangeLog]!
 }
 
@@ -159,6 +173,10 @@ type Query {
   ): PagedProducts!
   product(productId: ID!): ProductNode!
   zoneByLocation(location: [Float]!): ZoneNode!
+  refunds(
+    pageInput: PageInput!
+    orderBy: OrderByInput
+  ): PagedRefunds!
 }
 
 input AddressInput {

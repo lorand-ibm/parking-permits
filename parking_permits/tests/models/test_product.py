@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from decimal import Decimal
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -73,3 +74,18 @@ class TestProduct(TestCase):
             self.product.create_talpa_product()
             mock_post.assert_called_once()
             self.assertIsNotNone(self.product.talpa_product_id)
+
+    def test_get_modified_unit_price_return_modified_price(self):
+        product = ProductFactory(
+            unit_price=Decimal(10), low_emission_discount=Decimal(0.5)
+        )
+        low_emission_price = product.get_modified_unit_price(True, False)
+        self.assertEqual(low_emission_price, Decimal(5))
+
+        secondary_vehicle_price = product.get_modified_unit_price(False, True)
+        self.assertEqual(secondary_vehicle_price, Decimal(15))
+
+        secondary_vehicle_low_emission_price = product.get_modified_unit_price(
+            True, True
+        )
+        self.assertEqual(secondary_vehicle_low_emission_price, Decimal(7.5))

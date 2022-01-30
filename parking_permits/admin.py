@@ -118,10 +118,10 @@ class VehicleAdmin(admin.ModelAdmin):
 @admin.register(Refund)
 class RefundAdmin(admin.ModelAdmin):
     list_display = (
-        "customer",
-        "permit",
-        "amount",
+        "name",
         "iban",
+        "order",
+        "amount",
     )
 
 

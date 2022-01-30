@@ -3,12 +3,14 @@ import logging
 from decimal import Decimal
 
 import requests
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from parking_permits.exceptions import CreateTalpaProductError
+from parking_permits.exceptions import CreateTalpaProductError, ProductCatalogError
 
+from ..utils import diff_months_ceil, find_next_date
 from .mixins import TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
 
@@ -35,11 +37,66 @@ class ProductQuerySet(models.QuerySet):
     def for_company(self):
         return self.filter(type=ProductType.COMPANY)
 
+    def get_for_date(self, dt):
+        try:
+            return self.get(start_date__lte=dt, end_date__gte=dt)
+        except Product.DoesNotExist:
+            logger.error(f"Product does not exist for date {dt}")
+            raise ProductCatalogError(
+                _("Product catalog error, please report to admin")
+            )
+        except Product.MultipleObjectsReturned:
+            logger.error(f"Products date range overlapping for date {dt}")
+            raise ProductCatalogError(
+                _("Product catalog error, please report to admin")
+            )
+
     def for_date_range(self, start_date, end_date):
         return self.filter(
             start_date__lte=end_date,
             end_date__gte=start_date,
         ).order_by("start_date")
+
+    def get_products_with_quantities(self, start_date, end_date):
+        # convert to list to enable minus indexing
+        products = list(self.for_date_range(start_date, end_date))
+
+        # check that there is no gap and overlapping between product date ranges
+        for current_product, next_product in zip(products, products[1:]):
+            if (
+                current_product.end_date + relativedelta(days=1)
+                != next_product.start_date
+            ):
+                logger.error("There are gaps or overlaps in product date ranges")
+                raise ProductCatalogError(
+                    _("Product catalog error, please report to admin")
+                )
+
+        # check product date range covers the whole duration of the permit
+        if start_date < products[0].start_date or end_date > products[-1].end_date:
+            logger.error("Products does not cover permit duration")
+            raise ProductCatalogError(
+                _("Product catalog error, please report to admin")
+            )
+
+        products_with_quantities = []
+        for index, product in enumerate(products):
+            if index == 0:
+                period_start_date = start_date
+            else:
+                period_start_date = find_next_date(product.start_date, start_date.day)
+
+            if index == len(products) - 1:
+                period_end_date = end_date
+            else:
+                period_end_date = find_next_date(product.end_date, end_date.day)
+
+            quantity = diff_months_ceil(period_start_date, period_end_date)
+            products_with_quantities.append(
+                [product, quantity, (period_start_date, period_end_date)]
+            )
+
+        return products_with_quantities
 
 
 class Product(TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin):
@@ -98,6 +155,14 @@ class Product(TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin)
         # the product name is the same for different languages
         # so no translation needed
         return f"Pysäköintialue {self.zone.name}"
+
+    def get_modified_unit_price(self, is_low_emission, is_secondary):
+        price = self.unit_price
+        if is_low_emission:
+            price -= price * self.low_emission_discount
+        if is_secondary:
+            price += price * self.secondary_vehicle_increase_rate
+        return price
 
     def create_talpa_product(self):
         if self.talpa_product_id:

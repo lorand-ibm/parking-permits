@@ -18,14 +18,16 @@ from django.utils.translation import gettext_lazy as _
 from parking_permits.models import (
     Address,
     Customer,
+    Order,
     ParkingPermit,
     ParkingZone,
     Product,
+    Refund,
     Vehicle,
 )
 
 from .decorators import is_ad_admin
-from .exceptions import ObjectNotFound, ParkingZoneError, UpdatePermitError
+from .exceptions import ObjectNotFound, ParkingZoneError, RefundError, UpdatePermitError
 from .models.parking_permit import ContractType
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
@@ -191,7 +193,7 @@ def resolve_create_resident_permit(obj, info, permit):
     with reversion.create_revision():
         start_time = isoparse(permit["start_time"])
         end_time = get_end_time(start_time, permit["month_count"])
-        permit = ParkingPermit.objects.create(
+        parking_permit = ParkingPermit.objects.create(
             contract_type=ContractType.FIXED_PERIOD,
             customer=customer,
             vehicle=vehicle,
@@ -203,8 +205,10 @@ def resolve_create_resident_permit(obj, info, permit):
         )
         request = info.context["request"]
         reversion.set_user(request.user)
-        comment = get_reversion_comment(EventType.CREATED, permit)
+        comment = get_reversion_comment(EventType.CREATED, parking_permit)
         reversion.set_comment(comment)
+
+    Order.objects.create_for_permits([parking_permit])
     return {"success": True}
 
 
@@ -245,17 +249,24 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info):
 @transaction.atomic
 def resolve_end_permit(obj, info, permit_id, end_type, iban=None):
     request = info.context["request"]
+    permit = ParkingPermit.objects.get(identifier=permit_id)
+    if permit.can_be_refunded:
+        if not iban:
+            raise RefundError("IBAN is not provided")
+        description = f"Refund for ending permit #{permit.identifier}"
+        Refund.objects.create(
+            name=str(permit.customer),
+            order=permit.order,
+            amount=permit.get_refund_amount_for_unused_items(),
+            iban=iban,
+            description=description,
+        )
+    if permit.is_open_ended:
+        # TODO: handle open ended. Currently how to handle
+        # open ended permit are not defined.
+        pass
     with reversion.create_revision():
-        permit = ParkingPermit.objects.get(identifier=permit_id)
         permit.end_permit(end_type)
-
-        if permit.contract_type == ContractType.OPEN_ENDED:
-            permit.end_subscription()
-        elif (
-            permit.contract_type == ContractType.FIXED_PERIOD and not permit.has_refund
-        ):
-            permit.create_refund(iban)
-
         reversion.set_user(request.user)
         comment = get_reversion_comment(EventType.CHANGED, permit)
         reversion.set_comment(comment)
@@ -337,3 +348,19 @@ def resolve_create_product(obj, info, product):
         modified_by=request.user,
     )
     return {"success": True}
+
+
+@query.field("refunds")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+def resolve_refunds(obj, info, page_input, order_by=None, search_items=None):
+    refunds = Refund.objects.all().order_by("-created_at")
+    if order_by:
+        refunds = apply_ordering(refunds, order_by)
+    if search_items:
+        refunds = apply_filtering(refunds, search_items)
+    paginator = QuerySetPaginator(refunds, page_input)
+    return {
+        "page_info": paginator.page_info,
+        "objects": paginator.object_list,
+    }

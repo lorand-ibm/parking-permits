@@ -1,3 +1,4 @@
+import calendar
 import operator
 from functools import reduce
 
@@ -47,5 +48,28 @@ def diff_months_ceil(start_date, end_date):
 def get_end_time(start_time, diff_months):
     end_time = start_time + relativedelta(months=diff_months, days=-1)
     return timezone.make_aware(
-        end_time.replace(hour=23, minute=59, second=0, microsecond=0, tzinfo=None)
+        end_time.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=None)
     )
+
+
+def find_next_date(dt, day):
+    """
+    Find the next date with specific day number after given date.
+    If the day number of given date matches the day, the original
+    date will be returned.
+
+    Args:
+        dt (datetime.date): the starting date to search for
+        day (int): the day number of found date
+
+    Returns:
+        datetime.date: the found date
+    """
+    try:
+        found = dt.replace(day=day)
+    except ValueError:
+        _, month_end = calendar.monthrange(dt.year, dt.month)
+        found = dt.replace(day=month_end)
+    if found < dt:
+        found += relativedelta(months=1)
+    return found

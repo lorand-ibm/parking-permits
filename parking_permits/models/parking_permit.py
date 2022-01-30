@@ -13,13 +13,11 @@ from ..constants import (
     SECONDARY_VEHICLE_PRICE_INCREASE,
     ParkingPermitEndType,
 )
-from ..exceptions import PermitCanNotBeEnded, ProductCatalogError, RefundCanNotBeCreated
+from ..exceptions import InvalidContractType, PermitCanNotBeEnded, RefundError
 from ..utils import diff_months_ceil, get_end_time
 from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
-from .product import Product
-from .refund import Refund
 from .vehicle import Vehicle
 
 logger = logging.getLogger("db")
@@ -107,8 +105,14 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         default=ParkingPermitStartType.IMMEDIATELY,
     )
     month_count = models.IntegerField(_("Month count"), default=1)
-    order_id = models.CharField(max_length=50, blank=True)
-    subscription_id = models.CharField(max_length=50, blank=True)
+    order = models.ForeignKey(
+        "Order",
+        related_name="permits",
+        verbose_name=_("Order"),
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+    )
 
     objects = ParkingPermitManager()
 
@@ -119,6 +123,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     def __str__(self):
         return "%s" % self.identifier
+
+    @property
+    def is_secondary_vehicle(self):
+        return not self.primary_vehicle
 
     @property
     def consent_low_emission_accepted(self):
@@ -134,7 +142,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
         if self.contract_type == ContractType.OPEN_ENDED:
             month_count = 1
-        if not self.primary_vehicle:
+        if self.is_secondary_vehicle:
             increase = decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
             monthly_price += increase * monthly_price
 
@@ -182,25 +190,42 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return self.month_count - self.months_used
 
     @property
+    def current_period_start_time(self):
+        return self.start_time + relativedelta(months=self.months_used - 1)
+
+    @property
     def current_period_end_time(self):
         return get_end_time(self.start_time, self.months_used)
 
     @property
-    def has_refund(self):
-        return hasattr(self, "refund")
+    def next_period_start_time(self):
+        return self.start_time + relativedelta(months=self.months_used)
 
     @property
     def monthly_price(self):
-        # TODO: return different price for different permit types
-        price = self.parking_zone.resident_price
-        if not self.primary_vehicle:
-            price += price * decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
-        return price
+        """
+        Return the monthly price for current period
+
+        Current monthly price is determined by the start date of current period
+        """
+        period_start_date = timezone.localdate(self.current_period_start_time)
+        product = self.parking_zone.products.for_resident().get_for_date(
+            period_start_date
+        )
+        is_secondary = not self.primary_vehicle
+        return product.get_modified_unit_price(
+            self.vehicle.is_low_emission, is_secondary
+        )
 
     @property
-    def refund_amount(self):
-        # TODO: account for different prices in different years
-        return self.months_left * self.monthly_price
+    def can_be_refunded(self):
+        return (
+            self.is_valid
+            and self.is_fixed_period
+            and self.order
+            and self.order.is_confirmed
+            and not hasattr(self.order, "refund")
+        )
 
     def end_permit(self, end_type):
         if end_type == ParkingPermitEndType.AFTER_CURRENT_PERIOD:
@@ -225,18 +250,50 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
             self.status = ParkingPermitStatus.CLOSED
         self.save()
 
-    def create_refund(self, iban):
-        if not self.is_fixed_period:
-            raise RefundCanNotBeCreated(
-                f"Refund cannot be created for {self.contract_type}"
+    def get_refund_amount_for_unused_items(self):
+        if not self.can_be_refunded:
+            raise RefundError("This permit cannot be refunded")
+
+        unused_order_items = self.get_unused_order_items()
+        total = decimal.Decimal(0)
+        for order_item, quantity, date_range in unused_order_items:
+            total += order_item.unit_price * quantity
+        return total
+
+    def get_unused_order_items(self):
+        if self.is_open_ended:
+            raise InvalidContractType(
+                "Cannot get unused order items for open ended permit"
             )
-        return Refund.objects.create(
-            permit=self, customer=self.customer, amount=self.refund_amount, iban=iban
+
+        unused_start_date = timezone.localdate(self.next_period_start_time)
+        order_items = self.order_items.filter(end_date__gte=unused_start_date).order_by(
+            "start_date"
         )
 
-    def end_subscription(self):
-        # TODO: end subscription
-        pass
+        if len(order_items) == 0:
+            return []
+
+        # first order item is partially used, so should calculate
+        # the remaining quantity and date range starting from
+        # unused_start_date
+        first_item = order_items[0]
+        first_item_unused_quantity = diff_months_ceil(
+            unused_start_date, first_item.end_date
+        )
+        first_item_with_quantity = [
+            first_item,
+            first_item_unused_quantity,
+            (unused_start_date, first_item.end_date),
+        ]
+
+        return [
+            first_item_with_quantity,
+            *[
+                [item, item.quantity, (item.start_date, item.end_date)]
+                for item in order_items[1:]
+            ],
+        ]
 
     def get_products_with_quantities(self):
         """Return a list of product and quantities for the permit"""
@@ -245,54 +302,10 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
         if self.is_open_ended:
             permit_start_date = timezone.localdate(self.start_time)
-            try:
-                product = qs.get(
-                    start_date__lte=permit_start_date,
-                    end_date__gte=permit_start_date,
-                )
-                return [(product, 1)]
-            except Product.DoesNotExist:
-                logger.error(f"Product does not exist for date {permit_start_date}")
-                raise ProductCatalogError(
-                    _("Product catalog error, please report to admin")
-                )
-            except Product.MultipleObjectsReturned:
-                logger.error(
-                    f"Products date range overlapping for date {permit_start_date}"
-                )
-                raise ProductCatalogError(
-                    _("Product catalog error, please report to admin")
-                )
+            product = qs.get_for_date(permit_start_date)
+            return [[product, 1, (permit_start_date, None)]]
 
         if self.is_fixed_period:
             permit_start_date = timezone.localdate(self.start_time)
             permit_end_date = timezone.localdate(self.end_time)
-            # convert to list to enable minus indexing
-            products = list(qs.for_date_range(permit_start_date, permit_end_date))
-            # check product date range covers the whole duration of the permit
-            if (
-                permit_start_date < products[0].start_date
-                or permit_end_date > products[-1].end_date
-            ):
-                logger.error("Products does not cover permit duration")
-                raise ProductCatalogError(
-                    _("Product catalog error, please report to admin")
-                )
-
-            products_with_quantities = [[product, 0] for product in products]
-
-            # the price of the month is determined by the start date of month period
-            period_starts = [
-                permit_start_date + relativedelta(months=n)
-                for n in range(self.month_count)
-            ]
-            product_index = 0
-            period_index = 0
-            while product_index < len(products) and period_index < len(period_starts):
-                if period_starts[period_index] <= products[product_index].end_date:
-                    products_with_quantities[product_index][1] += 1
-                    period_index += 1
-                else:
-                    product_index += 1
-
-            return products_with_quantities
+            return qs.get_products_with_quantities(permit_start_date, permit_end_date)

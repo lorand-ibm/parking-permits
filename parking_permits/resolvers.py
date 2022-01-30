@@ -13,7 +13,7 @@ from .customer_permit import CustomerPermit
 from .decorators import is_authenticated
 from .models import Address, Customer, ParkingZone, Vehicle
 from .models.order import Order
-from .models.parking_permit import ParkingPermitStatus
+from .models.parking_permit import ParkingPermit, ParkingPermitStatus
 from .services.hel_profile import HelsinkiProfile
 from .services.kmo import get_address_detail_from_kmo
 from .talpa.order import TalpaOrderManager
@@ -152,6 +152,9 @@ def get_customer_permits(customer_id):
 @is_authenticated
 def resolve_create_order(_, info):
     customer = info.context["request"].user.customer
-    order = Order.objects.create_for_customer(customer)
+    permits = ParkingPermit.objects.filter(
+        customer=customer, status=ParkingPermitStatus.DRAFT
+    )
+    order = Order.objects.create_for_permits(permits)
     checkout_url = TalpaOrderManager.send_to_talpa(order)
     return {"success": True, "order": {"checkout_url": checkout_url}}

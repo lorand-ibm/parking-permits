@@ -1,11 +1,13 @@
 import logging
 
 from django.db import models, transaction
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from parking_permits.mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
 from ..exceptions import OrderCreationFailed
+from ..utils import diff_months_ceil
 from .customer import Customer
 from .parking_permit import ContractType, ParkingPermit, ParkingPermitStatus
 from .product import Product
@@ -25,36 +27,156 @@ class OrderStatus(models.TextChoices):
 
 
 class OrderManager(models.Manager):
-    @transaction.atomic
-    def create_for_customer(self, customer):
-        permits = ParkingPermit.objects.filter(
-            customer=customer, status=ParkingPermitStatus.DRAFT
-        )
-
+    def _validate_permits(self, permits):
         if len(permits) > 2:
             raise OrderCreationFailed("More than 2 draft permits found")
-        if len(permits) == 2 and permits[0].contract_type != permits[1].contract_type:
-            raise OrderCreationFailed("Permit contract types do not match")
+        if len(permits) == 2:
+            if permits[0].contract_type != permits[1].contract_type:
+                raise OrderCreationFailed("Permits contract types do not match")
+            if permits[0].customer_id != permits[1].customer_id:
+                raise OrderCreationFailed("Permits customer do not match")
 
+    @transaction.atomic
+    def create_for_permits(self, permits):
+        self._validate_permits(permits)
         if permits[0].contract_type == ContractType.OPEN_ENDED:
             order_type = OrderType.SUBSCRIPTION
         else:
             order_type = OrderType.ORDER
 
-        order = Order.objects.create(customer=customer, order_type=order_type)
+        order = Order.objects.create(
+            customer=permits[0].customer, order_type=order_type
+        )
         for permit in permits:
             products_with_quantity = permit.get_products_with_quantities()
-            for product, quantity in products_with_quantity:
+            for product, quantity, date_range in products_with_quantity:
+                unit_price = product.get_modified_unit_price(
+                    permit.vehicle.is_low_emission, permit.is_secondary_vehicle
+                )
+                start_date, end_date = date_range
                 OrderItem.objects.create(
                     order=order,
                     product=product,
                     permit=permit,
-                    unit_price=product.unit_price,
+                    unit_price=unit_price,
+                    payment_unit_price=unit_price,
                     vat=product.vat,
                     quantity=quantity,
+                    start_date=start_date,
+                    end_date=end_date,
                 )
+            permit.order = order
+            permit.save()
 
         return order
+
+    def _validate_order_for_renewal(self, order):
+        date_ranges = []
+        if order.status != OrderStatus.CONFIRMED:
+            raise OrderCreationFailed(
+                "Cannot create renewal order for unconfirmed order"
+            )
+
+        for permit in order.permits.all():
+            if permit.status != ParkingPermitStatus.VALID:
+                raise OrderCreationFailed(
+                    "Cannot create renewal order for non-valid permits"
+                )
+            if permit.is_open_ended:
+                raise OrderCreationFailed(
+                    "Cannot create renewal order for open ended permits"
+                )
+            start_date = timezone.localdate(permit.next_period_start_time)
+            end_date = timezone.localdate(permit.end_time)
+            date_ranges.append([start_date, end_date])
+
+        if all([start_date >= end_date for start_date, end_date in date_ranges]):
+            raise OrderCreationFailed(
+                "Cannot create renewal order. All permits are ending or ended already."
+            )
+
+    @transaction.atomic
+    def create_renewal_order(self, order):
+        """
+        Replace original order with update permits information
+        """
+        self._validate_order_for_renewal(order)
+        new_order = Order.objects.create(
+            customer=order.customer, order_type=order.order_type
+        )
+        for permit in order.permits.all():
+            start_date = timezone.localdate(permit.next_period_start_time)
+            end_date = timezone.localdate(permit.end_time)
+            if start_date >= end_date:
+                # permit already ended or will be ended after current month period
+                continue
+
+            order_item_detail_list = permit.get_unused_order_items()
+            qs = Product.objects.for_resident()
+            product_detail_list = qs.get_products_with_quantities(start_date, end_date)
+
+            order_item_detail_iter = iter(order_item_detail_list)
+            product_detail_iter = iter(product_detail_list)
+
+            order_item_detail = next(order_item_detail_iter, None)
+            product_detail = next(product_detail_iter, None)
+
+            while order_item_detail and product_detail:
+                product, product_quantity, product_date_range = product_detail
+                product_start_date, product_end_date = product_date_range
+                (
+                    order_item,
+                    order_item_quantity,
+                    order_item_date_range,
+                ) = order_item_detail
+                order_item_start_date, order_item_end_date = order_item_date_range
+
+                # find the period in which the months have the same payment price
+                period_start_date = max(product_start_date, order_item_start_date)
+                period_end_date = min(product_end_date, order_item_end_date)
+                period_quantity = diff_months_ceil(period_start_date, period_end_date)
+
+                if period_start_date >= period_end_date:
+                    raise ValueError(
+                        "Error on product date ranges or order item date ranges"
+                    )
+
+                unit_price = product.get_modified_unit_price(
+                    permit.vehicle.is_low_emission, permit.is_secondary_vehicle
+                )
+
+                # the price the customer needs to pay after deducting the price
+                # that the customer has already paid in previous order for this
+                # order item
+                payment_unit_price = unit_price - order_item.unit_price
+                OrderItem.objects.create(
+                    order=new_order,
+                    product=product,
+                    permit=permit,
+                    unit_price=unit_price,
+                    payment_unit_price=payment_unit_price,
+                    vat=product.vat,
+                    quantity=period_quantity,
+                    start_date=period_start_date,
+                    end_date=period_end_date,
+                )
+
+                if product_end_date < order_item_end_date:
+                    # current product ended but order item is not
+                    product_detail = next(product_detail_iter, None)
+                elif product_end_date > order_item_end_date:
+                    # current order item is ended but product is not
+                    order_item_detail = next(order_item_detail_iter, None)
+                else:
+                    # when the end dates from product and order items are the same
+                    product_detail = next(product_detail_iter, None)
+                    order_item_detail = next(order_item_detail_iter, None)
+
+            # change permit active order to the new one
+            permit.order = new_order
+            permit.save()
+
+        return new_order
 
 
 class Order(TimestampedModelMixin, UUIDPrimaryKeyMixin):
@@ -94,6 +216,10 @@ class Order(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return f"Order: {self.id} ({self.order_type})"
 
     @property
+    def is_confirmed(self):
+        return self.status == OrderStatus.CONFIRMED
+
+    @property
     def total_price(self):
         return sum([item.total_price for item in self.order_items.all()])
 
@@ -122,12 +248,17 @@ class OrderItem(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     permit = models.ForeignKey(
         ParkingPermit,
         verbose_name=_("Parking permit"),
-        related_name="order_item",
+        related_name="order_items",
         on_delete=models.PROTECT,
     )
     unit_price = models.DecimalField(_("Unit price"), max_digits=6, decimal_places=2)
+    payment_unit_price = models.DecimalField(
+        _("Payment unit price"), max_digits=6, decimal_places=2
+    )
     vat = models.DecimalField(_("VAT"), max_digits=6, decimal_places=4)
     quantity = models.IntegerField(_("Quantity"))
+    start_date = models.DateField(_("Start date"), null=True, blank=True)
+    end_date = models.DateField(_("End date"), null=True, blank=True)
 
     class Meta:
         verbose_name = _("Order item")
