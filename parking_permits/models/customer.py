@@ -4,12 +4,13 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
+from helsinki_gdpr.models import SerializableMixin
 
 from .common import SourceSystem
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
 
-class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+class Customer(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
     source_system = models.CharField(
         _("Source system"), max_length=50, choices=SourceSystem.choices, blank=True
     )
@@ -54,6 +55,18 @@ class Customer(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         on_delete=models.PROTECT,
         blank=True,
         null=True,
+    )
+
+    serialize_fields = (
+        {"name": "first_name"},
+        {"name": "last_name"},
+        {"name": "national_id_number"},
+        {"name": "email"},
+        {"name": "phone_number"},
+        {"name": "primary_address", "accessor": lambda a: a.serialize()},
+        {"name": "other_address", "accessor": lambda a: a.serialize()},
+        {"name": "orders"},
+        {"name": "permits"},
     )
 
     @property

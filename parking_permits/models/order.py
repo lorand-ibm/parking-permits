@@ -3,6 +3,7 @@ import logging
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from helsinki_gdpr.models import SerializableMixin
 
 from parking_permits.mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
@@ -26,7 +27,7 @@ class OrderStatus(models.TextChoices):
     CANCELLED = "CANCELLED", _("Cancelled")
 
 
-class OrderManager(models.Manager):
+class OrderManager(SerializableMixin.SerializableManager):
     def _validate_permits(self, permits):
         if len(permits) > 2:
             raise OrderCreationFailed("More than 2 draft permits found")
@@ -179,7 +180,7 @@ class OrderManager(models.Manager):
         return new_order
 
 
-class Order(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+class Order(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
     talpa_order_id = models.UUIDField(
         _("Talpa order id"), unique=True, editable=False, null=True, blank=True
     )
@@ -208,6 +209,12 @@ class Order(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     )
     objects = OrderManager()
 
+    serialize_fields = (
+        {"name": "order_type"},
+        {"name": "status"},
+        {"name": "order_items"},
+    )
+
     class Meta:
         verbose_name = _("Order")
         verbose_name_plural = _("Orders")
@@ -232,7 +239,7 @@ class Order(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         return sum([item.total_price_vat for item in self.order_items.all()])
 
 
-class OrderItem(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+class OrderItem(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
     talpa_order_item_id = models.UUIDField(
         _("Talpa order item id"), unique=True, editable=False, null=True, blank=True
     )
@@ -259,6 +266,15 @@ class OrderItem(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     quantity = models.IntegerField(_("Quantity"))
     start_date = models.DateField(_("Start date"), null=True, blank=True)
     end_date = models.DateField(_("End date"), null=True, blank=True)
+
+    serialize_fields = (
+        {"name": "product", "accessor": lambda x: str(x)},
+        {"name": "unit_price"},
+        {"name": "vat_percentage"},
+        {"name": "quantity"},
+        {"name": "start_date"},
+        {"name": "end_date"},
+    )
 
     class Meta:
         verbose_name = _("Order item")

@@ -1,13 +1,14 @@
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
+from helsinki_gdpr.models import SerializableMixin
 
 from .common import SourceSystem
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
 
 
-class Address(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+class Address(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
     source_system = models.CharField(
         _("Source system"), max_length=50, choices=SourceSystem.choices, blank=True
     )
@@ -28,6 +29,15 @@ class Address(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+    )
+
+    serialize_fields = (
+        {"name": "street_name"},
+        {"name": "street_name_sv"},
+        {"name": "street_number"},
+        {"name": "city"},
+        {"name": "city_sv"},
+        {"name": "postal_code"},
     )
 
     class Meta:
