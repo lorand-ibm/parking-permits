@@ -3,11 +3,13 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from helsinki_gdpr.models import SerializableMixin
 
 from .common import SourceSystem
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
+from .parking_permit import ParkingPermit, ParkingPermitStatus
 
 
 class Customer(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
@@ -89,3 +91,40 @@ class Customer(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)
+
+    @property
+    def can_be_deleted(self):
+        """
+        Returns True if the customer and its data can be removed
+
+        This property can be used to check if the deleting is allowed
+        via GDPR API triggered from Helsinki Profile or automatic
+        removal process. A customer that can be removed must sadifity
+        following conditions:
+
+        - The last modified time of the customer is more than 2 years ago
+        - The customer does not have any valid permits
+        - The latest permit must be ended and modified more than 2 years ago
+        """
+        now = timezone.now()
+        time_delta = relativedelta(years=2)
+        if self.modified_at + time_delta > now:
+            return False
+
+        has_valid_permits = self.permits.filter(
+            status=ParkingPermitStatus.VALID
+        ).exists()
+        if has_valid_permits:
+            return False
+
+        try:
+            latest_modified_at = self.permits.latest("modified_at").modified_at
+            latest_end_time = self.permits.latest("end_time").end_time
+            times = [latest_modified_at, latest_end_time]
+            latest_time = max([time for time in times if time])
+            if latest_time + time_delta > now:
+                return False
+        except ParkingPermit.DoesNotExist:
+            pass
+
+        return True
