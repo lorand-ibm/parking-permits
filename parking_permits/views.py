@@ -2,13 +2,16 @@ import json
 import logging
 
 from django.db import transaction
+from django.http import Http404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from helsinki_gdpr.views import DeletionNotAllowed, DryRunSerializer, GDPRAPIView
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Order, ParkingPermit
+from .models import Customer, Order, ParkingPermit
+from .models.common import SourceSystem
 from .models.order import OrderStatus
 from .models.parking_permit import ParkingPermitStatus
 from .serializers import (
@@ -141,3 +144,33 @@ class OrderView(APIView):
 
         logger.info(f"{order} is confirmed and order permits are set to VALID ")
         return Response({"message": "Order received"}, status=200)
+
+
+class ParkingPermitsGDPRAPIView(GDPRAPIView):
+    def get_object(self) -> Customer:
+        try:
+            customer = Customer.objects.get(
+                source_system=SourceSystem.HELSINKI_PROFILE, source_id=self.kwargs["id"]
+            )
+        except Customer.DoesNotExist:
+            raise Http404
+        else:
+            self.check_object_permissions(self.request, customer)
+            return customer
+
+    def _delete(self):
+        customer = self.get_object()
+        if not customer.can_be_deleted:
+            raise DeletionNotAllowed()
+        customer.permits.all().delete()
+        customer.orders.all().delete()
+        customer.delete()
+
+    def delete(self, request, *args, **kwargs):
+        dry_run_serializer = DryRunSerializer(data=request.data)
+        dry_run_serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            self._delete()
+            if dry_run_serializer.data["dry_run"]:
+                transaction.set_rollback(True)
+        return Response(status=status.HTTP_204_NO_CONTENT)

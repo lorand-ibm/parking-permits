@@ -21,6 +21,8 @@ env = environ.Env(
     ALLOWED_ADMIN_AD_GROUPS=(list, None),
     TALPA_API_KEY=(str, ""),
     TALPA_NAMESPACE=(str, "asukaspysakointi"),
+    GDPR_API_QUERY_SCOPE=(str, ""),
+    GDPR_API_DELETE_SCOPE=(str, ""),
 )
 
 if path.exists(".env"):
@@ -172,3 +174,8 @@ LOGGING = {
 CRONJOBS = [
     ("22 00 * * *", "parking_permits.cron.automatic_expiration_of_permits"),
 ]
+
+# GDPR API
+GDPR_API_MODEL = "parking_permits.Customer"
+GDPR_API_QUERY_SCOPE = env("GDPR_API_QUERY_SCOPE")
+GDPR_API_DELETE_SCOPE = env("GDPR_API_DELETE_SCOPE")

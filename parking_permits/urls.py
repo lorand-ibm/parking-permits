@@ -26,4 +26,9 @@ urlpatterns = [
         views.OrderView.as_view(),
         name="order-notify",
     ),
+    path(
+        "gdpr-api/v1/profiles/<str:id>",
+        views.ParkingPermitsGDPRAPIView.as_view(),
+        name="gdpr_v1",
+    ),
 ]

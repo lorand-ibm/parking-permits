@@ -7,6 +7,7 @@ from django.contrib.gis.db import models
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from helsinki_gdpr.models import SerializableMixin
 
 from ..constants import (
     LOW_EMISSION_DISCOUNT,
@@ -15,7 +16,6 @@ from ..constants import (
 )
 from ..exceptions import InvalidContractType, PermitCanNotBeEnded, RefundError
 from ..utils import diff_months_ceil, get_end_time
-from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
 from .vehicle import Vehicle
@@ -51,7 +51,7 @@ def get_next_identifier():
     return last.identifier + 1
 
 
-class ParkingPermitManager(models.Manager):
+class ParkingPermitManager(SerializableMixin.SerializableManager):
     def active(self):
         active_status = [
             ParkingPermitStatus.VALID,
@@ -64,11 +64,12 @@ class ParkingPermitManager(models.Manager):
 
 
 @reversion.register()
-class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
+class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
     customer = models.ForeignKey(
-        Customer,
+        "Customer",
         verbose_name=_("Customer"),
         on_delete=models.PROTECT,
+        related_name="permits",
     )
     vehicle = models.ForeignKey(
         Vehicle,
@@ -112,6 +113,17 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         blank=True,
         null=True,
         on_delete=models.PROTECT,
+    )
+
+    serialize_fields = (
+        {"name": "identifier"},
+        {"name": "vehicle", "accessor": lambda v: str(v)},
+        {"name": "status"},
+        {"name": "contract_type"},
+        {"name": "start_type"},
+        {"name": "start_time"},
+        {"name": "end_time"},
+        {"name": "month_count"},
     )
 
     objects = ParkingPermitManager()
@@ -235,7 +247,7 @@ class ParkingPermit(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
         if (
             self.primary_vehicle
-            and self.customer.parkingpermit_set.active_after(end_time)
+            and self.customer.permits.active_after(end_time)
             .exclude(id=self.id)
             .exists()
         ):

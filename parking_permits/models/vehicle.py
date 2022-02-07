@@ -4,7 +4,6 @@ import arrow
 from django.contrib.gis.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .customer import Customer
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
 
@@ -88,7 +87,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         _("Last inspection date"), null=True, blank=True
     )
     owner = models.ForeignKey(
-        Customer,
+        "Customer",
         verbose_name=_("Owner"),
         on_delete=models.PROTECT,
         related_name="vehicles_owner",
@@ -96,7 +95,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
         blank=True,
     )
     holder = models.ForeignKey(
-        Customer,
+        "Customer",
         verbose_name=_("Holder"),
         on_delete=models.PROTECT,
         related_name="vehicles_holder",
