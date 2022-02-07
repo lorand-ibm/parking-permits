@@ -128,3 +128,12 @@ class Customer(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
             pass
 
         return True
+
+    def delete_all_data(self):
+        """Delete all customer related data"""
+
+        self.permits.all().delete()
+        self.orders.all().delete()
+        if self.user:
+            self.user.delete()
+        self.delete()
