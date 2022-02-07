@@ -1,8 +1,11 @@
 import decimal
+import json
 import logging
 
+import requests
 import reversion
 from dateutil.relativedelta import relativedelta
+from django.conf import settings
 from django.contrib.gis.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -14,7 +17,12 @@ from ..constants import (
     SECONDARY_VEHICLE_PRICE_INCREASE,
     ParkingPermitEndType,
 )
-from ..exceptions import InvalidContractType, PermitCanNotBeEnded, RefundError
+from ..exceptions import (
+    InvalidContractType,
+    ParkkihubiPermitError,
+    PermitCanNotBeEnded,
+    RefundError,
+)
 from ..utils import diff_months_ceil, get_end_time
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_zone import ParkingZone
@@ -321,3 +329,51 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
             permit_start_date = timezone.localdate(self.start_time)
             permit_end_date = timezone.localdate(self.end_time)
             return qs.get_products_with_quantities(permit_start_date, permit_end_date)
+
+    def create_parkkihubi_permit(self):
+        start_time = str(self.start_time)
+        end_time = (
+            str(get_end_time(self.start_time, 30))
+            if not self.end_time
+            else str(self.end_time)
+        )
+        data = {
+            "series": settings.PARKKIHUBI_PERMIT_SERIES,
+            "domain": settings.PARKKIHUBI_DOMAIN,
+            "external_id": str(self.id),
+            "subjects": [
+                {
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "registration_number": self.vehicle.registration_number,
+                }
+            ],
+            "areas": [
+                {
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "area": self.parking_zone.name,
+                }
+            ],
+        }
+        headers = {
+            "Authorization": f"ApiKey {settings.PARKKIHUBI_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        response = requests.post(
+            settings.PARKKIHUBI_OPERATOR_ENDPOINT,
+            data=json.dumps(data),
+            headers=headers,
+        )
+        if response.status_code == 201:
+            logger.info("Parkkihubi permit created")
+        else:
+            logger.error(
+                "Failed to create permit to pakkihubi."
+                f"Error: {response.status_code} {response.reason}. "
+                f"Detail: {response.text}"
+            )
+            raise ParkkihubiPermitError(
+                "Cannot create permit to Parkkihubi."
+                f"Error: {response.status_code} {response.reason}."
+            )
