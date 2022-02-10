@@ -119,11 +119,19 @@ class VehicleAdmin(admin.ModelAdmin):
 @admin.register(Refund)
 class RefundAdmin(admin.ModelAdmin):
     list_display = (
+        "refund_number",
         "name",
         "iban",
         "order",
         "amount",
     )
+    readonly_fields = ("refund_number",)
+
+    def refund_number(self, obj):
+        return obj.refund_number
+
+    refund_number.admin_order_field = "refund_number"
+    refund_number.short_description = _("Refund number")
 
 
 @admin.register(Product)
