@@ -162,9 +162,7 @@ class ParkingPermitsGDPRAPIView(GDPRAPIView):
         customer = self.get_object()
         if not customer.can_be_deleted:
             raise DeletionNotAllowed()
-        customer.permits.all().delete()
-        customer.orders.all().delete()
-        customer.delete()
+        customer.delete_all_data()
 
     def delete(self, request, *args, **kwargs):
         dry_run_serializer = DryRunSerializer(data=request.data)
