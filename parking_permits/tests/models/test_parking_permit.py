@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
@@ -8,6 +9,7 @@ from freezegun import freeze_time
 from parking_permits.constants import ParkingPermitEndType
 from parking_permits.exceptions import (
     InvalidContractType,
+    ParkkihubiPermitError,
     PermitCanNotBeEnded,
     ProductCatalogError,
 )
@@ -19,6 +21,7 @@ from parking_permits.tests.factories import ParkingZoneFactory
 from parking_permits.tests.factories.customer import CustomerFactory
 from parking_permits.tests.factories.parking_permit import ParkingPermitFactory
 from parking_permits.tests.factories.product import ProductFactory
+from parking_permits.tests.models.test_product import MockResponse
 from parking_permits.utils import get_end_time
 
 
@@ -398,3 +401,27 @@ class ParkingZoneTestCase(TestCase):
             self.assertEqual(unused_items[1][0].unit_price, Decimal(30))
             self.assertEqual(unused_items[1][1], 6)
             self.assertEqual(unused_items[1][2], (date(2021, 7, 1), date(2021, 12, 31)))
+
+
+class TestParkingPermit(TestCase):
+    def setUp(self):
+        self.permit = ParkingPermitFactory()
+
+    def test_should_return_correct_product_name(self):
+        self.assertIsNotNone(self.permit.parking_zone.name)
+
+    @patch("requests.post", return_value=MockResponse(201))
+    def test_should_save_talpa_product_id_when_creating_talpa_product_successfully(
+        self, mock_post
+    ):
+        self.permit.create_parkkihubi_permit()
+        mock_post.assert_called_once()
+        self.assertEqual(mock_post.return_value.status_code, 201)
+
+    @patch("requests.post", return_value=MockResponse(400))
+    def test_should_raise_error_when_creating_talpa_product_failed(self, mock_post):
+        self.permit.vehicle.registration_number = ""
+        with self.assertRaises(ParkkihubiPermitError):
+            self.permit.create_parkkihubi_permit()
+            mock_post.assert_called_once()
+            self.assertEqual(mock_post.return_value.status_code, 400)

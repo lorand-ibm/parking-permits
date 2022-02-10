@@ -56,3 +56,7 @@ class ProductCatalogError(ParkingPermitBaseException):
 
 class ParkingZoneError(ParkingPermitBaseException):
     pass
+
+
+class ParkkihubiPermitError(ParkingPermitBaseException):
+    pass
