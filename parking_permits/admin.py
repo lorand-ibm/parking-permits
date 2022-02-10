@@ -1,4 +1,5 @@
 from django.contrib.gis import admin
+from django.utils.translation import ugettext_lazy as _
 
 from parking_permits.models import (
     Address,
@@ -143,12 +144,19 @@ class ProductAdmin(admin.ModelAdmin):
 class OrderAdmin(admin.ModelAdmin):
     list_filter = ("order_type", "status")
     list_display = (
+        "order_number",
         "customer",
         "order_type",
         "status",
     )
     list_select_related = ("customer",)
-    readonly_fields = ("talpa_order_id", "talpa_subscription_id")
+    readonly_fields = ("order_number", "talpa_order_id", "talpa_subscription_id")
+
+    def order_number(self, obj):
+        return obj.order_number
+
+    order_number.admin_order_field = "order_number"
+    order_number.short_description = _("Order number")
 
 
 @admin.register(OrderItem)
