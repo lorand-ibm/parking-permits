@@ -77,12 +77,16 @@ type PermitNode {
 
 type RefundNode {
   id: ID!
+  refundNumber: Int!
   name: String
   amount: Float!
   iban: String!
   status: String!
   description: String
   createdAt: String
+  createdBy: String
+  modifiedAt: String
+  modifiedBy: String
 }
 
 type PageInfo {
@@ -177,6 +181,7 @@ type Query {
     pageInput: PageInput!
     orderBy: OrderByInput
   ): PagedRefunds!
+  refund(refundNumber: Int): RefundNode!
 }
 
 input AddressInput {
@@ -240,6 +245,11 @@ input ProductInput {
   lowEmissionDiscount: Float!
 }
 
+input RefundInput {
+  name: String!
+  iban: String!
+}
+
 type MutationResponse {
   success: Boolean
 }
@@ -256,4 +266,5 @@ type Mutation {
   updateProduct(productId: ID!, product: ProductInput!): MutationResponse
   deleteProduct(productId: ID!): MutationResponse
   createProduct(product: ProductInput!): MutationResponse
+  updateRefund(refundNumber: Int!, refund: RefundInput!): MutationResponse
 }
