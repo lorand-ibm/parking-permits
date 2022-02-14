@@ -14,9 +14,10 @@ from .exceptions import (
     NonDraftPermitUpdateError,
     PermitCanNotBeDelete,
     PermitLimitExceeded,
+    RefundError,
 )
 from .mock_vehicle import get_mock_vehicle
-from .models import Customer, ParkingPermit, ParkingZone
+from .models import Customer, OrderItem, ParkingPermit, ParkingZone, Refund
 from .models.parking_permit import (
     ContractType,
     ParkingPermitStartType,
@@ -200,20 +201,26 @@ class CustomerPermit:
             with reversion.create_revision():
                 permit = ParkingPermit.objects.get(id=permit_id)
                 permit.end_permit(end_type)
-
-                if permit.contract_type == ContractType.OPEN_ENDED:
-                    permit.end_subscription()
-                elif (
-                    permit.contract_type == ContractType.FIXED_PERIOD
-                    and not permit.has_refund
-                ):
-                    permit.create_refund(iban)
+                permit.update_parkkihubi_permit()
+                if permit.can_be_refunded:
+                    if not iban:
+                        raise RefundError("IBAN is not provided")
+                    description = f"Refund for ending permit #{permit.identifier}"
+                    Refund.objects.create(
+                        name=str(permit.customer),
+                        order=permit.order,
+                        amount=permit.get_refund_amount_for_unused_items(),
+                        iban=iban,
+                        description=description,
+                    )
 
                 reversion.set_user(self.customer.user)
                 comment = get_reversion_comment(EventType.CHANGED, permit)
                 reversion.set_comment(comment)
         # Delete all the draft permit while ending the customer valid permits
-        self.customer_permit_query.filter(status=DRAFT).delete()
+        draft_permits = self.customer_permit_query.filter(status=DRAFT)
+        OrderItem.objects.filter(permit__in=draft_permits).delete()
+        draft_permits.delete()
         return True
 
     def _update_fields_to_all_draft(self, data):
