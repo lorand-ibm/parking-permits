@@ -6,6 +6,7 @@ from ariadne import (
     snake_case_fallback_resolvers,
 )
 from ariadne.contrib.federation import FederatedObjectType
+from django.db.utils import IntegrityError
 
 from project.settings import BASE_DIR
 
@@ -125,8 +126,16 @@ def resolve_update_parking_permit(obj, info, input, permit_id=None):
 def resolve_update_vehicle(obj, info, vehicle_id, registration):
     vehicle = Vehicle.objects.get(id=vehicle_id)
     vehicle.registration_number = registration.upper()
-    vehicle.save(update_fields=["registration_number"])
-    return {"success": True, "vehicle": vehicle}
+    try:
+        vehicle.save(update_fields=["registration_number"])
+        return {"success": True, "vehicle": vehicle}
+    except IntegrityError:
+        return {
+            "success": False,
+            "errors": [
+                f"Permit with registration {vehicle.registration_number} already exist."
+            ],
+        }
 
 
 @mutation.field("endParkingPermit")

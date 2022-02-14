@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.http import Http404
 from drf_yasg import openapi
@@ -141,6 +142,8 @@ class OrderView(APIView):
             for permit in order.permits.all():
                 permit.status = ParkingPermitStatus.VALID
                 permit.save()
+                if not settings.DEBUG:
+                    permit.create_parkkihubi_permit()
 
         logger.info(f"{order} is confirmed and order permits are set to VALID ")
         return Response({"message": "Order received"}, status=200)

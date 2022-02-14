@@ -330,14 +330,59 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
             permit_end_date = timezone.localdate(self.end_time)
             return qs.get_products_with_quantities(permit_start_date, permit_end_date)
 
+    def update_parkkihubi_permit(self):
+        response = requests.patch(
+            f"{settings.PARKKIHUBI_OPERATOR_ENDPOINT}{str(self.id)}/",
+            data=json.dumps(self._get_parkkihubi_data()),
+            headers=self._get_parkkihubi_headers(),
+        )
+
+        if response.status_code == 200:
+            logger.info("Parkkihubi update permit")
+        else:
+            logger.error(
+                "Failed to update permit to pakkihubi."
+                f"Error: {response.status_code} {response.reason}. "
+                f"Detail: {response.text}"
+            )
+            raise ParkkihubiPermitError(
+                "Cannot update permit to Parkkihubi."
+                f"Error: {response.status_code} {response.reason}."
+            )
+
     def create_parkkihubi_permit(self):
+        response = requests.post(
+            settings.PARKKIHUBI_OPERATOR_ENDPOINT,
+            data=json.dumps(self._get_parkkihubi_data()),
+            headers=self._get_parkkihubi_headers(),
+        )
+        if response.status_code == 201:
+            logger.info("Parkkihubi permit created")
+        else:
+            logger.error(
+                "Failed to create permit to pakkihubi."
+                f"Error: {response.status_code} {response.reason}. "
+                f"Detail: {response.text}"
+            )
+            raise ParkkihubiPermitError(
+                "Cannot create permit to Parkkihubi."
+                f"Error: {response.status_code} {response.reason}."
+            )
+
+    def _get_parkkihubi_headers(self):
+        return {
+            "Authorization": f"ApiKey {settings.PARKKIHUBI_TOKEN}",
+            "Content-Type": "application/json",
+        }
+
+    def _get_parkkihubi_data(self):
         start_time = str(self.start_time)
         end_time = (
             str(get_end_time(self.start_time, 30))
             if not self.end_time
             else str(self.end_time)
         )
-        data = {
+        return {
             "series": settings.PARKKIHUBI_PERMIT_SERIES,
             "domain": settings.PARKKIHUBI_DOMAIN,
             "external_id": str(self.id),
@@ -356,24 +401,3 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
                 }
             ],
         }
-        headers = {
-            "Authorization": f"ApiKey {settings.PARKKIHUBI_TOKEN}",
-            "Content-Type": "application/json",
-        }
-        response = requests.post(
-            settings.PARKKIHUBI_OPERATOR_ENDPOINT,
-            data=json.dumps(data),
-            headers=headers,
-        )
-        if response.status_code == 201:
-            logger.info("Parkkihubi permit created")
-        else:
-            logger.error(
-                "Failed to create permit to pakkihubi."
-                f"Error: {response.status_code} {response.reason}. "
-                f"Detail: {response.text}"
-            )
-            raise ParkkihubiPermitError(
-                "Cannot create permit to Parkkihubi."
-                f"Error: {response.status_code} {response.reason}."
-            )

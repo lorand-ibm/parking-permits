@@ -33,6 +33,7 @@ class OrderViewTestCase(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 400)
 
+    @override_settings(DEBUG=True)
     def test_order_view_should_update_order_and_permits_status(self):
         talpa_order_id = "D86CA61D-97E9-410A-A1E3-4894873B1B35"
         order = OrderFactory(talpa_order_id=talpa_order_id, status=OrderStatus.DRAFT)

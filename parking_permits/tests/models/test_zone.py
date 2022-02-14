@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from freezegun import freeze_time
 
 from parking_permits.exceptions import PriceError
@@ -29,6 +29,7 @@ class ParkingZoneTestCase(TestCase):
             self.zone.resident_price
 
     @freeze_time("2021-12-20")
+    @override_settings(DBUG=True)
     def test_zone_resident_products(self):
         ProductFactory(
             zone=self.zone,
