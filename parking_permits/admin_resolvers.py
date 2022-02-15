@@ -364,3 +364,30 @@ def resolve_refunds(obj, info, page_input, order_by=None, search_items=None):
         "page_info": paginator.page_info,
         "objects": paginator.object_list,
     }
+
+
+@query.field("refund")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+def resolve_refund(obj, info, refund_number):
+    try:
+        return Refund.objects.get(refund_number=refund_number)
+    except Refund.DoesNotExist:
+        raise ObjectNotFound("Refund not found")
+
+
+@mutation.field("updateRefund")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+def resolve_update_refund(obj, info, refund_number, refund):
+    request = info.context["request"]
+    try:
+        r = Refund.objects.get(refund_number=refund_number)
+    except Refund.DoesNotExist:
+        raise ObjectNotFound("Refund not found")
+
+    r.name = refund["name"]
+    r.iban = refund["iban"]
+    r.modified_by = request.user
+    r.save()
+    return {"success": True}

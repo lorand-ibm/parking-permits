@@ -1,6 +1,7 @@
 import logging
 
 from django.db import models, transaction
+from django.db.models.expressions import RawSQL
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from helsinki_gdpr.models import SerializableMixin
@@ -28,6 +29,17 @@ class OrderStatus(models.TextChoices):
 
 
 class OrderManager(SerializableMixin.SerializableManager):
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .annotate(
+                order_number=RawSQL(
+                    "order_number", (), output_field=models.IntegerField()
+                )
+            )
+        )
+
     def _validate_permits(self, permits):
         if len(permits) > 2:
             raise OrderCreationFailed("More than 2 draft permits found")
