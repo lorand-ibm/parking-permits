@@ -35,7 +35,7 @@ class TalpaOrderManager:
     @classmethod
     def _get_product_description(cls, product):
         start_time = product.start_date.strftime(DATE_FORMAT)
-        end_time = product.start_date.strftime(DATE_FORMAT)
+        end_time = product.end_date.strftime(DATE_FORMAT)
         return f"{start_time} - {end_time}"
 
     @classmethod
