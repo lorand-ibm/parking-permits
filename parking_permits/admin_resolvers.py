@@ -209,7 +209,7 @@ def resolve_create_resident_permit(obj, info, permit):
         reversion.set_comment(comment)
 
     Order.objects.create_for_permits([parking_permit])
-    return {"success": True}
+    return {"success": True, "permit": parking_permit}
 
 
 @mutation.field("updateResidentPermit")
