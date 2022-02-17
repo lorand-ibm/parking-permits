@@ -2,7 +2,6 @@ import decimal
 
 import reversion
 from dateutil.parser import isoparse, parse
-from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone as tz
@@ -24,7 +23,7 @@ from .models.parking_permit import (
     ParkingPermitStatus,
 )
 from .reversion import EventType, get_reversion_comment
-from .utils import diff_months_floor
+from .utils import diff_months_floor, get_end_time
 
 IMMEDIATELY = ParkingPermitStartType.IMMEDIATELY
 OPEN_ENDED = ContractType.OPEN_ENDED
@@ -41,10 +40,6 @@ def next_day():
 
 def two_week_from_now():
     return tz.localtime(tz.now() + tz.timedelta(weeks=2))
-
-
-def get_end_time(start, month=0):
-    return tz.localtime(start + relativedelta(months=month))
 
 
 class CustomerPermit:

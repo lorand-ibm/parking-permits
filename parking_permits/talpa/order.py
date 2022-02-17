@@ -5,6 +5,7 @@ from collections import defaultdict
 import requests
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from parking_permits.exceptions import OrderCreationFailed
@@ -35,7 +36,7 @@ class TalpaOrderManager:
     @classmethod
     def _get_product_description(cls, product):
         start_time = product.start_date.strftime(DATE_FORMAT)
-        end_time = product.start_date.strftime(DATE_FORMAT)
+        end_time = product.end_date.strftime(DATE_FORMAT)
         return f"{start_time} - {end_time}"
 
     @classmethod
@@ -73,6 +74,7 @@ class TalpaOrderManager:
 
     @classmethod
     def _append_detail_meta(cls, item, permit):
+        start_time = timezone.localtime(permit.start_time).strftime(DATE_FORMAT)
         item["meta"] += [
             {
                 "key": "permitDuration",
@@ -84,7 +86,7 @@ class TalpaOrderManager:
             {
                 "key": "startDate",
                 "label": _("Parking permit start date*"),
-                "value": f"{permit.start_time.strftime(DATE_FORMAT)}",
+                "value": start_time,
                 "visibleInCheckout": True,
                 "ordinal": 2,
             },
@@ -99,11 +101,12 @@ class TalpaOrderManager:
             },
         ]
         if permit.end_time:
+            end_time = timezone.localtime(permit.end_time).strftime(TIME_FORMAT)
             item["meta"].append(
                 {
                     "key": "endDate",
                     "label": _("Parking permit expiration date"),
-                    "value": f"{permit.end_time.strftime(TIME_FORMAT)}",
+                    "value": end_time,
                     "visibleInCheckout": True,
                     "ordinal": 3,
                 }
