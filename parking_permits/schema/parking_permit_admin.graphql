@@ -94,6 +94,9 @@ type PageInfo {
   page: Int!
   next: Int
   prev: Int
+  startIndex: Int!
+  endIndex: Int!
+  count: Int!
 }
 
 type PagedPermits {
