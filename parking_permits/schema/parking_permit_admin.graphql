@@ -254,13 +254,18 @@ type MutationResponse {
   success: Boolean
 }
 
+type CreatePermitResponse {
+  success: Boolean
+  permit: PermitNode
+}
+
 enum PermitEndType {
   IMMEDIATELY
   AFTER_CURRENT_PERIOD
 }
 
 type Mutation {
-  createResidentPermit(permit: ResidentPermitInput!): MutationResponse
+  createResidentPermit(permit: ResidentPermitInput!): CreatePermitResponse
   endPermit(permitId: Int!, endType: PermitEndType!, iban: String): MutationResponse
   updateResidentPermit(permitId: ID!, permitInfo: ResidentPermitInput!): MutationResponse
   updateProduct(productId: ID!, product: ProductInput!): MutationResponse
