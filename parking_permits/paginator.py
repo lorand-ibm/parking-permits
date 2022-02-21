@@ -29,4 +29,7 @@ class QuerySetPaginator:
             "prev": self.prev_page,
             "page": self.page.number,
             "num_pages": self.paginator.num_pages,
+            "start_index": self.page.start_index(),
+            "end_index": self.page.end_index(),
+            "count": self.paginator.count,
         }
