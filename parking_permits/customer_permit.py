@@ -66,6 +66,8 @@ class CustomerPermit:
                 if product.quantity:
                     products.append(product)
             permit.products = products
+            if permit.can_be_refunded:
+                permit.refund_amount = permit.get_refund_amount_for_unused_items()
             permits.append(permit)
         return permits
 

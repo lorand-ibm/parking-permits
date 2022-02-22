@@ -63,11 +63,13 @@ type PermitNode {
   id: ID!
   zone: ID!
   orderId: String
+  canBeRefunded: Boolean
   subscriptionId: String
   vehicle: VehicleNode!
   products: [ProductNode]!
   contractType: String
   monthCount: Int
+  refundAmount: Int
   startType: String
   startTime: String
   endTime: String
