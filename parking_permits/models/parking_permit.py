@@ -247,6 +247,97 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
             and not hasattr(self.order, "refund")
         )
 
+    def get_price_change_list(self, new_vehicle, new_zone):
+        """Get a list of price changes if the permit is changed
+
+        Only vehicle and zone change will affect the price
+
+        Args:
+            new_vehicle: new vehicle used in the permit
+            new_zone: new zone used in the permit
+
+        Returns:
+            A list of price change information
+        """
+        # TODO: currently, company permit type is not available
+        previous_products = self.parking_zone.products.for_resident()
+        new_products = new_zone.products.for_resident()
+        is_secondary = not self.primary_vehicle
+        if self.is_open_ended:
+            start_date = timezone.localdate(self.next_period_start_time)
+            previous_product = previous_products.get_for_date(start_date)
+            previous_price = previous_product.get_modified_unit_price(
+                self.vehicle.is_low_emission, is_secondary
+            )
+            new_product = new_products.get_for_date(start_date)
+            new_price = new_product.get_modified_unit_price(
+                new_vehicle.is_low_emission, is_secondary
+            )
+            return [[new_price - previous_price, start_date, 1]]
+
+        if self.is_fixed_period:
+            # price change affected date range and products
+            start_date = timezone.localdate(self.next_period_start_time)
+            end_date = timezone.localdate(self.end_time)
+            previous_product_iter = previous_products.for_date_range(
+                start_date, end_date
+            ).iterator()
+            new_product_iter = new_products.for_date_range(
+                start_date, end_date
+            ).iterator()
+
+            # calculate the price change list in the affected date range
+            month_start_date = start_date
+            previous_product = next(previous_product_iter, None)
+            new_product = next(new_product_iter, None)
+            price_change_list = []
+            while month_start_date < end_date and previous_product and new_product:
+                previous_price = previous_product.get_modified_unit_price(
+                    self.vehicle.is_low_emission,
+                    is_secondary,
+                )
+                new_price = new_product.get_modified_unit_price(
+                    new_vehicle.is_low_emission,
+                    is_secondary,
+                )
+                diff_price = new_price - previous_price
+                if (
+                    len(price_change_list) > 0
+                    and price_change_list[-1]["product"] == new_product.name
+                    and price_change_list[-1]["price_change"] == diff_price
+                ):
+                    # if it's the same product and diff price is the same as
+                    # previous one, combine the price change by increase the
+                    # quantity by 1
+                    price_change_list[-1]["month_count"] += 1
+                else:
+                    # if the product is different or diff price is different,
+                    # create a new price change item
+                    price_change_list.append(
+                        {
+                            "product": new_product.name,
+                            "previous_price": previous_price,
+                            "new_price": new_price,
+                            "price_change": diff_price,
+                            "start_date": month_start_date,
+                            "month_count": 1,
+                        }
+                    )
+
+                month_start_date += relativedelta(months=1)
+                if month_start_date > previous_product.end_date:
+                    previous_product = next(previous_product_iter, None)
+                if month_start_date > new_product.end_date:
+                    new_product = next(new_product_iter, None)
+
+            # calculate the end date based on month count in
+            # each price change item
+            for price_change in price_change_list:
+                price_change["end_date"] = price_change["start_date"] + relativedelta(
+                    months=price_change["month_count"], days=-1
+                )
+            return price_change_list
+
     def end_permit(self, end_type):
         if end_type == ParkingPermitEndType.AFTER_CURRENT_PERIOD:
             end_time = self.current_period_end_time
