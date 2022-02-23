@@ -212,6 +212,26 @@ def resolve_create_resident_permit(obj, info, permit):
     return {"success": True, "permit": parking_permit}
 
 
+@query.field("permitPriceChangeList")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_permit_price_change_list(obj, info, permit_id, permit_info):
+    try:
+        permit = ParkingPermit.objects.get(identifier=permit_id)
+    except ParkingPermit.DoesNotExist:
+        raise ObjectNotFound(_("Parking permit not found"))
+
+    customer_info = permit_info["customer"]
+    if permit.customer.national_id_number != customer_info["national_id_number"]:
+        raise UpdatePermitError(_("Cannot change the customer of the permit"))
+
+    vehicle_info = permit_info["vehicle"]
+    vehicle = update_or_create_vehicle(vehicle_info)
+    parking_zone = ParkingZone.objects.get(name=customer_info["zone"])
+    return permit.get_price_change_list(vehicle, parking_zone)
+
+
 @mutation.field("updateResidentPermit")
 @is_ad_admin
 @convert_kwargs_to_snake_case

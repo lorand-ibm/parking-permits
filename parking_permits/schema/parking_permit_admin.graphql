@@ -164,6 +164,16 @@ type PermitDetailNode {
   changeLogs: [ChangeLog]!
 }
 
+type PermitPriceChange {
+  product: String!
+  previousPrice: Float!
+  newPrice: Float!
+  priceChange: Float!
+  startDate: String!
+  endDate: String!
+  monthCount: Int!
+}
+
 type Query {
   permits(
     pageInput: PageInput!
@@ -185,6 +195,7 @@ type Query {
     orderBy: OrderByInput
   ): PagedRefunds!
   refund(refundNumber: Int): RefundNode!
+  permitPriceChangeList(permitId: ID!, permitInfo: ResidentPermitInput!): [PermitPriceChange]
 }
 
 input AddressInput {
