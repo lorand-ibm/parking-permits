@@ -215,8 +215,8 @@ class ParkingZoneTestCase(TestCase):
 
     def test_get_refund_amount_for_unused_items_should_return_correct_total(self):
         product_detail_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(20)],
-            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal(30)],
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("20")],
+            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal("30")],
         ]
         self._create_zone_products(self.zone_a, product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 1, 1))
@@ -238,12 +238,12 @@ class ParkingZoneTestCase(TestCase):
 
         with freeze_time(datetime(2021, 4, 15)):
             refund_amount = permit.get_refund_amount_for_unused_items()
-            self.assertEqual(refund_amount, Decimal(220))
+            self.assertEqual(refund_amount, Decimal("220"))
 
     def test_get_products_with_quantities_should_return_a_single_product_for_open_ended(
         self,
     ):
-        product_detail_list = [[(date(2021, 1, 1), date(2021, 12, 31)), Decimal(30)]]
+        product_detail_list = [[(date(2021, 1, 1), date(2021, 12, 31)), Decimal("30")]]
         self._create_zone_products(self.zone_a, product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 2, 15))
         permit = ParkingPermitFactory(
@@ -274,8 +274,8 @@ class ParkingZoneTestCase(TestCase):
         self,
     ):
         product_detail_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(30)],
-            [(date(2021, 5, 1), date(2021, 12, 31)), Decimal(30)],
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("30")],
+            [(date(2021, 5, 1), date(2021, 12, 31)), Decimal("30")],
         ]
         self._create_zone_products(self.zone_a, product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 6, 15))
@@ -292,9 +292,9 @@ class ParkingZoneTestCase(TestCase):
         self,
     ):
         product_detail_list = [
-            [(date(2021, 1, 1), date(2021, 5, 31)), Decimal(30)],
-            [(date(2021, 6, 1), date(2021, 7, 31)), Decimal(30)],
-            [(date(2021, 8, 1), date(2021, 12, 31)), Decimal(30)],
+            [(date(2021, 1, 1), date(2021, 5, 31)), Decimal("30")],
+            [(date(2021, 6, 1), date(2021, 7, 31)), Decimal("30")],
+            [(date(2021, 8, 1), date(2021, 12, 31)), Decimal("30")],
         ]
         products = self._create_zone_products(self.zone_a, product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 2, 15))
@@ -318,9 +318,9 @@ class ParkingZoneTestCase(TestCase):
         self,
     ):
         product_detail_list = [
-            [(date(2021, 1, 10), date(2021, 5, 9)), Decimal(30)],
-            [(date(2021, 5, 10), date(2021, 8, 9)), Decimal(30)],
-            [(date(2021, 8, 10), date(2021, 12, 31)), Decimal(30)],
+            [(date(2021, 1, 10), date(2021, 5, 9)), Decimal("30")],
+            [(date(2021, 5, 10), date(2021, 8, 9)), Decimal("30")],
+            [(date(2021, 8, 10), date(2021, 12, 31)), Decimal("30")],
         ]
         products = self._create_zone_products(self.zone_a, product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 2, 15))
@@ -344,8 +344,8 @@ class ParkingZoneTestCase(TestCase):
         self,
     ):
         product_detail_list = [
-            [(date(2021, 1, 10), date(2021, 5, 9)), Decimal(30)],
-            [(date(2021, 5, 10), date(2021, 10, 9)), Decimal(30)],
+            [(date(2021, 1, 10), date(2021, 5, 9)), Decimal("30")],
+            [(date(2021, 5, 10), date(2021, 10, 9)), Decimal("30")],
         ]
         self._create_zone_products(self.zone_a, product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 2, 15))
@@ -362,7 +362,7 @@ class ParkingZoneTestCase(TestCase):
 
     def test_get_unused_order_items_raise_error_for_open_ended_permit(self):
         product_detail_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(30)],
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("30")],
         ]
         self._create_zone_products(self.zone_a, product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 1, 1))
@@ -377,8 +377,8 @@ class ParkingZoneTestCase(TestCase):
 
     def test_get_unused_order_items_return_unused_items(self):
         product_detail_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(20)],
-            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal(30)],
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("20")],
+            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal("30")],
         ]
         self._create_zone_products(self.zone_a, product_detail_list)
         start_time = timezone.make_aware(datetime(2021, 1, 1))
@@ -399,22 +399,22 @@ class ParkingZoneTestCase(TestCase):
         with freeze_time(datetime(2021, 4, 15)):
             unused_items = permit.get_unused_order_items()
             self.assertEqual(len(unused_items), 2)
-            self.assertEqual(unused_items[0][0].unit_price, Decimal(20))
+            self.assertEqual(unused_items[0][0].unit_price, Decimal("20"))
             self.assertEqual(unused_items[0][1], 2)
             self.assertEqual(unused_items[0][2], (date(2021, 5, 1), date(2021, 6, 30)))
-            self.assertEqual(unused_items[1][0].unit_price, Decimal(30))
+            self.assertEqual(unused_items[1][0].unit_price, Decimal("30"))
             self.assertEqual(unused_items[1][1], 6)
             self.assertEqual(unused_items[1][2], (date(2021, 7, 1), date(2021, 12, 31)))
 
     def test_parking_permit_change_price_list_when_prices_go_down(self):
         zone_a_product_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(20)],
-            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal(30)],
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("20")],
+            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal("30")],
         ]
         self._create_zone_products(self.zone_a, zone_a_product_list)
         zone_b_product_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(30)],
-            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal(40)],
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("30")],
+            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal("40")],
         ]
         self._create_zone_products(self.zone_b, zone_b_product_list)
         high_emission_vehicle = VehicleFactory()
@@ -438,29 +438,31 @@ class ParkingZoneTestCase(TestCase):
             )
             self.assertEqual(len(price_change_list), 2)
             self.assertEqual(price_change_list[0]["product"], "Pysäköintialue B")
-            self.assertEqual(price_change_list[0]["previous_price"], Decimal(20))
-            self.assertEqual(price_change_list[0]["new_price"], Decimal(15))
-            self.assertEqual(price_change_list[0]["price_change"], Decimal(-5))
+            self.assertEqual(price_change_list[0]["previous_price"], Decimal("20"))
+            self.assertEqual(price_change_list[0]["new_price"], Decimal("15"))
+            self.assertEqual(price_change_list[0]["price_change"], Decimal("-5"))
+            self.assertEqual(price_change_list[0]["price_change_vat"], Decimal("-1.2"))
             self.assertEqual(price_change_list[0]["month_count"], 2)
             self.assertEqual(price_change_list[0]["start_date"], date(2021, 5, 1))
             self.assertEqual(price_change_list[0]["end_date"], date(2021, 6, 30))
             self.assertEqual(price_change_list[1]["product"], "Pysäköintialue B")
-            self.assertEqual(price_change_list[1]["previous_price"], Decimal(30))
-            self.assertEqual(price_change_list[1]["new_price"], Decimal(20))
-            self.assertEqual(price_change_list[1]["price_change"], Decimal(-10))
+            self.assertEqual(price_change_list[1]["previous_price"], Decimal("30"))
+            self.assertEqual(price_change_list[1]["new_price"], Decimal("20"))
+            self.assertEqual(price_change_list[1]["price_change"], Decimal("-10"))
+            self.assertEqual(price_change_list[1]["price_change_vat"], Decimal("-2.4"))
             self.assertEqual(price_change_list[1]["month_count"], 6)
             self.assertEqual(price_change_list[1]["start_date"], date(2021, 7, 1))
             self.assertEqual(price_change_list[1]["end_date"], date(2021, 12, 31))
 
     def test_parking_permit_change_price_list_when_prices_go_up(self):
         zone_a_product_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(20)],
-            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal(30)],
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("20")],
+            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal("30")],
         ]
         self._create_zone_products(self.zone_a, zone_a_product_list)
         zone_b_product_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal(30)],
-            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal(40)],
+            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("30")],
+            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal("40")],
         ]
         self._create_zone_products(self.zone_b, zone_b_product_list)
         high_emission_vehicle = VehicleFactory()
@@ -484,16 +486,18 @@ class ParkingZoneTestCase(TestCase):
             )
             self.assertEqual(len(price_change_list), 2)
             self.assertEqual(price_change_list[0]["product"], "Pysäköintialue B")
-            self.assertEqual(price_change_list[0]["previous_price"], Decimal(10))
-            self.assertEqual(price_change_list[0]["new_price"], Decimal(30))
-            self.assertEqual(price_change_list[0]["price_change"], Decimal(20))
+            self.assertEqual(price_change_list[0]["previous_price"], Decimal("10"))
+            self.assertEqual(price_change_list[0]["new_price"], Decimal("30"))
+            self.assertEqual(price_change_list[0]["price_change"], Decimal("20"))
+            self.assertEqual(price_change_list[0]["price_change_vat"], Decimal("4.8"))
             self.assertEqual(price_change_list[0]["month_count"], 2)
             self.assertEqual(price_change_list[0]["start_date"], date(2021, 5, 1))
             self.assertEqual(price_change_list[0]["end_date"], date(2021, 6, 30))
             self.assertEqual(price_change_list[1]["product"], "Pysäköintialue B")
-            self.assertEqual(price_change_list[1]["previous_price"], Decimal(15))
-            self.assertEqual(price_change_list[1]["new_price"], Decimal(40))
-            self.assertEqual(price_change_list[1]["price_change"], Decimal(25))
+            self.assertEqual(price_change_list[1]["previous_price"], Decimal("15"))
+            self.assertEqual(price_change_list[1]["new_price"], Decimal("40"))
+            self.assertEqual(price_change_list[1]["price_change"], Decimal("25"))
+            self.assertEqual(price_change_list[1]["price_change_vat"], Decimal("6"))
             self.assertEqual(price_change_list[1]["month_count"], 6)
             self.assertEqual(price_change_list[1]["start_date"], date(2021, 7, 1))
             self.assertEqual(price_change_list[1]["end_date"], date(2021, 12, 31))

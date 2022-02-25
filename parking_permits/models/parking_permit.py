@@ -1,6 +1,6 @@
-import decimal
 import json
 import logging
+from decimal import Decimal
 
 import requests
 import reversion
@@ -163,11 +163,11 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
         if self.contract_type == ContractType.OPEN_ENDED:
             month_count = 1
         if self.is_secondary_vehicle:
-            increase = decimal.Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
+            increase = Decimal(SECONDARY_VEHICLE_PRICE_INCREASE) / 100
             monthly_price += increase * monthly_price
 
         if self.vehicle.is_low_emission:
-            discount = decimal.Decimal(LOW_EMISSION_DISCOUNT) / 100
+            discount = Decimal(LOW_EMISSION_DISCOUNT) / 100
             monthly_price -= discount * monthly_price
 
         return monthly_price * month_count, monthly_price
@@ -313,11 +313,15 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
                 else:
                     # if the product is different or diff price is different,
                     # create a new price change item
+                    price_change_vat = (diff_price * new_product.vat).quantize(
+                        Decimal("0.0001")
+                    )
                     price_change_list.append(
                         {
                             "product": new_product.name,
                             "previous_price": previous_price,
                             "new_price": new_price,
+                            "price_change_vat": price_change_vat,
                             "price_change": diff_price,
                             "start_date": month_start_date,
                             "month_count": 1,
@@ -366,7 +370,7 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
             raise RefundError("This permit cannot be refunded")
 
         unused_order_items = self.get_unused_order_items()
-        total = decimal.Decimal(0)
+        total = Decimal(0)
         for order_item, quantity, date_range in unused_order_items:
             total += order_item.unit_price * quantity
         return total

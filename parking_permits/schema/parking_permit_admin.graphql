@@ -169,6 +169,7 @@ type PermitPriceChange {
   previousPrice: Float!
   newPrice: Float!
   priceChange: Float!
+  priceChangeVat: Float!
   startDate: String!
   endDate: String!
   monthCount: Int!
