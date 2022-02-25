@@ -227,9 +227,8 @@ def resolve_permit_price_change_list(obj, info, permit_id, permit_info):
         raise UpdatePermitError(_("Cannot change the customer of the permit"))
 
     vehicle_info = permit_info["vehicle"]
-    vehicle = update_or_create_vehicle(vehicle_info)
     parking_zone = ParkingZone.objects.get(name=customer_info["zone"])
-    return permit.get_price_change_list(vehicle, parking_zone)
+    return permit.get_price_change_list(parking_zone, vehicle_info["is_low_emission"])
 
 
 @mutation.field("updateResidentPermit")

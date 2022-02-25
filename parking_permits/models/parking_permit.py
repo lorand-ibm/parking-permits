@@ -247,14 +247,14 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
             and not hasattr(self.order, "refund")
         )
 
-    def get_price_change_list(self, new_vehicle, new_zone):
+    def get_price_change_list(self, new_zone, is_low_emission):
         """Get a list of price changes if the permit is changed
 
         Only vehicle and zone change will affect the price
 
         Args:
-            new_vehicle: new vehicle used in the permit
             new_zone: new zone used in the permit
+            is_low_emission: True if the new vehicle is a low emission one
 
         Returns:
             A list of price change information
@@ -267,11 +267,13 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
             start_date = timezone.localdate(self.next_period_start_time)
             previous_product = previous_products.get_for_date(start_date)
             previous_price = previous_product.get_modified_unit_price(
-                self.vehicle.is_low_emission, is_secondary
+                self.vehicle.is_low_emission,
+                is_secondary,
             )
             new_product = new_products.get_for_date(start_date)
             new_price = new_product.get_modified_unit_price(
-                new_vehicle.is_low_emission, is_secondary
+                is_low_emission,
+                is_secondary,
             )
             return [[new_price - previous_price, start_date, 1]]
 
@@ -297,7 +299,7 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
                     is_secondary,
                 )
                 new_price = new_product.get_modified_unit_price(
-                    new_vehicle.is_low_emission,
+                    is_low_emission,
                     is_secondary,
                 )
                 diff_price = new_price - previous_price

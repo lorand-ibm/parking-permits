@@ -418,7 +418,6 @@ class ParkingZoneTestCase(TestCase):
         ]
         self._create_zone_products(self.zone_b, zone_b_product_list)
         high_emission_vehicle = VehicleFactory()
-        low_emission_vehicle = VehicleFactory(low_emission_vehicle=True)
 
         start_time = timezone.make_aware(datetime(2021, 1, 1))
         end_time = get_end_time(start_time, 12)
@@ -433,9 +432,7 @@ class ParkingZoneTestCase(TestCase):
             month_count=12,
         )
         with freeze_time(datetime(2021, 4, 15)):
-            price_change_list = permit.get_price_change_list(
-                low_emission_vehicle, self.zone_b
-            )
+            price_change_list = permit.get_price_change_list(self.zone_b, True)
             self.assertEqual(len(price_change_list), 2)
             self.assertEqual(price_change_list[0]["product"], "Pysäköintialue B")
             self.assertEqual(price_change_list[0]["previous_price"], Decimal("20"))
@@ -465,7 +462,6 @@ class ParkingZoneTestCase(TestCase):
             [(date(2021, 7, 1), date(2021, 12, 31)), Decimal("40")],
         ]
         self._create_zone_products(self.zone_b, zone_b_product_list)
-        high_emission_vehicle = VehicleFactory()
         low_emission_vehicle = VehicleFactory(low_emission_vehicle=True)
 
         start_time = timezone.make_aware(datetime(2021, 1, 1))
@@ -481,9 +477,7 @@ class ParkingZoneTestCase(TestCase):
             month_count=12,
         )
         with freeze_time(datetime(2021, 4, 15)):
-            price_change_list = permit.get_price_change_list(
-                high_emission_vehicle, self.zone_b
-            )
+            price_change_list = permit.get_price_change_list(self.zone_b, False)
             self.assertEqual(len(price_change_list), 2)
             self.assertEqual(price_change_list[0]["product"], "Pysäköintialue B")
             self.assertEqual(price_change_list[0]["previous_price"], Decimal("10"))
