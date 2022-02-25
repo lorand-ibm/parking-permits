@@ -35,7 +35,7 @@ class Refund(TimestampedModelMixin, UserStampedModelMixin, UUIDPrimaryKeyMixin):
     amount = models.DecimalField(
         _("Amount"), default=0.00, max_digits=6, decimal_places=2
     )
-    iban = models.CharField(max_length=30)
+    iban = models.CharField(max_length=30, blank=True)
     status = models.CharField(
         _("Status"),
         max_length=32,
