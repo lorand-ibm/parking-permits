@@ -50,7 +50,7 @@ class OrderManager(SerializableMixin.SerializableManager):
                 raise OrderCreationFailed("Permits customer do not match")
 
     @transaction.atomic
-    def create_for_permits(self, permits):
+    def create_for_permits(self, permits, status=OrderStatus.DRAFT):
         self._validate_permits(permits)
         if permits[0].contract_type == ContractType.OPEN_ENDED:
             order_type = OrderType.SUBSCRIPTION
@@ -58,7 +58,7 @@ class OrderManager(SerializableMixin.SerializableManager):
             order_type = OrderType.ORDER
 
         order = Order.objects.create(
-            customer=permits[0].customer, order_type=order_type
+            customer=permits[0].customer, order_type=order_type, status=status
         )
         for permit in permits:
             products_with_quantity = permit.get_products_with_quantities()
@@ -109,13 +109,15 @@ class OrderManager(SerializableMixin.SerializableManager):
             )
 
     @transaction.atomic
-    def create_renewal_order(self, order):
+    def create_renewal_order(self, order, status=OrderStatus.DRAFT):
         """
         Replace original order with update permits information
         """
         self._validate_order_for_renewal(order)
         new_order = Order.objects.create(
-            customer=order.customer, order_type=order.order_type
+            customer=order.customer,
+            order_type=order.order_type,
+            status=status,
         )
         for permit in order.permits.all():
             start_date = timezone.localdate(permit.next_period_start_time)
@@ -125,8 +127,7 @@ class OrderManager(SerializableMixin.SerializableManager):
                 continue
 
             order_item_detail_list = permit.get_unused_order_items()
-            qs = Product.objects.for_resident()
-            product_detail_list = qs.get_products_with_quantities(start_date, end_date)
+            product_detail_list = permit.get_products_with_quantities()
 
             order_item_detail_iter = iter(order_item_detail_list)
             product_detail_iter = iter(product_detail_list)
