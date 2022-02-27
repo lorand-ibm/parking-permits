@@ -1,8 +1,3 @@
-import decimal
-
-from parking_permits.constants import VAT_PERCENTAGE
-
-
 def get_meta_value(meta_pair_list, meta_pair_key):
     return next(
         (
@@ -12,20 +7,6 @@ def get_meta_value(meta_pair_list, meta_pair_key):
         ),
         None,
     )
-
-
-def resolve_price_response(total_price=0, monthly_price=0):
-    price_vat = decimal.Decimal(VAT_PERCENTAGE) / 100 * total_price
-    row_price_vat = decimal.Decimal(VAT_PERCENTAGE) / 100 * monthly_price
-    return {
-        "row_price_net": float(total_price - price_vat),
-        "row_price_vat": float(price_vat),
-        "row_price_total": float(total_price),
-        "price_net": float(monthly_price - row_price_vat),
-        "price_vat": float(row_price_vat),
-        "price_gross": float(monthly_price),
-        "vat_percentage": float(VAT_PERCENTAGE),
-    }
 
 
 def snake_to_camel_dict(dictionary):
