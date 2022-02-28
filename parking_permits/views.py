@@ -13,8 +13,8 @@ from rest_framework.views import APIView
 
 from .models import Customer, Order
 from .models.common import SourceSystem
-from .models.order import OrderItem, OrderStatus
-from .models.parking_permit import ParkingPermitStatus
+from .models.order import OrderStatus
+from .models.parking_permit import ParkingPermit, ParkingPermitStatus
 from .serializers import (
     MessageResponseSerializer,
     OrderItemSerializer,
@@ -59,18 +59,25 @@ class TalpaResolvePrice(APIView):
         tags=["ResolvePrice"],
     )
     def post(self, request, format=None):
-        order_item_id = request.data.get("orderItem").get("orderItemId")
+        meta = request.data.get("meta")
+        permit_id = talpa.get_meta_value(meta, "permitId")
 
-        if order_item_id is None:
+        if permit_id is None:
             return Response(
-                {"message": "No orderItemId is found"},
+                {
+                    "message": "No permitId key available in meta list of key-value pairs"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            order_item = OrderItem.objects.get(talpa_order_item_id=order_item_id)
-            price = order_item.payment_unit_price
-            vat = order_item.vat
+            permit = ParkingPermit.objects.get(pk=permit_id)
+            products_with_quantity = permit.get_products_with_quantities()
+            product, quantity, date_range = products_with_quantity[0]
+            price = product.get_modified_unit_price(
+                permit.vehicle.is_low_emission, permit.is_secondary_vehicle
+            )
+            vat = product.vat
             price_vat = price * vat
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -84,7 +91,7 @@ class TalpaResolvePrice(APIView):
                     "price_net": float(price - price_vat),
                     "price_vat": float(price_vat),
                     "price_gross": float(price),
-                    "vat_percentage": float(vat * 100),
+                    "vat_percentage": float(product.vat_percentage),
                 }
             )
         )
@@ -102,14 +109,14 @@ class TalpaResolveRightOfPurchase(APIView):
         tags=["RightOfPurchase"],
     )
     def post(self, request):
+        meta = request.data.get("meta")
+        permit_id = talpa.get_meta_value(meta, "permitId")
         user_id = request.data.get("userId")
-        order_id = request.data.get("orderId")
-        order_item_id = request.data.get("orderItem").get("orderItemId")
 
         try:
-            order_item = OrderItem.objects.get(talpa_order_item_id=order_item_id)
-            customer = order_item.permit.customer
-            vehicle = order_item.permit.vehicle
+            permit = ParkingPermit.objects.get(pk=permit_id)
+            customer = permit.customer
+            vehicle = permit.vehicle
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -121,9 +128,7 @@ class TalpaResolveRightOfPurchase(APIView):
         res = {
             "error_message": "",
             "right_of_purchase": right_of_purchase,
-            "order_id": order_id,
             "user_id": user_id,
-            "order_item_id": order_item_id,
         }
         return Response(talpa.snake_to_camel_dict(res))
 
