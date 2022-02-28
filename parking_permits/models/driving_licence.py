@@ -1,5 +1,5 @@
-import arrow
 from django.contrib.gis.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .customer import Customer
@@ -20,7 +20,7 @@ class DrivingLicence(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     active = models.BooleanField(null=False, default=True)
 
     def is_valid_for_vehicle(self, vehicle):
-        is_not_expired = self.valid_end > arrow.utcnow()
+        is_not_expired = self.valid_end > timezone.localdate(timezone.now())
         is_not_suspended = self.active
 
         return is_not_expired and is_not_suspended
