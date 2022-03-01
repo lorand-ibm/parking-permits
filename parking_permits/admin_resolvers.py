@@ -252,6 +252,10 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info, iban=None)
     parking_zone = ParkingZone.objects.get(name=customer_info["zone"])
 
     original_order = permit.order
+    price_change_list = permit.get_price_change_list(
+        parking_zone, vehicle_info["is_low_emission"]
+    )
+    total_price_change = sum([item["price_change"] for item in price_change_list])
     should_create_new_order = (
         # only create new order when emission status or parking zone changed
         (
@@ -280,12 +284,11 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info, iban=None)
             original_order, status=OrderStatus.CONFIRMED
         )
         logger.info(f"Creating renewal order completed: {new_order.id}")
-        diff_price = new_order.total_price - original_order.total_price
-        if diff_price < 0:
+        if total_price_change < 0:
             refund = Refund.objects.create(
                 name=str(customer),
                 order=original_order,
-                amount=-diff_price,
+                amount=-total_price_change,
                 iban=iban,
                 description=f"Refund for updating permit: {permit.identifier}",
             )
