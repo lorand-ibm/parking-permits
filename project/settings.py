@@ -21,6 +21,12 @@ env = environ.Env(
     ALLOWED_ADMIN_AD_GROUPS=(list, None),
     TALPA_API_KEY=(str, ""),
     TALPA_NAMESPACE=(str, "asukaspysakointi"),
+    GDPR_API_QUERY_SCOPE=(str, ""),
+    GDPR_API_DELETE_SCOPE=(str, ""),
+    PARKKIHUBI_DOMAIN=(str, ""),
+    PARKKIHUBI_PERMIT_SERIES=(str, ""),
+    PARKKIHUBI_TOKEN=(str, ""),
+    PARKKIHUBI_OPERATOR_ENDPOINT=(str, ""),
 )
 
 if path.exists(".env"):
@@ -31,7 +37,7 @@ DEBUG = env("DEBUG")
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
-AUTH_USER_MODEL = "users_app.CustomUser"
+AUTH_USER_MODEL = "users.User"
 
 SRID = 4326
 KMO_URL = env("KMO_URL")
@@ -51,10 +57,13 @@ INSTALLED_APPS = [
     "ariadne.contrib.django",
     "django_extensions",
     "corsheaders",
-    "parking_permits_app",
-    "users_app",
+    "parking_permits",
+    "users",
     "rest_framework",
     "reversion",
+    "django_db_logger",
+    "drf_yasg",
+    "django_crontab",
 ]
 
 MIDDLEWARE = [
@@ -111,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "fi"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Helsinki"
 
 USE_I18N = True
 
@@ -131,6 +140,12 @@ TALPA_PRODUCT_EXPERIENCE_API = env("TALPA_PRODUCT_EXPERIENCE_API")
 TALPA_ORDER_EXPERIENCE_API = env("TALPA_ORDER_EXPERIENCE_API")
 TALPA_API_KEY = env("TALPA_API_KEY")
 
+# PARKKIHUBI
+PARKKIHUBI_DOMAIN = env("PARKKIHUBI_DOMAIN")
+PARKKIHUBI_PERMIT_SERIES = env("PARKKIHUBI_PERMIT_SERIES")
+PARKKIHUBI_TOKEN = env("PARKKIHUBI_TOKEN")
+PARKKIHUBI_OPERATOR_ENDPOINT = env("PARKKIHUBI_OPERATOR_ENDPOINT")
+
 # cors
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -148,3 +163,30 @@ OIDC_API_TOKEN_AUTH = {
 
 ALLOWED_ADMIN_AD_GROUPS = env.list("ALLOWED_ADMIN_AD_GROUPS")
 MAX_ALLOWED_USER_PERMIT = 2
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
+        },
+        "simple": {"format": "%(levelname)s %(asctime)s %(message)s"},
+    },
+    "handlers": {
+        "db_log": {
+            "level": "DEBUG",
+            "class": "django_db_logger.db_log_handler.DatabaseLogHandler",
+        },
+    },
+    "loggers": {"db": {"handlers": ["db_log"], "level": "DEBUG"}},
+}
+
+CRONJOBS = [
+    ("22 00 * * *", "parking_permits.cron.automatic_expiration_of_permits"),
+    ("59 23 * * *", "parking_permits.cron.automatic_remove_obsolete_customer_data"),
+]
+
+# GDPR API
+GDPR_API_MODEL = "parking_permits.Customer"
+GDPR_API_QUERY_SCOPE = env("GDPR_API_QUERY_SCOPE")
+GDPR_API_DELETE_SCOPE = env("GDPR_API_DELETE_SCOPE")

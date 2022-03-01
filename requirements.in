@@ -13,3 +13,7 @@ whitenoise==5.2.0                             # enabling Django to serve its own
 xmltodict==0.12.0                             # parsing xml to dictionary
 django-helusers
 django-reversion
+django_db_logger
+drf-yasg
+django-crontab
+helsinki-profile-gdpr-api

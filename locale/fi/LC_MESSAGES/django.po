@@ -251,3 +251,18 @@ msgstr "Pysäköintitunnus"
 
 msgid "Parking permits"
 msgstr "Pysäköintitunnukset"
+
+msgid "* The permit is valid from the selected start date once the payment has been accepted."
+msgstr "* Tunnus on voimassa valitsemastasi alkamispäivästä kun maksusuoritus on hyväksytty."
+
+msgid "Parking permit expiration date"
+msgstr "Pysäköintitunnuksen päättymispäivä"
+
+msgid "Parking permit start date*"
+msgstr "Pysäköintitunnuksen alkamispäivä*"
+
+msgid "Duration of parking permit"
+msgstr "Pysäköintitunnuksen kesto"
+
+msgid "Fixed period %(month)d kk"
+msgstr "Määräaikainen %(month)d kk"

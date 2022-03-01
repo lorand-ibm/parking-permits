@@ -1,0 +1,290 @@
+type ProductNode {
+  id: ID!
+  type: String!
+  unitPrice: Float!
+  unit: String!
+  startDate: String!
+  endDate: String!
+  vat: Float!
+  vatPercentage: Float!
+  zone: String!
+  lowEmissionDiscount: Float!
+  secondaryVehicleIncreaseRate: Float!
+  modifiedAt: String
+  modifiedBy: String
+}
+
+type ZoneNode {
+  name: String
+  label: String
+  labelSv: String
+  residentProducts: [ProductNode]
+}
+
+type AddressNode {
+  id: ID!
+  streetName: String
+  streetNumber: String
+  streetNameSv: String
+  city: String
+  citySv: String
+  postalCode: String
+  zone: ZoneNode
+}
+
+type CustomerNode {
+  firstName: String
+  lastName: String
+  nationalIdNumber: String
+  primaryAddress: AddressNode
+  zone: String
+  email: String
+  phoneNumber: String
+  addressSecurityBan: Boolean
+  driverLicenseChecked: Boolean
+}
+
+type VehicleNode {
+  manufacturer: String!
+  model: String!
+  registrationNumber: String!
+  isLowEmission: Boolean!
+  consentLowEmissionAccepted: Boolean!
+  serialNumber: String
+  category: String
+}
+
+enum ParkingPermitStatus {
+  DRAFT
+  ARRIVED
+  PROCESSING
+  ACCEPTED
+  REJECTED
+  PAYMENT_IN_PROGRESS
+  VALID
+  CLOSED
+}
+
+type PermitNode {
+  identifier: Int!
+  customer: CustomerNode!
+  vehicle: VehicleNode
+  parkingZone: ZoneNode
+  status: ParkingPermitStatus!
+  startTime: String
+  endTime: String
+}
+
+type RefundNode {
+  id: ID!
+  refundNumber: Int!
+  name: String
+  amount: Float!
+  iban: String!
+  status: String!
+  description: String
+  createdAt: String
+  createdBy: String
+  modifiedAt: String
+  modifiedBy: String
+}
+
+type PageInfo {
+  numPages: Int!
+  page: Int!
+  next: Int
+  prev: Int
+  startIndex: Int!
+  endIndex: Int!
+  count: Int!
+}
+
+type PagedPermits {
+  objects: [PermitNode]
+  pageInfo: PageInfo
+}
+
+type PagedProducts {
+  objects: [ProductNode]
+  pageInfo: PageInfo
+}
+
+type PagedRefunds {
+  objects: [RefundNode]
+  pageInfo: PageInfo
+}
+
+enum OrderDirection {
+  ASC,
+  DESC
+}
+
+input PageInput {
+  page: Int!
+  pageSize: Int
+}
+
+input OrderByInput {
+  field: String!
+  orderFields: [String]!
+  orderDirection: OrderDirection!
+}
+
+input SearchItem {
+  matchType: String!
+  fields: [String]!
+  value: String!
+}
+
+type ChangeLog {
+  id: ID!
+  event: String!
+  description: String!
+  createdAt: String!
+  createdBy: String!
+}
+
+type PermitDetailNode {
+  identifier: Int!
+  customer: CustomerNode!
+  vehicle: VehicleNode
+  parkingZone: ZoneNode
+  status: ParkingPermitStatus!
+  startTime: String
+  endTime: String
+  consentLowEmissionAccepted: Boolean
+  contractType: String
+  monthCount: Int
+  monthsLeft: Int
+  monthlyPrice: Float
+  currentPeriodEndTime: String
+  canEndImmediately: Boolean
+  canEndAfterCurrentPeriod: Boolean
+  canBeRefunded: Boolean
+  changeLogs: [ChangeLog]!
+}
+
+type PermitPriceChange {
+  product: String!
+  previousPrice: Float!
+  newPrice: Float!
+  priceChange: Float!
+  priceChangeVat: Float!
+  startDate: String!
+  endDate: String!
+  monthCount: Int!
+}
+
+type Query {
+  permits(
+    pageInput: PageInput!
+    orderBy: OrderByInput
+    searchItems: [SearchItem]
+   ): PagedPermits!
+  permitDetail(permitId: ID!): PermitDetailNode!
+  zones: [ZoneNode]
+  customer(nationalIdNumber: String!): CustomerNode!
+  vehicle(regNumber: String!, nationalIdNumber: String!): VehicleNode!
+  products(
+    pageInput: PageInput!
+    orderBy: OrderByInput
+  ): PagedProducts!
+  product(productId: ID!): ProductNode!
+  zoneByLocation(location: [Float]!): ZoneNode!
+  refunds(
+    pageInput: PageInput!
+    orderBy: OrderByInput
+  ): PagedRefunds!
+  refund(refundNumber: Int): RefundNode!
+  permitPriceChangeList(permitId: ID!, permitInfo: ResidentPermitInput!): [PermitPriceChange]
+}
+
+input AddressInput {
+  sourceSystem: String
+  sourceId: String
+  streetName: String
+  streetNumber: String
+  streetNameSv: String
+  city: String
+  citySv: String
+  postalCode: String
+  location: [Float]
+}
+
+input ZoneInput {
+  name: String
+  label: String
+  labelSv: String
+}
+
+input CustomerInput {
+  firstName: String
+  lastName: String
+  nationalIdNumber: String
+  primaryAddress: AddressInput
+  zone: String
+  email: String
+  phoneNumber: String
+  addressSecurityBan: Boolean
+  driverLicenseChecked: Boolean
+}
+
+input VehicleInput {
+  manufacturer: String!
+  model: String!
+  registrationNumber: String!
+  isLowEmission: Boolean!
+  serialNumber: String
+  consentLowEmissionAccepted: Boolean!
+  category: String
+}
+
+input ResidentPermitInput {
+  contractType: String
+  customer: CustomerInput!
+  vehicle: VehicleInput
+  status: ParkingPermitStatus!
+  startTime: String
+  endTime: String
+  monthCount: Int
+}
+
+input ProductInput {
+  type: String!
+  zone: String!
+  unitPrice: Float!
+  unit: String!
+  startDate: String!
+  endDate: String!
+  vatPercentage: Float!
+  lowEmissionDiscount: Float!
+}
+
+input RefundInput {
+  name: String!
+  iban: String!
+}
+
+type MutationResponse {
+  success: Boolean
+}
+
+type CreatePermitResponse {
+  success: Boolean
+  permit: PermitNode
+}
+
+enum PermitEndType {
+  IMMEDIATELY
+  AFTER_CURRENT_PERIOD
+}
+
+type Mutation {
+  createResidentPermit(permit: ResidentPermitInput!): CreatePermitResponse
+  endPermit(permitId: Int!, endType: PermitEndType!, iban: String): MutationResponse
+  updateResidentPermit(permitId: ID!, permitInfo: ResidentPermitInput!, iban: String): MutationResponse
+  updateProduct(productId: ID!, product: ProductInput!): MutationResponse
+  deleteProduct(productId: ID!): MutationResponse
+  createProduct(product: ProductInput!): MutationResponse
+  updateRefund(refundNumber: Int!, refund: RefundInput!): MutationResponse
+}

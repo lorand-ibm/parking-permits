@@ -1,0 +1,146 @@
+type ZoneNode  {
+  id: ID!
+  sharedProductId: String
+  name: String
+  description: String
+  descriptionSv: String
+  location: [[[[Float]]]]
+}
+
+type AddressNode  {
+  id: ID!
+  streetName: String
+  streetNumber: Int
+  streetNameSv: String
+  city: String
+  citySv: String
+  postalCode: String
+  location: [Float]
+  zone: ZoneNode
+  primary: Boolean
+}
+
+enum Language {
+  FINNISH
+  ENGLISH
+  SWEDISH
+}
+
+type CustomerNode {
+  id: ID!
+  age: Int!
+  firstName: String!
+  lastName: String!
+  language: Language
+  email: String
+  phoneNumber: String
+  primaryAddress: AddressNode
+  otherAddress: AddressNode
+}
+
+type VehicleNode {
+  id: ID!
+  powerType: String
+  manufacturer: String
+  model: String
+  productionYear: Int
+  registrationNumber: String
+  emission: Int
+  isLowEmission: Boolean
+}
+
+type ProductNode {
+  vat: Float!
+  quantity: Int!
+  unitPrice: Float!
+  totalPrice: Float!
+  endDate: String!
+  startDate: String!
+  lowEmissionDiscount: Float!
+}
+
+type PermitNode {
+  id: ID!
+  zone: ID!
+  orderId: String
+  subscriptionId: String
+  vehicle: VehicleNode!
+  products: [ProductNode]!
+  contractType: String
+  monthCount: Int
+  startType: String
+  startTime: String
+  endTime: String
+  status: String
+  parkingZone: ZoneNode
+  consentLowEmissionAccepted: Boolean
+  primaryVehicle: Boolean
+  monthsLeft: Int
+  currentPeriodEndTime: String
+  canEndImmediately: Boolean
+  canEndAfterCurrentPeriod: Boolean
+  hasRefund: Boolean
+}
+
+type PermitResult {
+  success: Boolean!
+  errors: [String]
+  permits: [PermitNode]
+}
+
+type Query {
+  profile: CustomerNode!
+  getPermits: PermitResult
+}
+
+type updateVehicleResult {
+  success: Boolean!
+  errors: [String]
+  vehicle: VehicleNode
+}
+
+type DeletePermitResult {
+  success: Boolean!
+  errors: [String]
+}
+
+enum PermitEndType {
+  IMMEDIATELY
+  AFTER_CURRENT_PERIOD
+}
+
+type TalpaOrderNode {
+  checkoutUrl: String
+}
+
+type TalpaOrderResult {
+  success: Boolean!
+  errors: [String]
+  order: TalpaOrderNode
+}
+
+type Mutation {
+  createParkingPermit(zoneId: ID!): PermitResult!
+  createOrder: TalpaOrderResult!
+  deleteParkingPermit(permitId: ID!): DeletePermitResult!
+  endParkingPermit(permitIds: [String]!, endType: PermitEndType!, iban: String): DeletePermitResult
+  updateParkingPermit(
+    input: ParkingPermitInput!
+    permitId: ID
+  ): PermitResult!
+  updateVehicle(
+    vehicleId: ID!
+    registration: String!
+  ): updateVehicleResult!
+}
+
+input ParkingPermitInput {
+  consentLowEmissionAccepted: Boolean
+  primaryVehicle: Boolean
+  startTime: String
+  endTime: String
+  startType: String
+  contractType: String
+  monthCount: Int
+  zoneId: String
+}

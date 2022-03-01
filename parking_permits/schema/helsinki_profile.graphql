@@ -1,0 +1,28 @@
+query MyProfileQuery {
+  myProfile {
+    id
+    firstName
+    lastName
+    language
+    verifiedPersonalInformation {
+      nationalIdentificationNumber
+    }
+    primaryPhone {
+      phone
+    }
+    primaryEmail {
+      email
+    }
+    addresses {
+      edges {
+        node {
+          id
+          city
+          postalCode
+          address
+          primary
+        }
+      }
+    }
+  }
+}
