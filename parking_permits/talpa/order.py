@@ -46,6 +46,9 @@ class TalpaOrderManager:
             "productName": order_item.product.name,
             "productDescription": cls._get_product_description(order_item.product),
             "unit": "kk",
+            "startDate": timezone.localtime(order_item.permit.start_time).strftime(
+                DATE_FORMAT
+            ),
             "quantity": order_item.quantity,
             "priceNet": float(order_item.unit_price_net),
             "priceVat": float(order_item.unit_price_vat),
@@ -76,6 +79,7 @@ class TalpaOrderManager:
     def _append_detail_meta(cls, item, permit):
         start_time = timezone.localtime(permit.start_time).strftime(DATE_FORMAT)
         item["meta"] += [
+            {"key": "permitId", "value": str(permit.id), "visible": False},
             {
                 "key": "permitDuration",
                 "label": _("Duration of parking permit"),
