@@ -164,6 +164,17 @@ type PermitDetailNode {
   changeLogs: [ChangeLog]!
 }
 
+type PermitPriceChange {
+  product: String!
+  previousPrice: Float!
+  newPrice: Float!
+  priceChange: Float!
+  priceChangeVat: Float!
+  startDate: String!
+  endDate: String!
+  monthCount: Int!
+}
+
 type Query {
   permits(
     pageInput: PageInput!
@@ -185,6 +196,7 @@ type Query {
     orderBy: OrderByInput
   ): PagedRefunds!
   refund(refundNumber: Int): RefundNode!
+  permitPriceChangeList(permitId: ID!, permitInfo: ResidentPermitInput!): [PermitPriceChange]
 }
 
 input AddressInput {
@@ -270,7 +282,7 @@ enum PermitEndType {
 type Mutation {
   createResidentPermit(permit: ResidentPermitInput!): CreatePermitResponse
   endPermit(permitId: Int!, endType: PermitEndType!, iban: String): MutationResponse
-  updateResidentPermit(permitId: ID!, permitInfo: ResidentPermitInput!): MutationResponse
+  updateResidentPermit(permitId: ID!, permitInfo: ResidentPermitInput!, iban: String): MutationResponse
   updateProduct(productId: ID!, product: ProductInput!): MutationResponse
   deleteProduct(productId: ID!): MutationResponse
   createProduct(product: ProductInput!): MutationResponse

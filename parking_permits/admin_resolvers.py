@@ -28,6 +28,7 @@ from parking_permits.models import (
 
 from .decorators import is_ad_admin
 from .exceptions import ObjectNotFound, ParkingZoneError, RefundError, UpdatePermitError
+from .models.order import OrderStatus
 from .models.parking_permit import ContractType
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
@@ -208,15 +209,17 @@ def resolve_create_resident_permit(obj, info, permit):
         comment = get_reversion_comment(EventType.CREATED, parking_permit)
         reversion.set_comment(comment)
 
-    Order.objects.create_for_permits([parking_permit])
+    # when creating from Admin UI, it's considered the payment is completed
+    # and the order status should be confirmed
+    Order.objects.create_for_permits([parking_permit], status=OrderStatus.CONFIRMED)
     return {"success": True, "permit": parking_permit}
 
 
-@mutation.field("updateResidentPermit")
+@query.field("permitPriceChangeList")
 @is_ad_admin
 @convert_kwargs_to_snake_case
 @transaction.atomic
-def resolve_update_resident_permit(obj, info, permit_id, permit_info):
+def resolve_permit_price_change_list(obj, info, permit_id, permit_info):
     try:
         permit = ParkingPermit.objects.get(identifier=permit_id)
     except ParkingPermit.DoesNotExist:
@@ -225,12 +228,42 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info):
     customer_info = permit_info["customer"]
     if permit.customer.national_id_number != customer_info["national_id_number"]:
         raise UpdatePermitError(_("Cannot change the customer of the permit"))
-    update_or_create_customer(customer_info)
 
     vehicle_info = permit_info["vehicle"]
-    vehicle = update_or_create_vehicle(vehicle_info)
+    parking_zone = ParkingZone.objects.get(name=customer_info["zone"])
+    return permit.get_price_change_list(parking_zone, vehicle_info["is_low_emission"])
+
+
+@mutation.field("updateResidentPermit")
+@is_ad_admin
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_update_resident_permit(obj, info, permit_id, permit_info, iban=None):
+    try:
+        permit = ParkingPermit.objects.get(identifier=permit_id)
+    except ParkingPermit.DoesNotExist:
+        raise ObjectNotFound(_("Parking permit not found"))
+
+    customer_info = permit_info["customer"]
+    if permit.customer.national_id_number != customer_info["national_id_number"]:
+        raise UpdatePermitError(_("Cannot change the customer of the permit"))
+    vehicle_info = permit_info["vehicle"]
 
     parking_zone = ParkingZone.objects.get(name=customer_info["zone"])
+
+    original_order = permit.order
+    should_create_new_order = (
+        # only create new order when emission status or parking zone changed
+        (
+            permit.vehicle.is_low_emission != vehicle_info["is_low_emission"]
+            or permit.parking_zone_id != parking_zone.id
+        )
+        and original_order
+        and original_order.is_confirmed
+    )
+
+    customer = update_or_create_customer(customer_info)
+    vehicle = update_or_create_vehicle(vehicle_info)
     with reversion.create_revision():
         permit.status = permit_info["status"]
         permit.parking_zone = parking_zone
@@ -240,6 +273,24 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info):
         reversion.set_user(request.user)
         comment = get_reversion_comment(EventType.CHANGED, permit)
         reversion.set_comment(comment)
+
+    if should_create_new_order:
+        logger.info(f"Creating renewal order for permit: {permit.identifier}")
+        new_order = Order.objects.create_renewal_order(
+            original_order, status=OrderStatus.CONFIRMED
+        )
+        logger.info(f"Creating renewal order completed: {new_order.id}")
+        diff_price = new_order.total_price - original_order.total_price
+        if diff_price < 0:
+            refund = Refund.objects.create(
+                name=str(customer),
+                order=original_order,
+                amount=-diff_price,
+                iban=iban,
+                description=f"Refund for updating permit: {permit.identifier}",
+            )
+            logger.info(f"Refund for lowered permit price created: {refund}")
+
     return {"success": True}
 
 
