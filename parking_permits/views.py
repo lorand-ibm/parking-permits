@@ -17,12 +17,12 @@ from .models.order import OrderStatus
 from .models.parking_permit import ParkingPermit, ParkingPermitStatus
 from .serializers import (
     MessageResponseSerializer,
-    OrderItemSerializer,
     OrderSerializer,
     ResolveAvailabilityResponseSerializer,
     ResolveAvailabilitySerializer,
+    ResolvePriceResponseSerializer,
     RightOfPurchaseResponseSerializer,
-    RightOfPurchaseSerializer,
+    TalpaPayloadSerializer,
 )
 from .services import talpa
 
@@ -50,11 +50,9 @@ class TalpaResolveAvailability(APIView):
 class TalpaResolvePrice(APIView):
     @swagger_auto_schema(
         operation_description="Resolve price of product from an order item.",
-        request_body=OrderItemSerializer,
+        request_body=TalpaPayloadSerializer,
         responses={
-            200: openapi.Response(
-                "Right of purchase response", MessageResponseSerializer
-            )
+            200: openapi.Response("Resolve price", ResolvePriceResponseSerializer)
         },
         tags=["ResolvePrice"],
     )
@@ -100,7 +98,7 @@ class TalpaResolvePrice(APIView):
 class TalpaResolveRightOfPurchase(APIView):
     @swagger_auto_schema(
         operation_description="Used as an webhook by Talpa in order to send an order notification.",
-        request_body=RightOfPurchaseSerializer,
+        request_body=TalpaPayloadSerializer,
         responses={
             200: openapi.Response(
                 "Right of purchase response", RightOfPurchaseResponseSerializer

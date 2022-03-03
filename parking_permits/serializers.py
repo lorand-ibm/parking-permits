@@ -6,23 +6,25 @@ class MetaItemSerializer(serializers.Serializer):
     value = serializers.CharField(help_text="Meta value")
 
 
-class OrderItemSerializer(serializers.Serializer):
-    orderItemId = serializers.CharField(help_text="Order item id")
+class TalpaPayloadSerializer(serializers.Serializer):
+    userId = serializers.CharField(help_text="User id")
     meta = MetaItemSerializer(many=True)
-
-
-class RightOfPurchaseSerializer(serializers.Serializer):
-    orderId = serializers.CharField(help_text="Id of a generated order")
-    namespace = serializers.CharField(help_text="Namespace used by talpa")
-    orderItem = OrderItemSerializer()
 
 
 class RightOfPurchaseResponseSerializer(serializers.Serializer):
     errorMessage = serializers.CharField(help_text="Error if exists", default="")
     rightOfPurchase = serializers.BooleanField(help_text="Has rights to purchase")
     userId = serializers.CharField(help_text="User id")
-    orderId = serializers.CharField(help_text="Order id")
-    orderItemId = serializers.CharField(help_text="Order item id")
+
+
+class ResolvePriceResponseSerializer(serializers.Serializer):
+    rowPriceNet = serializers.FloatField(help_text="Row price net")
+    rowPriceVat = serializers.FloatField(help_text="Row price vat")
+    rowPriceTotal = serializers.FloatField(help_text="Row price total")
+    priceNet = serializers.FloatField(help_text="Total net price")
+    priceVat = serializers.FloatField(help_text="Total vat")
+    priceGross = serializers.FloatField(help_text="Gross price")
+    vatPercentage = serializers.FloatField(help_text="Vat percentage")
 
 
 class OrderSerializer(serializers.Serializer):
@@ -36,8 +38,7 @@ class ResolveAvailabilitySerializer(serializers.Serializer):
     productId = serializers.CharField(help_text="Shared product id")
 
 
-class ResolveAvailabilityResponseSerializer(serializers.Serializer):
-    productId = serializers.CharField(help_text="Shared product id")
+class ResolveAvailabilityResponseSerializer(ResolveAvailabilitySerializer):
     value = serializers.BooleanField(default=True)
 
 
