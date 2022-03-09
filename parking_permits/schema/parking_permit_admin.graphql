@@ -73,6 +73,7 @@ type PermitNode {
   status: ParkingPermitStatus!
   startTime: String
   endTime: String
+  description: String
 }
 
 type RefundNode {
@@ -152,6 +153,7 @@ type PermitDetailNode {
   status: ParkingPermitStatus!
   startTime: String
   endTime: String
+  description: String
   consentLowEmissionAccepted: Boolean
   contractType: String
   monthCount: Int
@@ -247,6 +249,7 @@ input ResidentPermitInput {
   startTime: String
   endTime: String
   monthCount: Int
+  description: String
 }
 
 input ProductInput {
