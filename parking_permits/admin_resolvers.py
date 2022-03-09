@@ -203,6 +203,7 @@ def resolve_create_resident_permit(obj, info, permit):
             start_time=start_time,
             month_count=permit["month_count"],
             end_time=end_time,
+            description=permit["description"],
         )
         request = info.context["request"]
         reversion.set_user(request.user)
@@ -272,6 +273,7 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info, iban=None)
         permit.status = permit_info["status"]
         permit.parking_zone = parking_zone
         permit.vehicle = vehicle
+        permit.description = permit_info["description"]
         permit.save()
         request = info.context["request"]
         reversion.set_user(request.user)
