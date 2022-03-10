@@ -122,6 +122,7 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
         null=True,
         on_delete=models.PROTECT,
     )
+    description = models.TextField(_("Description"), blank=True)
 
     serialize_fields = (
         {"name": "identifier"},
@@ -132,6 +133,7 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
         {"name": "start_time"},
         {"name": "end_time"},
         {"name": "month_count"},
+        {"name": "description"},
     )
 
     objects = ParkingPermitManager()
