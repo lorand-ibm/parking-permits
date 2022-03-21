@@ -51,13 +51,13 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(DrivingClass)
 class DrivingClassAdmin(admin.ModelAdmin):
-    list_display = ("class_name", "identifier")
+    list_display = ("identifier",)
 
 
 @admin.register(DrivingLicence)
 class DrivingLicenceAdmin(admin.ModelAdmin):
     search_fields = ("customer__first_name", "customer__last_name")
-    list_display = ("id", "customer", "valid_start", "valid_end", "active")
+    list_display = ("id", "customer", "start_date", "end_date", "active")
     list_select_related = ("customer",)
 
 
@@ -110,10 +110,7 @@ class VehicleAdmin(admin.ModelAdmin):
         "registration_number",
         "manufacturer",
         "model",
-        "owner",
-        "holder",
     )
-    list_select_related = ("owner", "holder")
 
 
 @admin.register(Refund)
