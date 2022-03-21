@@ -8,26 +8,38 @@ from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
 
 class VehiclePowerType(models.TextChoices):
+    ELECTRIC = "ELECTRIC", _("Electric")
     BENSIN = "BENSIN", _("Bensin")
     DIESEL = "DIESEL", _("Diesel")
-    BIFUEL = "BIFUEL", _("Bibuel")
+    BIFUEL = "BIFUEL", _("Bifuel")
 
 
-class VehicleCategory(models.TextChoices):
-    M1 = "M1"
-    M2 = "M2"
-    N1 = "N1"
-    N2 = "N2"
-    L3e = "L3e"
-    L4e = "L4e"
-    L5e = "L5e"
-    L6e = "L6e"
+class VehicleClass(models.TextChoices):
+    M1 = "M1", _("M1")
+    M2 = "M2", _("M2")
+    N1 = "N1", _("N1")
+    N2 = "N2", _("N2")
+    L3eA1 = "L3e-A1", _("L3e-A1")
+    L3eA2 = "L3e-A2", _("L3e-A2")
+    L3eA3 = "L3e-A3", _("L3e-A3")
+    L3eA1E = "L3e-A1E", _("L3e-A1E")
+    L3eA2E = "L3e-A2E", _("L3e-A2E")
+    L3eA3E = "L3e-A3E", _("L3e-A3E")
+    L3eA1T = "L3e-A1T", _("L3e-A1T")
+    L3eA2T = "L3e-A2T", _("L3e-A2T")
+    L3eA3T = "L3e-A3T", _("L3e-A3T")
+    L4e = "L4e", _("L4e")
+    L5eA = "L5e-A", _("L5e-A")
+    L5eB = "L5e-B", _("L5e-B")
+    L6eA = "L6e-A", _("L6e-A")
+    L6eB = "L6e-B", _("L6e-B")
+    L6eBP = "L6e-BP", _("L6e-BP")
+    L6eBU = "L6e-BU", _("L6e-BU")
 
 
 class EmissionType(models.TextChoices):
-    EURO = "EURO"
-    NEDC = "NEDC"
-    WLTP = "WLTP"
+    NEDC = "NEDC", _("NEDC")
+    WLTP = "WLTP", _("WLTP")
 
 
 class LowEmissionCriteria(TimestampedModelMixin, UUIDPrimaryKeyMixin):
@@ -63,44 +75,28 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     power_type = models.CharField(
         _("Power type"), max_length=50, choices=VehiclePowerType.choices, blank=True
     )
-    category = models.CharField(
-        _("Category"), max_length=16, choices=VehicleCategory.choices, blank=True
+    vehicle_class = models.CharField(
+        _("VehicleClass"), max_length=16, choices=VehicleClass.choices, blank=True
     )
     manufacturer = models.CharField(_("Manufacturer"), max_length=100)
     model = models.CharField(_("Model"), max_length=100)
-    production_year = models.IntegerField(_("Production year"), blank=True, null=True)
+
     registration_number = models.CharField(
         _("Registration number"), max_length=24, unique=True
     )
+    weight = models.IntegerField(_("Total weigh of vehicle"), default=0)
     euro_class = models.IntegerField(_("Euro class"), blank=True, null=True)
     emission = models.IntegerField(_("Emission"), blank=True, null=True)
-    low_emission_vehicle = models.BooleanField(_("Low emission vehicle"), default=False)
     consent_low_emission_accepted = models.BooleanField(default=False)
     emission_type = models.CharField(
         _("Emission type"),
         max_length=16,
         choices=EmissionType.choices,
-        default=EmissionType.EURO,
+        default=EmissionType.WLTP,
     )
     serial_number = models.CharField(_("Serial number"), max_length=100, blank=True)
     last_inspection_date = models.DateField(
         _("Last inspection date"), null=True, blank=True
-    )
-    owner = models.ForeignKey(
-        "Customer",
-        verbose_name=_("Owner"),
-        on_delete=models.PROTECT,
-        related_name="vehicles_owner",
-        null=True,
-        blank=True,
-    )
-    holder = models.ForeignKey(
-        "Customer",
-        verbose_name=_("Holder"),
-        on_delete=models.PROTECT,
-        related_name="vehicles_holder",
-        null=True,
-        blank=True,
     )
 
     def is_due_for_inspection(self):
@@ -111,9 +107,8 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
     @property
     def is_low_emission(self):
-        if self.low_emission_vehicle:
+        if self.power_type == VehiclePowerType.ELECTRIC:
             return True
-
         try:
             le_criteria = LowEmissionCriteria.objects.get(
                 power_type=self.power_type,
@@ -128,6 +123,7 @@ class Vehicle(TimestampedModelMixin, UUIDPrimaryKeyMixin):
 
         if self.emission_type == EmissionType.NEDC:
             return self.emission <= le_criteria.nedc_max_emission_limit
+
         if self.emission_type == EmissionType.WLTP:
             return self.emission <= le_criteria.wltp_max_emission_limit
 
