@@ -64,3 +64,7 @@ class ParkkihubiPermitError(ParkingPermitBaseException):
 
 class AddressError(ParkingPermitBaseException):
     pass
+
+
+class TraficomFetchVehicleError(ParkingPermitBaseException):
+    pass
