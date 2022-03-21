@@ -117,14 +117,21 @@ class TalpaResolveRightOfPurchase(APIView):
             vehicle = permit.vehicle
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+        is_owner_or_holder, error_msg = customer.is_user_of_vehicle(
+            vehicle.registration_number
+        )
+        (
+            has_valid_driving_licence,
+            error_msg,
+        ) = customer.has_valid_driving_licence_for_vehicle(vehicle)
         right_of_purchase = (
-            customer.is_owner_or_holder_of_vehicle(vehicle)
-            and customer.driving_licence.is_valid_for_vehicle(vehicle)
+            is_owner_or_holder
+            and customer.driving_licence.active
+            and has_valid_driving_licence
             and not vehicle.is_due_for_inspection()
         )
         res = {
-            "error_message": "",
+            "error_message": error_msg,
             "right_of_purchase": right_of_purchase,
             "user_id": user_id,
         }
