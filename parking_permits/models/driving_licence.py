@@ -1,29 +1,21 @@
 from django.contrib.gis.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from .customer import Customer
 from .driving_class import DrivingClass
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 
 
 class DrivingLicence(TimestampedModelMixin, UUIDPrimaryKeyMixin):
     customer = models.OneToOneField(
-        Customer,
+        "Customer",
         verbose_name=_("Customer"),
         on_delete=models.PROTECT,
         related_name="driving_licence",
     )
     driving_classes = models.ManyToManyField(DrivingClass)
-    valid_start = models.DateField(_("Valid start"))
-    valid_end = models.DateField(_("Valid end"))
+    start_date = models.DateField(_("Start date"))
+    end_date = models.DateField(_("End date"), null=True, blank=True)
     active = models.BooleanField(null=False, default=True)
-
-    def is_valid_for_vehicle(self, vehicle):
-        is_not_expired = self.valid_end > timezone.localdate(timezone.now())
-        is_not_suspended = self.active
-
-        return is_not_expired and is_not_suspended
 
     class Meta:
         verbose_name = _("Driving licence")
