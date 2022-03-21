@@ -5,7 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
 from parking_permits.models import Vehicle
-from parking_permits.models.vehicle import EmissionType, VehicleCategory
+from parking_permits.models.vehicle import EmissionType, VehicleClass
 
 CARS = [
     {"manufacturer": "Toyota", "model": "CH-R"},
@@ -20,24 +20,20 @@ CARS = [
 ]
 
 
-def get_mock_vehicle(customer, registration):
+def get_mock_vehicle(registration):
     car = random.choice(CARS)
     try:
         vehicle = Vehicle.objects.get(
             Q(registration_number__iexact=registration),
-            Q(owner=customer) | Q(holder=customer),
         )
     except ObjectDoesNotExist:
         vehicle = Vehicle.objects.create(
-            owner=customer,
-            holder=customer,
             last_inspection_date=datetime.now() + timedelta(days=365),
-            emission_type=EmissionType.EURO,
+            emission_type=EmissionType.WLTP,
             emission=random.randint(50, 150),
             registration_number=registration,
-            production_year=random.randint(2010, 2021),
             manufacturer=car.get("manufacturer"),
             model=car.get("model"),
-            category=VehicleCategory.M1,
+            vehicle_class=VehicleClass.M1,
         )
     return vehicle
