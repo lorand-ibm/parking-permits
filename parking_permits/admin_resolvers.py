@@ -257,7 +257,7 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info, iban=None)
         parking_zone, vehicle_info["is_low_emission"]
     )
     total_price_change = sum([item["price_change"] for item in price_change_list])
-
+    
     # only create new order when emission status or parking zone changed
     should_create_new_order = (
         permit.vehicle.is_low_emission != vehicle_info["is_low_emission"]
