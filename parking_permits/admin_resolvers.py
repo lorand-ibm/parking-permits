@@ -257,14 +257,11 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info, iban=None)
         parking_zone, vehicle_info["is_low_emission"]
     )
     total_price_change = sum([item["price_change"] for item in price_change_list])
+
+    # only create new order when emission status or parking zone changed
     should_create_new_order = (
-        # only create new order when emission status or parking zone changed
-        (
-            permit.vehicle.is_low_emission != vehicle_info["is_low_emission"]
-            or permit.parking_zone_id != parking_zone.id
-        )
-        and original_order
-        and original_order.is_confirmed
+        permit.vehicle.is_low_emission != vehicle_info["is_low_emission"]
+        or permit.parking_zone_id != parking_zone.id
     )
 
     customer = update_or_create_customer(customer_info)
@@ -283,7 +280,7 @@ def resolve_update_resident_permit(obj, info, permit_id, permit_info, iban=None)
     if should_create_new_order:
         logger.info(f"Creating renewal order for permit: {permit.identifier}")
         new_order = Order.objects.create_renewal_order(
-            original_order, status=OrderStatus.CONFIRMED
+            customer, status=OrderStatus.CONFIRMED
         )
         logger.info(f"Creating renewal order completed: {new_order.id}")
         if total_price_change < 0:

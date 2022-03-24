@@ -88,9 +88,26 @@ type PermitResult {
   permits: [PermitNode]
 }
 
+type PermitPriceChangeItem {
+  product: String!
+  previousPrice: Float!
+  newPrice: Float!
+  priceChange: Float!
+  priceChangeVat: Float!
+  startDate: String!
+  endDate: String!
+  monthCount: Int!
+}
+
+type PermitPriceChangeResult {
+  permit: PermitNode!
+  priceChanges: [PermitPriceChangeItem]!
+}
+
 type Query {
   profile: CustomerNode!
   getPermits: PermitResult
+  getUpdateAddressPriceChanges(addressId: ID!): [PermitPriceChangeResult]
 }
 
 type updateVehicleResult {
@@ -119,6 +136,10 @@ type TalpaOrderResult {
   order: TalpaOrderNode
 }
 
+type ChangeAddressResult {
+  success: Boolean!
+}
+
 type Mutation {
   createParkingPermit(zoneId: ID!): PermitResult!
   createOrder: TalpaOrderResult!
@@ -132,6 +153,7 @@ type Mutation {
     vehicleId: ID!
     registration: String!
   ): updateVehicleResult!
+  changeAddress(addressId: ID!, iban: String): ChangeAddressResult!
 }
 
 input ParkingPermitInput {

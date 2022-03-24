@@ -60,3 +60,7 @@ class ParkingZoneError(ParkingPermitBaseException):
 
 class ParkkihubiPermitError(ParkingPermitBaseException):
     pass
+
+
+class AddressError(ParkingPermitBaseException):
+    pass

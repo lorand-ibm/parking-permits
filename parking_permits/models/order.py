@@ -83,14 +83,9 @@ class OrderManager(SerializableMixin.SerializableManager):
 
         return order
 
-    def _validate_order_for_renewal(self, order):
+    def _validate_customer_permits(self, permits):
         date_ranges = []
-        if order.status != OrderStatus.CONFIRMED:
-            raise OrderCreationFailed(
-                "Cannot create renewal order for unconfirmed order"
-            )
-
-        for permit in order.permits.all():
+        for permit in permits:
             if permit.status != ParkingPermitStatus.VALID:
                 raise OrderCreationFailed(
                     "Cannot create renewal order for non-valid permits"
@@ -99,6 +94,11 @@ class OrderManager(SerializableMixin.SerializableManager):
                 raise OrderCreationFailed(
                     "Cannot create renewal order for open ended permits"
                 )
+            if permit.order is None:
+                raise OrderCreationFailed("Permit does not have an order")
+            if permit.order.status != OrderStatus.CONFIRMED:
+                raise OrderCreationFailed("Permit has unconfirmed order")
+
             start_date = timezone.localdate(permit.next_period_start_time)
             end_date = timezone.localdate(permit.end_time)
             date_ranges.append([start_date, end_date])
@@ -109,17 +109,22 @@ class OrderManager(SerializableMixin.SerializableManager):
             )
 
     @transaction.atomic
-    def create_renewal_order(self, order, status=OrderStatus.DRAFT):
+    def create_renewal_order(self, customer, status=OrderStatus.DRAFT):
         """
-        Replace original order with update permits information
+        Create new order for updated permits information that affect
+        permit prices, e.g. change address or change vehicle
         """
-        self._validate_order_for_renewal(order)
+        customer_permits = ParkingPermit.objects.active().filter(
+            contract_type=ContractType.FIXED_PERIOD, customer=customer
+        )
+        self._validate_customer_permits(customer_permits)
+
         new_order = Order.objects.create(
-            customer=order.customer,
-            order_type=order.order_type,
+            customer=customer,
+            order_type=OrderType.ORDER,
             status=status,
         )
-        for permit in order.permits.all():
+        for permit in customer_permits:
             start_date = timezone.localdate(permit.next_period_start_time)
             end_date = timezone.localdate(permit.end_time)
             if start_date >= end_date:
