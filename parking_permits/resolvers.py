@@ -1,3 +1,6 @@
+import logging
+from collections import Counter
+
 from ariadne import (
     MutationType,
     QueryType,
@@ -6,18 +9,23 @@ from ariadne import (
     snake_case_fallback_resolvers,
 )
 from ariadne.contrib.federation import FederatedObjectType
+from django.db import transaction
 from django.db.utils import IntegrityError
+from django.utils.translation import ugettext
 
 from project.settings import BASE_DIR
 
 from .customer_permit import CustomerPermit
 from .decorators import is_authenticated
-from .models import Address, Customer, ParkingZone, Vehicle
-from .models.order import Order
+from .exceptions import AddressError, ObjectNotFound, ParkingZoneError
+from .models import Address, Customer, ParkingZone, Refund, Vehicle
+from .models.order import Order, OrderStatus
 from .models.parking_permit import ParkingPermit, ParkingPermitStatus
 from .services.hel_profile import HelsinkiProfile
 from .services.kmo import get_address_detail_from_kmo
 from .talpa.order import TalpaOrderManager
+
+logger = logging.getLogger("db")
 
 helsinki_profile_query = load_schema_from_path(
     BASE_DIR / "parking_permits" / "schema" / "helsinki_profile.graphql"
@@ -45,41 +53,30 @@ def resolve_customer_permits(obj, info):
     return get_customer_permits(request.user.customer.id)
 
 
+def save_profile_address(address):
+    street_name = address.get("street_name")
+    street_number = address.get("street_number")
+    address_detail = get_address_detail_from_kmo(street_name, street_number)
+    address.update(address_detail)
+    zone = ParkingZone.objects.get_for_location(address["location"])
+    address["zone"] = zone
+    address_obj, _ = Address.objects.update_or_create(
+        source_system=address.get("source_system"),
+        source_id=address.get("source_id"),
+        defaults=address,
+    )
+    return address_obj
+
+
 @query.field("profile")
 @is_authenticated
 def resolve_user_profile(_, info, *args):
     request = info.context["request"]
     profile = HelsinkiProfile(request)
     customer = profile.get_customer()
-    primary_address, other_address = profile.get_addresses()
-
-    primary_street_name = primary_address.get("street_name")
-    primary_street_number = primary_address.get("street_number")
-    primary_address_detail = get_address_detail_from_kmo(
-        primary_street_name, primary_street_number
-    )
-    primary_address.update(primary_address_detail)
-    zone = ParkingZone.objects.get_for_location(primary_address["location"])
-    primary_address["zone"] = zone
-    primary_obj, _ = Address.objects.update_or_create(
-        source_system=primary_address.get("source_system"),
-        source_id=primary_address.get("source_id"),
-        defaults=primary_address,
-    )
-
-    other_street_name = primary_address.get("street_name")
-    other_street_number = primary_address.get("street_number")
-    other_address_detail = get_address_detail_from_kmo(
-        other_street_name, other_street_number
-    )
-    other_address.update(other_address_detail)
-    zone = ParkingZone.objects.get_for_location(other_address["location"])
-    other_address["zone"] = zone
-    other_obj, _ = Address.objects.update_or_create(
-        source_system=other_address.get("source_system"),
-        source_id=other_address.get("source_id"),
-        defaults=other_address,
-    )
+    primary_address_data, other_address_data = profile.get_addresses()
+    primary_address = save_profile_address(primary_address_data)
+    other_address = save_profile_address(other_address_data)
 
     customer_obj, _ = Customer.objects.update_or_create(
         source_system=customer.get("source_system"),
@@ -87,11 +84,56 @@ def resolve_user_profile(_, info, *args):
         defaults={
             "user": request.user,
             **customer,
-            **{"primary_address": primary_obj, "other_address": other_obj},
+            **{"primary_address": primary_address, "other_address": other_address},
         },
     )
 
     return customer_obj
+
+
+def validate_customer_address(customer, address_id):
+    """Check if the given address a valid customer address
+
+    Customers can only update the permits to their only addresses,
+    i.e. either the primary address or the other address
+    """
+    addr_ids = [customer.primary_address_id, customer.other_address_id]
+    allowed_addr_ids = [str(addr_id) for addr_id in addr_ids if addr_id is not None]
+    if address_id not in allowed_addr_ids:
+        logger.error("Not a valid customer address")
+        raise AddressError(ugettext("Not a valid customer address"))
+
+    try:
+        return Address.objects.get(id=address_id)
+    except Address.DoesNotExist:
+        logger.error(f"updatePermitsAddress: address with id {address_id} not found")
+        raise ObjectNotFound(ugettext("Address not found"))
+
+
+@query.field("getUpdateAddressPriceChanges")
+@is_authenticated
+@convert_kwargs_to_snake_case
+def resolve_get_update_address_price_changes(_, info, address_id):
+    customer = info.context["request"].user.customer
+    address = validate_customer_address(customer, address_id)
+    new_zone = address.get_zone()
+
+    permits = ParkingPermit.objects.active().filter(customer=customer)
+    if len(permits) == 0:
+        logger.error(f"No active permits for the customer: {customer}")
+        raise ObjectNotFound(ugettext("No active permits for the customer"))
+
+    permit_price_changes = []
+    for permit in permits:
+        permit_price_changes.append(
+            {
+                "permit": permit,
+                "price_changes": permit.get_price_change_list(
+                    new_zone, permit.vehicle.is_low_emission
+                ),
+            }
+        )
+    return permit_price_changes
 
 
 @mutation.field("deleteParkingPermit")
@@ -167,3 +209,94 @@ def resolve_create_order(_, info):
     order = Order.objects.create_for_permits(permits)
     checkout_url = TalpaOrderManager.send_to_talpa(order)
     return {"success": True, "order": {"checkout_url": checkout_url}}
+
+
+@mutation.field("changeAddress")
+@is_authenticated
+@convert_kwargs_to_snake_case
+@transaction.atomic
+def resolve_change_address(_, info, address_id, iban=None):
+    customer = info.context["request"].user.customer
+    address = validate_customer_address(customer, address_id)
+    new_zone = address.get_zone()
+
+    permits = ParkingPermit.objects.active().filter(customer=customer)
+    if len(permits) == 0:
+        logger.error(f"No active permits for the customer: {customer}")
+        raise ObjectNotFound(ugettext("No active permits for the customer"))
+
+    # check that active permits are all in the same zone
+    permit_zone_ids = [permit.parking_zone_id for permit in permits]
+    if len(set(permit_zone_ids)) > 1:
+        logger.error(
+            f"updatePermitsAddress: active permits have conflict parking zones. Customer: {customer}"
+        )
+        raise ParkingZoneError(ugettext("Conflict parking zones for active permits"))
+
+    if permit_zone_ids[0] == new_zone.id:
+        logger.info("No changes to the parking zone")
+        return {"success": True}
+
+    fixed_period_permits = [permit for permit in permits if permit.is_fixed_period]
+    if len(fixed_period_permits) > 0:
+        # There can be two cases regarding customer's active permits:
+        #
+        # 1. A single permit or two permits are created at the same time.
+        # In this case, there will be a single order for the permit[s],
+        # and the total price changes for multiple permits are combined.
+        # Only a single refund will be created if the price of the permits
+        # goes down.
+        #
+        # 2. Two permits are created at different times.
+        # In this case, permits will have different orders, and the total
+        # price change need to be stored separately. We need to create
+        # separate refunds also if the price of the permits goes down.
+        #
+        # The total_price_change_by_order Counter (with permit order as the key)
+        # serves the purpose to combine the price change for multiple permits
+        # if they belong to the same order and create separate entries otherwise.
+        total_price_change_by_order = Counter()
+        for permit in fixed_period_permits:
+            price_change_list = permit.get_price_change_list(
+                new_zone, permit.vehicle.is_low_emission
+            )
+            permit_total_price_change = sum(
+                [item["price_change"] for item in price_change_list]
+            )
+            total_price_change_by_order.update(
+                {permit.order: permit_total_price_change}
+            )
+
+        # total price changes for customer's all valid permits
+        customer_total_price_change = sum(total_price_change_by_order.values())
+        if customer_total_price_change > 0:
+            # if price of the permits goes higher, the customer needs to make
+            # extra payments through Talpa before the orders can be set to confirmed
+            new_order_status = OrderStatus.DRAFT
+        else:
+            new_order_status = OrderStatus.CONFIRMED
+
+        for order, order_total_price_change in total_price_change_by_order.items():
+            Order.objects.create_renewal_order(customer, status=new_order_status)
+            if order_total_price_change < 0:
+                refund = Refund.objects.create(
+                    name=str(customer),
+                    order=order,
+                    amount=-order_total_price_change,
+                    iban=iban if iban else "",
+                    description=f"Refund for updating permits zone (customer switch address to: {address})",
+                )
+                logger.info(f"Refund for updating permits zone created: {refund}")
+
+        if customer_total_price_change > 0:
+            for permit in fixed_period_permits:
+                permit.status = ParkingPermitStatus.PAYMENT_IN_PROGRESS
+                permit.save()
+
+    open_ended_permits = [permit for permit in permits if permit.is_open_ended]
+    if len(open_ended_permits) > 0:
+        # TODO: handling open ended permits is not specified
+        pass
+
+    permits.update(parking_zone=new_zone)
+    return {"success": True}

@@ -50,3 +50,9 @@ class Address(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
             self.street_number,
             self.city,
         )
+
+    def get_zone(self):
+        if not self.zone:
+            self.zone = ParkingZone.objects.get_for_location(self.location)
+            self.save()
+        return self.zone

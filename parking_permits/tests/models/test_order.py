@@ -82,7 +82,7 @@ class TestOrderManager(TestCase):
         permit.save()
 
         with freeze_time(timezone.make_aware(datetime(2021, 5, 5))):
-            new_order = Order.objects.create_renewal_order(order)
+            new_order = Order.objects.create_renewal_order(self.customer)
             order_items = new_order.order_items.all().order_by("start_date")
             self.assertEqual(order_items.count(), 2)
             self.assertEqual(order_items[0].unit_price, Decimal(15))
@@ -104,10 +104,10 @@ class TestOrderManager(TestCase):
             end_time=end_time,
             month_count=6,
         )
-        order = Order.objects.create_for_permits([permit])
+        Order.objects.create_for_permits([permit])
         with freeze_time(timezone.make_aware(datetime(2021, 5, 5))):
             with self.assertRaises(OrderCreationFailed):
-                Order.objects.create_renewal_order(order)
+                Order.objects.create_renewal_order(self.customer)
 
     def test_create_renewable_order_should_raise_error_for_open_ended_permits(self):
         start_time = timezone.make_aware(datetime(2021, 3, 15))
@@ -121,12 +121,12 @@ class TestOrderManager(TestCase):
             end_time=end_time,
             month_count=6,
         )
-        order = Order.objects.create_for_permits([permit])
+        Order.objects.create_for_permits([permit])
         permit.status = ParkingPermitStatus.VALID
         permit.save()
         with freeze_time(timezone.make_aware(datetime(2021, 5, 5))):
             with self.assertRaises(OrderCreationFailed):
-                Order.objects.create_renewal_order(order)
+                Order.objects.create_renewal_order(self.customer)
 
 
 class TestOrder(TestCase):
