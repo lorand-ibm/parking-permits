@@ -267,6 +267,7 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
         is_secondary = not self.primary_vehicle
         if self.is_open_ended:
             start_date = timezone.localdate(self.next_period_start_time)
+            end_date = start_date + relativedelta(months=1, days=-1)
             previous_product = previous_products.get_for_date(start_date)
             previous_price = previous_product.get_modified_unit_price(
                 self.vehicle.is_low_emission,
@@ -289,6 +290,7 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
                     "price_change_vat": price_change_vat,
                     "price_change": diff_price,
                     "start_date": start_date,
+                    "end_date": end_date,
                     "month_count": 1,
                 }
             ]
