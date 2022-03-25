@@ -277,7 +277,21 @@ class ParkingPermit(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixi
                 is_low_emission,
                 is_secondary,
             )
-            return [[new_price - previous_price, start_date, 1]]
+            diff_price = new_price - previous_price
+            price_change_vat = (diff_price * new_product.vat).quantize(
+                Decimal("0.0001")
+            )
+            return [
+                {
+                    "product": new_product.name,
+                    "previous_price": previous_price,
+                    "new_price": new_price,
+                    "price_change_vat": price_change_vat,
+                    "price_change": diff_price,
+                    "start_date": start_date,
+                    "month_count": 1,
+                }
+            ]
 
         if self.is_fixed_period:
             # price change affected date range and products
