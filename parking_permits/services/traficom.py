@@ -150,7 +150,9 @@ class Traficom:
         }
 
     def _fetch_info(self, registration_number=None, hetu=None):
-        is_l_type_vehicle = len(registration_number) == 6
+        is_l_type_vehicle = (
+            len(registration_number) == 6 if registration_number else False
+        )
         vehicle_payload = f"""
             <laji>{LIGHT_WEIGHT_VEHICLE_TYPE if is_l_type_vehicle else VEHICLE_TYPE}</laji>
             <rekisteritunnus>{registration_number}</rekisteritunnus>
