@@ -277,10 +277,17 @@ def resolve_change_address(_, info, address_id, iban=None):
             new_order_status = OrderStatus.DRAFT
         else:
             new_order_status = OrderStatus.CONFIRMED
+
+        # update permit to the new zone before creating
+        # new order as the price is determined by the
+        # new zone
+        for permit in fixed_period_permits:
+            permit.parking_zone = new_zone
+            permit.save()
+
         new_order = Order.objects.create_renewal_order(
             customer, status=new_order_status
         )
-
         for order, order_total_price_change in total_price_change_by_order.items():
             # create refund for each order
             if order_total_price_change < 0:
@@ -302,14 +309,11 @@ def resolve_change_address(_, info, address_id, iban=None):
                 permit.save()
 
     open_ended_permits = [permit for permit in permits if permit.is_open_ended]
-    if len(open_ended_permits) > 0:
-        # TODO: handling open ended permits is not specified
-        pass
-
-    # Update all active permits to the new zone.
-    # For open ended permits, it's enough to update the permit zone
-    # as talpa will get the updated price based on new zone when
-    # asking permit price for next month
-    permits.update(parking_zone=new_zone)
+    for permit in open_ended_permits:
+        # For open ended permits, it's enough to update the permit zone
+        # as talpa will get the updated price based on new zone when
+        # asking permit price for next month
+        permit.parking_zone = new_zone
+        permit.save()
 
     return response
