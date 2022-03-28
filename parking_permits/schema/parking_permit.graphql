@@ -138,6 +138,7 @@ type TalpaOrderResult {
 
 type ChangeAddressResult {
   success: Boolean!
+  checkoutUrl: String
 }
 
 type Mutation {

@@ -49,13 +49,13 @@ class TalpaOrderManager:
             "unit": "kk",
             "startDate": date_time_to_utc(order_item.permit.start_time),
             "quantity": order_item.quantity,
-            "priceNet": float(order_item.unit_price_net),
-            "priceVat": float(order_item.unit_price_vat),
-            "priceGross": float(order_item.unit_price),
+            "priceNet": float(order_item.payment_unit_price_net),
+            "priceVat": float(order_item.payment_unit_price_vat),
+            "priceGross": float(order_item.payment_unit_price),
             "vatPercentage": float(order_item.vat_percentage),
-            "rowPriceNet": float(order_item.total_price_net),
-            "rowPriceVat": float(order_item.total_price_vat),
-            "rowPriceTotal": float(order_item.total_price),
+            "rowPriceNet": float(order_item.total_payment_price_net),
+            "rowPriceVat": float(order_item.total_payment_price_vat),
+            "rowPriceTotal": float(order_item.total_payment_price),
             "meta": [
                 {
                     "key": "sourceOrderItemId",
@@ -156,9 +156,9 @@ class TalpaOrderManager:
         return {
             "namespace": settings.NAMESPACE,
             "user": str(order.customer.id),
-            "priceNet": float(order.total_price_net),
-            "priceVat": float(order.total_price_vat),
-            "priceTotal": float(order.total_price),
+            "priceNet": float(order.total_payment_price_net),
+            "priceVat": float(order.total_payment_price_vat),
+            "priceTotal": float(order.total_payment_price),
             "customer": customer,
             "items": items,
         }
@@ -166,6 +166,7 @@ class TalpaOrderManager:
     @classmethod
     def send_to_talpa(cls, order):
         order_data = cls._create_order_data(order)
+        logger.info(f"Sending order to talpa, order id: {order.id}")
         response = requests.post(
             cls.url, data=json.dumps(order_data), headers=cls.headers
         )
@@ -176,6 +177,10 @@ class TalpaOrderManager:
             raise OrderCreationFailed(_("Failed to create the order"))
 
         response_data = response.json()
+        logger.info(
+            f"Sending order to talpa completed. Talpa order id: {response_data.get('orderId')}"
+        )
+
         with transaction.atomic():
             order.talpa_order_id = response_data.get("orderId")
             order.talpa_subscription_id = response_data.get("subscriptionId")
