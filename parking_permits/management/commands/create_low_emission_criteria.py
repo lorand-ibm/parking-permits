@@ -12,17 +12,14 @@ from parking_permits.models.vehicle import (
 
 LOW_EMISSION_CRITERIA = {
     VehiclePowerType.BENSIN: {
-        EmissionType.EURO: 6,
         EmissionType.NEDC: 95,
         EmissionType.WLTP: 126,
     },
     VehiclePowerType.DIESEL: {
-        EmissionType.EURO: 6,
         EmissionType.NEDC: 50,
         EmissionType.WLTP: 70,
     },
     VehiclePowerType.BIFUEL: {
-        EmissionType.EURO: 6,
         EmissionType.NEDC: 150,
         EmissionType.WLTP: 180,
     },
@@ -51,7 +48,7 @@ class Command(BaseCommand):
                 defaults={
                     "nedc_max_emission_limit": emission_criteria.get(EmissionType.NEDC),
                     "wltp_max_emission_limit": emission_criteria.get(EmissionType.WLTP),
-                    "euro_min_class_limit": emission_criteria.get(EmissionType.EURO),
+                    "euro_min_class_limit": 6,
                 },
             )
         self.stdout.write("Test LowEmissionCriteria created")
