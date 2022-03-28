@@ -166,6 +166,7 @@ class TalpaOrderManager:
     @classmethod
     def send_to_talpa(cls, order):
         order_data = cls._create_order_data(order)
+        logger.info(f"Sending order to talpa, order Id: {order.id}")
         response = requests.post(
             cls.url, data=json.dumps(order_data), headers=cls.headers
         )
@@ -176,6 +177,10 @@ class TalpaOrderManager:
             raise OrderCreationFailed(_("Failed to create the order"))
 
         response_data = response.json()
+        logger.info(
+            f"Sending order to talpa completed. Talpa order id: {response_data.get('orderId')}"
+        )
+
         with transaction.atomic():
             order.talpa_order_id = response_data.get("orderId")
             order.talpa_subscription_id = response_data.get("subscriptionId")
