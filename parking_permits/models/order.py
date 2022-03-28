@@ -256,6 +256,18 @@ class Order(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
     def total_price_vat(self):
         return sum([item.total_price_vat for item in self.order_items.all()])
 
+    @property
+    def total_payment_price(self):
+        return sum([item.total_payment_price for item in self.order_items.all()])
+
+    @property
+    def total_payment_price_net(self):
+        return sum([item.total_payment_price_net for item in self.order_items.all()])
+
+    @property
+    def total_payment_price_vat(self):
+        return sum([item.total_payment_price_vat for item in self.order_items.all()])
+
 
 class OrderItem(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
     talpa_order_item_id = models.UUIDField(
@@ -324,3 +336,23 @@ class OrderItem(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
     @property
     def total_price_vat(self):
         return self.total_price * self.vat
+
+    @property
+    def payment_unit_price_net(self):
+        return self.payment_unit_price * (1 - self.vat)
+
+    @property
+    def payment_unit_price_vat(self):
+        return self.payment_unit_price * self.vat
+
+    @property
+    def total_payment_price(self):
+        return self.quantity * self.payment_unit_price
+
+    @property
+    def total_payment_price_net(self):
+        return self.total_payment_price * (1 - self.vat)
+
+    @property
+    def total_payment_price_vat(self):
+        return self.total_payment_price * self.vat
