@@ -89,7 +89,7 @@ class CustomerPermit:
                     contract_type=contract_type,
                     start_time=next_day(),
                     end_time=end_time,
-                    vehicle=get_mock_vehicle(self.customer, ""),
+                    vehicle=get_mock_vehicle(""),  # TODO: Replace with traficom
                 )
                 comment = get_reversion_comment(EventType.CREATED, permit)
                 reversion.set_user(self.customer.user)

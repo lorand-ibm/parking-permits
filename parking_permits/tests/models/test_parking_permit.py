@@ -17,13 +17,19 @@ from parking_permits.models import Order
 from parking_permits.models.order import OrderStatus
 from parking_permits.models.parking_permit import ContractType, ParkingPermitStatus
 from parking_permits.models.product import ProductType
+from parking_permits.models.vehicle import EmissionType, VehiclePowerType
 from parking_permits.tests.factories import ParkingZoneFactory
 from parking_permits.tests.factories.customer import CustomerFactory
 from parking_permits.tests.factories.parking_permit import ParkingPermitFactory
 from parking_permits.tests.factories.product import ProductFactory
-from parking_permits.tests.factories.vehicle import VehicleFactory
+from parking_permits.tests.factories.vehicle import (
+    LowEmissionCriteriaFactory,
+    VehicleFactory,
+)
 from parking_permits.tests.models.test_product import MockResponse
 from parking_permits.utils import get_end_time
+
+CURRENT_YEAR = date.today().year
 
 
 class ParkingZoneTestCase(TestCase):
@@ -126,7 +132,7 @@ class ParkingZoneTestCase(TestCase):
         )
         self.assertEqual(open_ended_permit_started_two_years_ago.months_left, None)
 
-    @freeze_time(timezone.make_aware(datetime(2022, 1, 20)))
+    @freeze_time(timezone.make_aware(datetime(CURRENT_YEAR, 1, 20)))
     def test_should_return_correct_end_time_of_current_time(self):
         start_time = timezone.make_aware(datetime(2021, 11, 15))
         end_time = get_end_time(start_time, 6)
@@ -138,7 +144,7 @@ class ParkingZoneTestCase(TestCase):
         )
         self.assertEqual(
             permit.current_period_end_time,
-            timezone.make_aware(datetime(2022, 2, 14, 23, 59, 59, 999999)),
+            timezone.make_aware(datetime(CURRENT_YEAR, 2, 14, 23, 59, 59, 999999)),
         )
 
         start_time = timezone.make_aware(datetime(2021, 11, 20))
@@ -151,7 +157,7 @@ class ParkingZoneTestCase(TestCase):
         )
         self.assertEqual(
             permit.current_period_end_time,
-            timezone.make_aware(datetime(2022, 2, 19, 23, 59, 59, 999999)),
+            timezone.make_aware(datetime(CURRENT_YEAR, 2, 19, 23, 59, 59, 999999)),
         )
 
     @freeze_time(timezone.make_aware(datetime(2021, 11, 20, 12, 10, 50)))
@@ -200,7 +206,7 @@ class ParkingZoneTestCase(TestCase):
             end_time=primary_end_time,
             month_count=6,
         )
-        secondary_start_time = timezone.make_aware(datetime(2022, 1, 1))
+        secondary_start_time = timezone.make_aware(datetime(CURRENT_YEAR, 1, 1))
         secondary_end_time = get_end_time(secondary_start_time, 2)
         ParkingPermitFactory(
             customer=self.customer,
@@ -453,19 +459,34 @@ class ParkingZoneTestCase(TestCase):
 
     def test_parking_permit_change_price_list_when_prices_go_up(self):
         zone_a_product_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("20")],
-            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal("30")],
+            [(date(CURRENT_YEAR, 1, 1), date(CURRENT_YEAR, 6, 30)), Decimal("20")],
+            [(date(CURRENT_YEAR, 7, 1), date(CURRENT_YEAR, 12, 31)), Decimal("30")],
         ]
         self._create_zone_products(self.zone_a, zone_a_product_list)
         zone_b_product_list = [
-            [(date(2021, 1, 1), date(2021, 6, 30)), Decimal("30")],
-            [(date(2021, 7, 1), date(2021, 12, 31)), Decimal("40")],
+            [(date(CURRENT_YEAR, 1, 1), date(CURRENT_YEAR, 6, 30)), Decimal("30")],
+            [(date(CURRENT_YEAR, 7, 1), date(CURRENT_YEAR, 12, 31)), Decimal("40")],
         ]
         self._create_zone_products(self.zone_b, zone_b_product_list)
-        low_emission_vehicle = VehicleFactory(low_emission_vehicle=True)
 
-        start_time = timezone.make_aware(datetime(2021, 1, 1))
+        start_time = timezone.make_aware(datetime(CURRENT_YEAR, 1, 1))
         end_time = get_end_time(start_time, 12)
+
+        low_emission_vehicle = VehicleFactory(
+            power_type=VehiclePowerType.BENSIN,
+            emission=70,
+            euro_class=6,
+            emission_type=EmissionType.WLTP,
+        )
+        LowEmissionCriteriaFactory(
+            start_date=start_time,
+            end_date=end_time,
+            nedc_max_emission_limit=None,
+            wltp_max_emission_limit=80,
+            euro_min_class_limit=6,
+            power_type=low_emission_vehicle.power_type,
+        )
+
         permit = ParkingPermitFactory(
             customer=self.customer,
             parking_zone=self.zone_a,
@@ -476,7 +497,7 @@ class ParkingZoneTestCase(TestCase):
             end_time=end_time,
             month_count=12,
         )
-        with freeze_time(datetime(2021, 4, 15)):
+        with freeze_time(datetime(CURRENT_YEAR, 4, 15)):
             price_change_list = permit.get_price_change_list(self.zone_b, False)
             self.assertEqual(len(price_change_list), 2)
             self.assertEqual(price_change_list[0]["product"], "Pysäköintialue B")
@@ -485,16 +506,24 @@ class ParkingZoneTestCase(TestCase):
             self.assertEqual(price_change_list[0]["price_change"], Decimal("20"))
             self.assertEqual(price_change_list[0]["price_change_vat"], Decimal("4.8"))
             self.assertEqual(price_change_list[0]["month_count"], 2)
-            self.assertEqual(price_change_list[0]["start_date"], date(2021, 5, 1))
-            self.assertEqual(price_change_list[0]["end_date"], date(2021, 6, 30))
+            self.assertEqual(
+                price_change_list[0]["start_date"], date(CURRENT_YEAR, 5, 1)
+            )
+            self.assertEqual(
+                price_change_list[0]["end_date"], date(CURRENT_YEAR, 6, 30)
+            )
             self.assertEqual(price_change_list[1]["product"], "Pysäköintialue B")
             self.assertEqual(price_change_list[1]["previous_price"], Decimal("15"))
             self.assertEqual(price_change_list[1]["new_price"], Decimal("40"))
             self.assertEqual(price_change_list[1]["price_change"], Decimal("25"))
             self.assertEqual(price_change_list[1]["price_change_vat"], Decimal("6"))
             self.assertEqual(price_change_list[1]["month_count"], 6)
-            self.assertEqual(price_change_list[1]["start_date"], date(2021, 7, 1))
-            self.assertEqual(price_change_list[1]["end_date"], date(2021, 12, 31))
+            self.assertEqual(
+                price_change_list[1]["start_date"], date(CURRENT_YEAR, 7, 1)
+            )
+            self.assertEqual(
+                price_change_list[1]["end_date"], date(CURRENT_YEAR, 12, 31)
+            )
 
 
 class TestParkingPermit(TestCase):

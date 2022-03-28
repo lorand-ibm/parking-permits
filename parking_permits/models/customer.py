@@ -7,7 +7,10 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from helsinki_gdpr.models import SerializableMixin
 
+from ..exceptions import TraficomFetchVehicleError
+from ..services.traficom import Traficom
 from .common import SourceSystem
+from .driving_licence import DrivingLicence
 from .mixins import TimestampedModelMixin, UUIDPrimaryKeyMixin
 from .parking_permit import ParkingPermit, ParkingPermitStatus
 
@@ -82,8 +85,44 @@ class Customer(SerializableMixin, TimestampedModelMixin, UUIDPrimaryKeyMixin):
         )
         return relativedelta(datetime.today(), date_of_birth).years
 
-    def is_owner_or_holder_of_vehicle(self, vehicle):
-        return vehicle.owner == self or vehicle.holder == self
+    def is_user_of_vehicle(self, registration_number):
+        try:
+            owners = Traficom().get_vehicle_owners(registration_number)
+            is_owner = self.national_id_number in owners
+            return (
+                is_owner,
+                "" if is_owner else "Customer is not an owner or holder of a vehicle",
+            )
+        except TraficomFetchVehicleError as e:
+            return False, str(e)
+
+    def has_valid_driving_licence_for_vehicle(self, vehicle):
+        try:
+            licence_details = Traficom().get_driving_licence_details(
+                self.national_id_number
+            )
+            driving_licence = DrivingLicence.objects.update_or_create(
+                customer=self,
+                defaults={
+                    "start_date": licence_details.get("issue_date"),
+                },
+            )
+
+            driving_classes = licence_details.get("driving_classes", [])
+            driving_licence[0].driving_classes.set(driving_classes)
+            is_allowed_for_vehicle = any(
+                vehicle.vehicle_class in d_class.vehicle_classes
+                for d_class in driving_classes
+            )
+
+            return (
+                is_allowed_for_vehicle,
+                ""
+                if is_allowed_for_vehicle
+                else "Customer does not have a valid driving licence",
+            )
+        except TraficomFetchVehicleError as e:
+            return False, str(e)
 
     class Meta:
         verbose_name = _("Customer")

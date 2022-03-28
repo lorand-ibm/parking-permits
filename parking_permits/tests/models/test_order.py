@@ -10,13 +10,19 @@ from parking_permits.models import Order
 from parking_permits.models.order import OrderStatus
 from parking_permits.models.parking_permit import ContractType, ParkingPermitStatus
 from parking_permits.models.product import ProductType
+from parking_permits.models.vehicle import EmissionType, VehiclePowerType
 from parking_permits.tests.factories.customer import CustomerFactory
 from parking_permits.tests.factories.order import OrderFactory, OrderItemFactory
 from parking_permits.tests.factories.parking_permit import ParkingPermitFactory
 from parking_permits.tests.factories.product import ProductFactory
-from parking_permits.tests.factories.vehicle import VehicleFactory
+from parking_permits.tests.factories.vehicle import (
+    LowEmissionCriteriaFactory,
+    VehicleFactory,
+)
 from parking_permits.tests.factories.zone import ParkingZoneFactory
 from parking_permits.utils import get_end_time
+
+CURRENT_YEAR = date.today().year
 
 
 class TestOrderManager(TestCase):
@@ -25,22 +31,22 @@ class TestOrderManager(TestCase):
         ProductFactory(
             zone=self.zone,
             type=ProductType.RESIDENT,
-            start_date=date(2021, 1, 1),
-            end_date=date(2021, 6, 30),
+            start_date=date(CURRENT_YEAR, 1, 1),
+            end_date=date(CURRENT_YEAR, 6, 30),
             unit_price=Decimal(30),
         )
         ProductFactory(
             zone=self.zone,
             type=ProductType.RESIDENT,
-            start_date=date(2021, 7, 1),
-            end_date=date(2021, 12, 31),
+            start_date=date(CURRENT_YEAR, 7, 1),
+            end_date=date(CURRENT_YEAR, 12, 31),
             unit_price=Decimal(50),
         )
         self.customer = CustomerFactory(zone=self.zone)
 
     def test_create_for_customer_should_create_order_with_items(self):
-        start_time = timezone.make_aware(datetime(2021, 3, 15))
-        end_time = get_end_time(start_time, 6)  # end at 2021-09-14 23:59
+        start_time = timezone.make_aware(datetime(CURRENT_YEAR, 3, 15))
+        end_time = get_end_time(start_time, 6)  # end at CURRENT_YEAR-09-14 23:59
         permit = ParkingPermitFactory(
             parking_zone=self.zone,
             customer=self.customer,
@@ -59,10 +65,29 @@ class TestOrderManager(TestCase):
         self.assertEqual(order_items[1].quantity, 2)
 
     def test_test_create_renewable_order_should_create_renewal_order(self):
-        high_emission_vehicle = VehicleFactory(low_emission_vehicle=False)
-        low_emission_vehicle = VehicleFactory(low_emission_vehicle=True)
-        start_time = timezone.make_aware(datetime(2021, 3, 15))
-        end_time = get_end_time(start_time, 6)  # end at 2021-09-14 23:59
+        start_time = timezone.make_aware(datetime(CURRENT_YEAR, 3, 15))
+        end_time = get_end_time(start_time, 6)  # end at CURRENT_YEAR-09-14 23:59
+
+        high_emission_vehicle = VehicleFactory(
+            power_type=VehiclePowerType.BENSIN,
+            emission=100,
+            euro_class=6,
+            emission_type=EmissionType.WLTP,
+        )
+        low_emission_vehicle = VehicleFactory(
+            power_type=VehiclePowerType.BENSIN,
+            emission=70,
+            euro_class=6,
+            emission_type=EmissionType.WLTP,
+        )
+        LowEmissionCriteriaFactory(
+            start_date=start_time,
+            end_date=end_time,
+            nedc_max_emission_limit=None,
+            wltp_max_emission_limit=80,
+            euro_min_class_limit=6,
+            power_type=low_emission_vehicle.power_type,
+        )
         permit = ParkingPermitFactory(
             parking_zone=self.zone,
             vehicle=high_emission_vehicle,
@@ -81,7 +106,7 @@ class TestOrderManager(TestCase):
         permit.vehicle = low_emission_vehicle
         permit.save()
 
-        with freeze_time(timezone.make_aware(datetime(2021, 5, 5))):
+        with freeze_time(timezone.make_aware(datetime(CURRENT_YEAR, 5, 5))):
             new_order = Order.objects.create_renewal_order(self.customer)
             order_items = new_order.order_items.all().order_by("start_date")
             self.assertEqual(order_items.count(), 2)
@@ -93,8 +118,8 @@ class TestOrderManager(TestCase):
             self.assertEqual(order_items[1].quantity, 2)
 
     def test_create_renewable_order_should_raise_error_for_draft_permits(self):
-        start_time = timezone.make_aware(datetime(2021, 3, 15))
-        end_time = get_end_time(start_time, 6)  # end at 2021-09-14 23:59
+        start_time = timezone.make_aware(datetime(CURRENT_YEAR, 3, 15))
+        end_time = get_end_time(start_time, 6)  # end at CURRENT_YEAR-09-14 23:59
         permit = ParkingPermitFactory(
             parking_zone=self.zone,
             customer=self.customer,
@@ -105,13 +130,13 @@ class TestOrderManager(TestCase):
             month_count=6,
         )
         Order.objects.create_for_permits([permit])
-        with freeze_time(timezone.make_aware(datetime(2021, 5, 5))):
+        with freeze_time(timezone.make_aware(datetime(CURRENT_YEAR, 5, 5))):
             with self.assertRaises(OrderCreationFailed):
                 Order.objects.create_renewal_order(self.customer)
 
     def test_create_renewable_order_should_raise_error_for_open_ended_permits(self):
-        start_time = timezone.make_aware(datetime(2021, 3, 15))
-        end_time = get_end_time(start_time, 6)  # end at 2021-09-14 23:59
+        start_time = timezone.make_aware(datetime(CURRENT_YEAR, 3, 15))
+        end_time = get_end_time(start_time, 6)  # end at 2022-09-14 23:59
         permit = ParkingPermitFactory(
             parking_zone=self.zone,
             customer=self.customer,
@@ -124,7 +149,7 @@ class TestOrderManager(TestCase):
         Order.objects.create_for_permits([permit])
         permit.status = ParkingPermitStatus.VALID
         permit.save()
-        with freeze_time(timezone.make_aware(datetime(2021, 5, 5))):
+        with freeze_time(timezone.make_aware(datetime(CURRENT_YEAR, 5, 5))):
             with self.assertRaises(OrderCreationFailed):
                 Order.objects.create_renewal_order(self.customer)
 

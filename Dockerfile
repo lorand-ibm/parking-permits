@@ -39,7 +39,7 @@ RUN if [ "x$BUILD_MODE" != "xlocal" ]; \
         rm -rf /etc/pki/entitlement; \
         rm -rf /etc/rhsm; \
     fi;
-    
+
 RUN useradd -ms /bin/bash -d /app parking_permits
 
 RUN chown parking_permits /opt/app-root/lib/python3.9/site-packages
