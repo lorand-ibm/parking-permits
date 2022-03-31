@@ -12,7 +12,6 @@ from dateutil.parser import isoparse
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.db import transaction
-from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from parking_permits.models import (
@@ -32,6 +31,7 @@ from .models.order import OrderStatus
 from .models.parking_permit import ContractType
 from .paginator import QuerySetPaginator
 from .reversion import EventType, get_obj_changelogs, get_reversion_comment
+from .services.dvv import get_person_info
 from .utils import apply_filtering, apply_ordering, get_end_time
 
 logger = logging.getLogger("db")
@@ -97,9 +97,10 @@ def resolve_customer(obj, info, national_id_number):
     try:
         customer = Customer.objects.get(national_id_number=national_id_number)
     except Customer.DoesNotExist:
-        logger.info("Customer does not exist, search from DVV")
-        # TODO: search from DVV and create customer once DVV integration is ready
-        raise ObjectNotFound(_("Customer not found"))
+        logger.info("Customer does not exist, searching from DVV...")
+        customer = get_person_info(national_id_number)
+        if not customer:
+            raise ObjectNotFound(_("Person not found"))
     return customer
 
 
@@ -108,11 +109,7 @@ def resolve_customer(obj, info, national_id_number):
 @convert_kwargs_to_snake_case
 def resolve_vehicle(obj, info, reg_number, national_id_number):
     try:
-        q = Q(registration_number=reg_number) & (
-            Q(owner__national_id_number=national_id_number)
-            | Q(holder__national_id_number=national_id_number)
-        )
-        vehicle = Vehicle.objects.get(q)
+        vehicle = Vehicle.objects.get(registration_number=reg_number)
     except Vehicle.DoesNotExist:
         logger.info("Vehicle does not exist, search from Traficom")
         # TODO: search from Traficom and create vehicle once Traficom integration is ready
@@ -169,10 +166,8 @@ def update_or_create_vehicle(vehicle_info):
         "registration_number": vehicle_info["registration_number"],
         "manufacturer": vehicle_info["manufacturer"],
         "model": vehicle_info["model"],
-        "low_emission_vehicle": vehicle_info["is_low_emission"],
         "consent_low_emission_accepted": vehicle_info["consent_low_emission_accepted"],
         "serial_number": vehicle_info["serial_number"],
-        "category": vehicle_info["category"],
     }
     return Vehicle.objects.update_or_create(
         registration_number=vehicle_info["registration_number"], defaults=vehicle_data
