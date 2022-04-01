@@ -42,9 +42,15 @@ class TalpaResolveAvailability(APIView):
         tags=["ResolveAvailability"],
     )
     def post(self, request, format=None):
+        logger.info(
+            f"Data received for resolve availability = {json.dumps(request.data)}"
+        )
         shared_product_id = request.data.get("productId")
-        res = {"product_id": shared_product_id, "value": True}
-        return Response(talpa.snake_to_camel_dict(res))
+        res = talpa.snake_to_camel_dict(
+            {"product_id": shared_product_id, "value": True}
+        )
+        logger.info(f"Resolve availability response = {json.dumps(res)}")
+        return Response(res)
 
 
 class TalpaResolvePrice(APIView):
@@ -57,6 +63,7 @@ class TalpaResolvePrice(APIView):
         tags=["ResolvePrice"],
     )
     def post(self, request, format=None):
+        logger.info(f"Data received for resolve price = {json.dumps(request.data)}")
         meta = request.data.get("orderItem").get("meta")
         permit_id = talpa.get_meta_value(meta, "permitId")
 
@@ -78,21 +85,22 @@ class TalpaResolvePrice(APIView):
             vat = product.vat
             price_vat = price * vat
         except Exception as e:
+            logger.error(f"Resolve price error = {str(e)}")
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(
-            talpa.snake_to_camel_dict(
-                {
-                    "row_price_net": float(price - price_vat),
-                    "row_price_vat": float(price_vat),
-                    "row_price_total": float(price),
-                    "price_net": float(price - price_vat),
-                    "price_vat": float(price_vat),
-                    "price_gross": float(price),
-                    "vat_percentage": float(product.vat_percentage),
-                }
-            )
+        response = talpa.snake_to_camel_dict(
+            {
+                "row_price_net": float(price - price_vat),
+                "row_price_vat": float(price_vat),
+                "row_price_total": float(price),
+                "price_net": float(price - price_vat),
+                "price_vat": float(price_vat),
+                "price_gross": float(price),
+                "vat_percentage": float(product.vat_percentage),
+            }
         )
+        logger.info(f"Resolve price response = {json.dumps(response)}")
+        return Response(response)
 
 
 class TalpaResolveRightOfPurchase(APIView):
@@ -107,6 +115,9 @@ class TalpaResolveRightOfPurchase(APIView):
         tags=["RightOfPurchase"],
     )
     def post(self, request):
+        logger.info(
+            f"Data received for resolve right of purchase = {json.dumps(request.data)}"
+        )
         meta = request.data.get("orderItem").get("meta")
         permit_id = talpa.get_meta_value(meta, "permitId")
         user_id = request.data.get("userId")
@@ -116,6 +127,7 @@ class TalpaResolveRightOfPurchase(APIView):
             customer = permit.customer
             vehicle = permit.vehicle
         except Exception as e:
+            logger.error(f"Resolve right of purchase error = {str(e)}")
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         is_owner_or_holder, error_msg = customer.is_user_of_vehicle(
             vehicle.registration_number
@@ -130,12 +142,15 @@ class TalpaResolveRightOfPurchase(APIView):
             and has_valid_driving_licence
             and not vehicle.is_due_for_inspection()
         )
-        res = {
-            "error_message": error_msg,
-            "right_of_purchase": right_of_purchase,
-            "user_id": user_id,
-        }
-        return Response(talpa.snake_to_camel_dict(res))
+        res = talpa.snake_to_camel_dict(
+            {
+                "error_message": error_msg,
+                "right_of_purchase": right_of_purchase,
+                "user_id": user_id,
+            }
+        )
+        logger.info(f"Resolve right of purchase response = {json.dumps(res)}")
+        return Response(res)
 
 
 class OrderView(APIView):
