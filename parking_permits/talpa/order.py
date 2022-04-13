@@ -35,17 +35,19 @@ class TalpaOrderManager:
         return (permit_info + car_info) if has_multiple_permit else car_info
 
     @classmethod
-    def _get_product_description(cls, product):
-        start_time = product.start_date.strftime(DATE_FORMAT)
-        end_time = product.end_date.strftime(DATE_FORMAT)
-        return f"{start_time} - {end_time}"
+    def _get_product_description(cls, order_item):
+        if order_item.start_date and order_item.end_date:
+            start_time = order_item.start_date.strftime(DATE_FORMAT)
+            end_time = order_item.end_date.strftime(DATE_FORMAT)
+            return f"{start_time} - {end_time}"
+        return ""
 
     @classmethod
     def _create_item_data(cls, order, order_item):
         item = {
             "productId": str(order_item.product.talpa_product_id),
             "productName": order_item.product.name,
-            "productDescription": cls._get_product_description(order_item.product),
+            "productDescription": cls._get_product_description(order_item),
             "unit": "kk",
             "startDate": date_time_to_utc(order_item.permit.start_time),
             "quantity": order_item.quantity,
